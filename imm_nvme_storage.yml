@@ -1,0 +1,16 @@
+---
+- name: Manage Lenovo IMM/XCC server
+  hosts: imm_server_01
+  connection: local
+  gather_facts: false
+
+  tasks:
+    - name: "Power cycle the server via Redfish"
+      shell: "curl -k https://[{{ ansible_host }}]/redfish/v1/Systems/1 --user '{{ imm_user }}:{{ imm_pass }}' | jq .PowerState"
+      register: power_state_control_hosts_redfish
+      until: power_state_control_hosts_redfish.stdout|regex_search('Off')
+      ignore_errors: true
+
+    - name: Display the command output
+      debug:
+        var: power_state_control_hosts_redfish

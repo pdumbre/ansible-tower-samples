@@ -1,6 +1,6 @@
 ---
 - name: Manage Lenovo IMM/XCC server
-  hosts: imm_server_01
+  hosts: all
   connection: local
   gather_facts: false
 

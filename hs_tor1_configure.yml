@@ -1,0 +1,14 @@
+---
+- name: Configure High Speed switches
+  hosts: all
+  connection: local
+  gather_facts: false
+
+  tasks:
+    - name: "Configure ip address"
+      ansible.builtin.command: hostname
+      register: hostname_output
+
+    - name: Print the hostname
+      ansible.builtin.debug:
+        var: hostname_output.stdout

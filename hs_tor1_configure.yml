@@ -1,14 +1,27 @@
 ---
 - name: Configure High Speed switches
   hosts: all
-  connection: local
   gather_facts: false
 
   tasks:
-    - name: "Configure ip address"
+    - name: "Check hostname"
       ansible.builtin.command: hostname
       register: hostname_output
 
     - name: Print the hostname
       ansible.builtin.debug:
         var: hostname_output.stdout
+
+    - name: "Configure ip address"
+      ansible.builtin.shell: |
+        nv set interface eth0 ip address 169.254.4.1/24
+        nv config apply
+        nv config save
+        
+    - name: Apply multiple NVUE configurations
+      nvidia.nvue.command:
+        commands:
+          - "set interface eth0 ip address 169.254.1.4/24"
+          - "set interface eth0 link state up"
+        apply: true
+        assume_yes: true

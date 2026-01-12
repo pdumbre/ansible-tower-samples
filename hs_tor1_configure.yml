@@ -4,9 +4,10 @@
   gather_facts: false
 
   tasks:
-  - name: Debug variable value
-    ansible.builtin.debug:
-      var: skip_playbook_dev_env
+    - name: Print the hostname
+      ansible.builtin.debug:
+        var: skip_playbook_dev_env
+      
     - name: "Check hostname"
       ansible.builtin.command: hostname
       register: hostname_output

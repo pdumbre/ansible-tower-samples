@@ -17,6 +17,7 @@
       uri:
         url: "{{ awx_url }}/api/v2/hosts/"
         method: POST
+        force_basic_auth: yes
         user: "admin"
         password: "Abell4Cloud!"
         body_format: json

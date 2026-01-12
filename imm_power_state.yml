@@ -1,0 +1,23 @@
+---
+- name: Read Lenovo IMM power state via Redfish
+  hosts: all
+  gather_facts: no
+  connection: local
+
+  vars:
+    redfish_base: "https://{{ NODE_IPV6 }}/redfish/v1"
+
+  tasks:
+    - name: Get system power state
+      uri:
+        url: "{{ redfish_base }}/Systems/1"
+        user: "{{ USERNAME }}"
+        password: "{{ PASSWORD }}"
+        method: GET
+        validate_certs: no
+        force_basic_auth: yes
+      register: redfish_result
+
+    - name: Show power state
+      debug:
+        msg: "IMM {{ inventory_hostname }} power state: {{ redfish_result.json.PowerState }}"

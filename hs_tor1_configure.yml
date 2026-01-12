@@ -29,4 +29,4 @@
           - "set interface eth0 link state up"
         apply: true
         assume_yes: true
-      when: skip_playbook_dev_env
+      when: skip_playbook_dev_env | bool

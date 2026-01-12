@@ -19,6 +19,7 @@
       ansible.builtin.uri:
         url: "{{ awx_url }}/api/v2/tokens/"
         method: POST
+        force_basic_auth: yes
         user: "{{ awx_username }}"
         password: "{{ awx_password }}"
         body_format: json

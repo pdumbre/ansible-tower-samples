@@ -3,7 +3,5 @@
   tasks:
     - name: Hello Message
       debug:
-        msg: "Hello World!"
-      ansible.builtin.debug:
         msg: "--- Starting configuration for node and switches"
 

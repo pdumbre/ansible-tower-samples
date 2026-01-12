@@ -1,0 +1,27 @@
+- name: Discover hosts
+  hosts: localhost
+  gather_facts: no
+  vars:
+    awx_inventory_id: 2
+    awx_url: http://10.48.112.67
+    awx_token: "{{ lookup('env', 'AWX_TOKEN') }}"
+
+  tasks:
+    - name: Extract IPs
+      set_fact:
+         discovered_ips:
+          - "192.24.5.1"
+          - "192.24.5.2"
+
+    - name: Add hosts to AWX
+      uri:
+        url: "{{ awx_url }}/api/v2/hosts/"
+        method: POST
+        headers:
+          Authorization: "Bearer {{ awx_token }}"
+          Content-Type: application/json
+        body_format: json
+        body:
+          name: "{{ item }}"
+          inventory: "{{ awx_inventory_id }}"
+      loop: "{{ discovered_ips }}"

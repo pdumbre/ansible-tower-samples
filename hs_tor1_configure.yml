@@ -1,7 +1,7 @@
 ---
 - name: Configure High Speed switches
-  when: skip_playbook_dev_env
   hosts: all
+  when: skip_playbook_dev_env
   gather_facts: false
 
   tasks:

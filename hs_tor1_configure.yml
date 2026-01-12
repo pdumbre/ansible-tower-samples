@@ -26,4 +26,3 @@
           - "set interface eth0 link state up"
         apply: true
         assume_yes: true
-      when: dev_environment | bool

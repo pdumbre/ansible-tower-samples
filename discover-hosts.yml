@@ -26,7 +26,6 @@
         body: '{"description": "Ansible Playbook Token"}'
         validate_certs: false # Set to true in production
       register: awx_token_response
-      no_log: true # Prevent sensitive data in logs
 
     - name: Add new host to the specific inventory
       ansible.builtin.uri:

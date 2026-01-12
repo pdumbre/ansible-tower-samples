@@ -17,9 +17,8 @@
       uri:
         url: "{{ awx_url }}/api/v2/hosts/"
         method: POST
-        headers:
-          Authorization: "Bearer {{ awx_token }}"
-          Content-Type: application/json
+        user: "admin"
+        password: "Abell4Cloud!"
         body_format: json
         body:
           name: "{{ item }}"

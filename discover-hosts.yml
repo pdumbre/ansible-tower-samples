@@ -1,27 +1,51 @@
-- name: Discover hosts
+---
+- name: Update AWX inventory with a new host
   hosts: localhost
-  gather_facts: no
+  connection: local
+  gather_facts: false
+
   vars:
-    awx_inventory_id: 2
-    awx_url: http://10.48.112.67
-    awx_token: "{{ lookup('env', 'AWX_TOKEN') }}"
+    awx_url: "http://10.48.112.67"
+    awx_username: "admin"
+    awx_password: "Abell4Cloud!"
+    inventory_id: 2  # The ID of your existing static inventory in AWX
+    new_host_name: "new-server-01.example.com"
+    new_host_variables:
+      ansible_host: "10.0.0.50"
+      ansible_user: "ec2-user"
 
   tasks:
-    - name: Extract IPs
-      set_fact:
-         discovered_ips:
-          - "192.24.5.1"
-          - "192.24.5.2"
-
-    - name: Add hosts to AWX
-      uri:
-        url: "{{ awx_url }}/api/v2/hosts/"
+    - name: Get AWX auth token
+      ansible.builtin.uri:
+        url: "{{ awx_url }}/api/v2/tokens/"
         method: POST
-        force_basic_auth: yes
-        user: "admin"
-        password: "Abell4Cloud!"
+        user: "{{ awx_username }}"
+        password: "{{ awx_password }}"
         body_format: json
-        body:
-          name: "{{ item }}"
-          inventory: "{{ awx_inventory_id }}"
-      loop: "{{ discovered_ips }}"
+        status_code: [200, 201]
+        body: '{"description": "Ansible Playbook Token"}'
+        validate_certs: false # Set to true in production
+      register: awx_token_response
+      no_log: true # Prevent sensitive data in logs
+
+    - name: Add new host to the specific inventory
+      ansible.builtin.uri:
+        url: "{{ awx_url }}/api/v2/inventories/{{ inventory_id }}/hosts/"
+        method: POST
+        headers:
+          Authorization: "Bearer {{ awx_token_response.json.token }}"
+        body_format: json
+        status_code: [200, 201]
+        body: "{{ host_data | to_json }}"
+        validate_certs: false # Set to true in production
+      vars:
+        host_data:
+          name: "{{ new_host_name }}"
+          enabled: true
+          variables: "{{ new_host_variables | to_json }}"
+      register: add_host_result
+
+    - name: Print the result of adding the host
+      ansible.builtin.debug:
+        var: add_host_result.json.name
+

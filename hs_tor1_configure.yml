@@ -11,16 +11,19 @@
     - name: "Check hostname"
       ansible.builtin.command: hostname
       register: hostname_output
+      when: skip_playbook_dev_env | bool
 
     - name: Print the hostname
       ansible.builtin.debug:
         var: hostname_output.stdout
+      when: skip_playbook_dev_env | bool
 
     - name: "Configure ip address"
       ansible.builtin.shell: |
         nv set interface eth0 ip address 169.254.4.1/24
         nv config apply
         nv config save
+      when: skip_playbook_dev_env | bool
         
     - name: Apply multiple NVUE configurations
       nvidia.nvue.command:

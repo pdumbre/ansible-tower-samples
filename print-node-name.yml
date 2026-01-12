@@ -1,5 +1,9 @@
-- hosts: all
-  gather_facts: no
+---
+- name: Display all host variables and facts for each host
+  hosts: all
+  gather_facts: true  # Ensure facts are gathered if needed
   tasks:
-    - name: Run task on all hosts in parallel
-      shell: hostname
+    - name: Print all variables for the current host
+      ansible.builtin.debug:
+        var: hostvars[inventory_hostname]
+      # The output will appear as a JSON structure in the AWX job log

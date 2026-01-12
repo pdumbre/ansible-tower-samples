@@ -1,7 +1,6 @@
 ---
 - name: Configure High Speed switches
   hosts: all
-  when: skip_playbook_dev_env
   gather_facts: false
 
   tasks:
@@ -26,3 +25,4 @@
           - "set interface eth0 link state up"
         apply: true
         assume_yes: true
+      when: skip_playbook_dev_env | bool

@@ -1,0 +1,20 @@
+- name: Create and populate AWX dynamic inventory
+  hosts: localhost
+  gather_facts: no
+  collections:
+    - awx.awx
+
+  vars:
+    inventory_name: "kickstart-Inventory"
+    project_name: "kickstart-test"
+
+  tasks:
+
+    - name: Create inventory
+      inventory:
+        name: "{{ inventory_name }}"
+        organization: "Default"
+        state: present
+        controller_host: "{{ awx_host }}"
+        controller_username: "{{ awx_username }}"
+        controller_password: "{{ awx_password }}"

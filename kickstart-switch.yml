@@ -8,9 +8,9 @@
     inventory_name: "Network-Switches"
     organization: "Default"
 
-    awx_host: "{{ lookup('env', 'AWX_HOST') }}"
-    awx_user: "{{ lookup('env', 'AWX_USERNAME') }}"
-    awx_pass: "{{ lookup('env', 'AWX_PASSWORD') }}"
+    awx_host: "{{ AWX_HOST }}"
+    awx_user: "{{ AWX_USERNAME }}"
+    awx_pass: "{{ AWX_PASSWORD }}"
 
   tasks:
     - name: Read JSON file

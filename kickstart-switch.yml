@@ -22,6 +22,10 @@
       set_fact:
         switches: "{{ raw_json.content | b64decode | from_json }}"
 
+    - name: Print a custom message with a variable
+      ansible.builtin.debug:
+        msg: "The value of awx_host is {{ awx_host }}"
+
     - name: Get organization ID
       uri:
         url: "{{ awx_host }}/api/v2/organizations/?name={{ organization }}"

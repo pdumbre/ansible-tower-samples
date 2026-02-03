@@ -4,7 +4,6 @@
   gather_facts: false
 
   vars:
-    json_file: "/var/lib/awx/projects/kickstart.json"
     inventory_name: "Network-Switches"
     organization: "Default"
 

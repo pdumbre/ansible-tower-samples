@@ -1,0 +1,117 @@
+---
+- name: Generate AWX inventory from switches JSON (API-based)
+  hosts: localhost
+  gather_facts: false
+
+  vars:
+    json_file: "./switches.json"
+    inventory_name: "Network-Switches"
+    organization: "Default"
+
+    awx_host: "{{ lookup('env', 'TOWER_HOST') }}"
+    awx_user: "{{ lookup('env', 'TOWER_USERNAME') }}"
+    awx_pass: "{{ lookup('env', 'TOWER_PASSWORD') }}"
+
+  tasks:
+    - name: Read JSON file
+      slurp:
+        src: "{{ json_file }}"
+      register: raw_json
+
+    - name: Parse JSON
+      set_fact:
+        switches: "{{ raw_json.content | b64decode | from_json }}"
+
+    - name: Get organization ID
+      uri:
+        url: "{{ awx_host }}/api/v2/organizations/?name={{ organization }}"
+        method: GET
+        user: "{{ awx_user }}"
+        password: "{{ awx_pass }}"
+        force_basic_auth: true
+        validate_certs: false
+      register: org_result
+
+    - name: Set organization ID
+      set_fact:
+        org_id: "{{ org_result.json.results[0].id }}"
+
+    - name: Create inventory
+      uri:
+        url: "{{ awx_host }}/api/v2/inventories/"
+        method: POST
+        user: "{{ awx_user }}"
+        password: "{{ awx_pass }}"
+        force_basic_auth: true
+        validate_certs: false
+        status_code: [200,201,400]
+        body_format: json
+        body:
+          name: "{{ inventory_name }}"
+          organization: "{{ org_id }}"
+      register: inventory_result
+
+    - name: Get inventory ID
+      uri:
+        url: "{{ awx_host }}/api/v2/inventories/?name={{ inventory_name }}"
+        method: GET
+        user: "{{ awx_user }}"
+        password: "{{ awx_pass }}"
+        force_basic_auth: true
+        validate_certs: false
+      register: inventory_lookup
+
+    - set_fact:
+        inventory_id: "{{ inventory_lookup.json.results[0].id }}"
+
+    - name: Create groups (switch_type)
+      uri:
+        url: "{{ awx_host }}/api/v2/groups/"
+        method: POST
+        user: "{{ awx_user }}"
+        password: "{{ awx_pass }}"
+        force_basic_auth: true
+        validate_certs: false
+        status_code: [200,201,400]
+        body_format: json
+        body:
+          name: "{{ item.switch_type }}"
+          inventory: "{{ inventory_id }}"
+      loop: "{{ switches.switches }}"
+      loop_control:
+        label: "{{ item.switch_type }}"
+
+    - name: Create hosts
+      uri:
+        url: "{{ awx_host }}/api/v2/hosts/"
+        method: POST
+        user: "{{ awx_user }}"
+        password: "{{ awx_pass }}"
+        force_basic_auth: true
+        validate_certs: false
+        status_code: [200,201,400]
+        body_format: json
+        body:
+          name: "{{ item.name }}"
+          inventory: "{{ inventory_id }}"
+          variables: "{{ item | to_nice_yaml }}"
+      loop: "{{ switches.switches }}"
+      loop_control:
+        label: "{{ item.name }}"
+
+    - name: Assign hosts to groups
+      uri:
+        url: "{{ awx_host }}/api/v2/groups/{{ group_id }}/hosts/"
+        method: POST
+        user: "{{ awx_user }}"
+        password: "{{ awx_pass }}"
+        force_basic_auth: true
+        validate_certs: false
+        status_code: [204]
+        body_format: json
+        body:
+          id: "{{ host_id }}"
+      vars:
+        group_id: "{{ lookup('pipe', 'echo ' + item.switch_type) }}"
+      loop: "{{ switches.switches }}"
+      when: false  # optional if using inventory variables only

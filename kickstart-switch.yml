@@ -4,13 +4,13 @@
   gather_facts: false
 
   vars:
-    json_file: "./switches.json"
+    json_file: "/var/lib/awx/projects/kickstart.json"
     inventory_name: "Network-Switches"
     organization: "Default"
 
-    awx_host: "{{ lookup('env', 'TOWER_HOST') }}"
-    awx_user: "{{ lookup('env', 'TOWER_USERNAME') }}"
-    awx_pass: "{{ lookup('env', 'TOWER_PASSWORD') }}"
+    awx_host: "{{ lookup('env', 'AWX_HOST') }}"
+    awx_user: "{{ lookup('env', 'AWX_USERNAME') }}"
+    awx_pass: "{{ lookup('env', 'AWX_PASSWORD') }}"
 
   tasks:
     - name: Read JSON file

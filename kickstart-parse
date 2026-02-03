@@ -1,0 +1,77 @@
+---
+- name: Generate AWX inventory from switches JSON
+  hosts: localhost
+  gather_facts: false
+
+  vars:
+    json_file: "/var/lib/awx/projects/kickstart.json"
+    inventory_name: "Network-Switches"
+    organization: "Default"
+
+    controller_host: "{{ lookup('env', 'TOWER_HOST') }}"
+    controller_username: "{{ lookup('env', 'TOWER_USERNAME') }}"
+    controller_password: "{{ lookup('env', 'TOWER_PASSWORD') }}"
+    validate_certs: false
+
+  tasks:
+    - name: Read switches JSON file
+      ansible.builtin.slurp:
+        src: "{{ json_file }}"
+      register: switches_raw
+
+    - name: Parse JSON
+      set_fact:
+        switches_data: "{{ switches_raw.content | b64decode | from_json }}"
+
+    - name: Ensure inventory exists
+      awx.awx.inventory:
+        name: "{{ inventory_name }}"
+        organization: "{{ organization }}"
+        state: present
+        controller_host: "{{ controller_host }}"
+        controller_username: "{{ controller_username }}"
+        controller_password: "{{ controller_password }}"
+        validate_certs: "{{ validate_certs }}"
+
+    - name: Create groups based on switch_type
+      awx.awx.group:
+        name: "{{ item.switch_type }}"
+        inventory: "{{ inventory_name }}"
+        state: present
+        controller_host: "{{ controller_host }}"
+        controller_username: "{{ controller_username }}"
+        controller_password: "{{ controller_password }}"
+        validate_certs: "{{ validate_certs }}"
+      loop: "{{ switches_data.switches }}"
+      loop_control:
+        label: "{{ item.switch_type }}"
+      run_once: true
+
+    - name: Create switch hosts with variables
+      awx.awx.host:
+        name: "{{ item.name }}"
+        inventory: "{{ inventory_name }}"
+        groups:
+          - "{{ item.switch_type }}"
+        variables:
+          serial: "{{ item.serial }}"
+          partNo: "{{ item.partNo }}"
+          model: "{{ item.model }}"
+          macAddr: "{{ item.macAddr }}"
+          reservedVLANs: "{{ item.reservedVLANs }}"
+          manufacturer: "{{ item.manufacturer }}"
+          vendor: "{{ item.vendor }}"
+          softver: "{{ item.softver }}"
+          boot_version: "{{ item.boot_version }}"
+          images: "{{ item.images }}"
+          location: "{{ item.location }}"
+          ipv6: "{{ item.ipv6 }}"
+          users: "{{ item.users }}"
+        state: present
+        controller_host: "{{ controller_host }}"
+        controller_username: "{{ controller_username }}"
+        controller_password: "{{ controller_password }}"
+        validate_certs: "{{ validate_certs }}"
+      loop: "{{ switches_data.switches }}"
+      loop_control:
+        label: "{{ item.name }}"

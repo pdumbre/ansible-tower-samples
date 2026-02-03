@@ -17,4 +17,4 @@
     - name: Save export to a file
       copy:
         content: "{{ export_output['assets'] | to_nice_yaml }}"
-        dest: "/var/lib/awx/projects/switch_export.yaml
+        dest: "/var/lib/awx/projects/switch_export.yaml"

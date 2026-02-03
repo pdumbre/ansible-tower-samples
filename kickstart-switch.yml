@@ -15,7 +15,7 @@
   tasks:
     - name: Read JSON file
       slurp:
-        src: "{{ json_file }}"
+        src: "{{ kickstart_file }}"
       register: raw_json
 
     - name: Parse JSON

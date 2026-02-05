@@ -1,9 +1,12 @@
+- name: Print Redfish URL
+  debug:
+    msg: "Calling URL: https://{{ redfish_host }}/redfish/v1/Managers/1/NetworkProtocol"
 
 - name: Get current network protocol configuration
   uri:
     url: "https://{{ redfish_host }}/redfish/v1/Managers/1/NetworkProtocol"
     method: GET
-    user: "{{ redfish_host }}"
+    user: "{{ redfish_user }}"
     password: "{{ redfish_password }}"
     validate_certs: no
     force_basic_auth: yes

@@ -1,0 +1,18 @@
+---
+# Main playbook for Node IMM/iDRAC Setup
+# This playbook configures Dell iDRAC and Lenovo IMM using REST APIs
+# Equivalent to NodesImmSetup.groovy from isf-rackprep
+
+- name: Configure Node IMM/iDRAC Setup
+  hosts: all
+  gather_facts: no
+  serial: 1  # Process one node at a time to avoid overwhelming the network
+
+  pre_tasks:
+    - name: Display node information
+      debug:
+        msg:
+          - "Configuring node: {{ inventory_hostname }}"     
+  roles:
+    - imm_setup
+    

@@ -1,0 +1,3 @@
+- name: Include vendor role
+  include_role:
+    name: "imm-setup-{{ vendor }}"

@@ -2,6 +2,15 @@
   debug:
     msg: "Calling URL: https://{{ redfish_host }}/redfish/v1/Managers/1/NetworkProtocol"
 
+- name: Print Redfish user
+  debug:
+    msg: "Calling {{ redfish_user }}"
+
+- name: Print Redfish pass
+  debug:
+    msg: "Calling {{ redfish_password }}"
+
+
 - name: Get current network protocol configuration
   uri:
     url: "https://{{ redfish_host }}/redfish/v1/Managers/1/NetworkProtocol"

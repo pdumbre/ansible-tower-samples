@@ -1,0 +1,6 @@
+- name: Node setup
+  hosts: all
+  gather_facts: no
+  roles:
+    - node_setup
+

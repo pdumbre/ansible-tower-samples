@@ -1,0 +1,9 @@
+- name: Get current power state (HPE iLO)
+  uri:
+    url: "https://{{ mgmt_ip }}/redfish/v1/Systems/1"
+    method: GET
+    user: "{{ mgmt_user }}"
+    password: "{{ mgmt_password }}"
+    force_basic_auth: yes
+    validate_certs: no
+  register: hpe_power

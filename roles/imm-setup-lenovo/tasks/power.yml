@@ -1,10 +1,10 @@
 
 - name: Get current network protocol configuration
   uri:
-    url: "https://{{ ansible_host }}/redfish/v1/Managers/1/NetworkProtocol"
+    url: "https://{{ redfish_host }}/redfish/v1/Managers/1/NetworkProtocol"
     method: GET
-    user: "{{ ansible_user }}"
-    password: "{{ ansible_password }}"
+    user: "{{ redfish_host }}"
+    password: "{{ redfish_password }}"
     validate_certs: no
     force_basic_auth: yes
     return_content: yes

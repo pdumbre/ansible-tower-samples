@@ -84,7 +84,8 @@
   set_fact:
     current_mac: "{{ network_interface_detail.json.MACAddress | default('Not available') }}"
     current_ipv6_addresses: "{{ current_network.json.IPv6Addresses | default([]) }}"
-    current_ipv6_addr: "{{ current_network.json.IPv6Addresses[0].Address | default('') if current_network.json.IPv6Addresses | default([]) | length > 0 else '' }}"
+    current_ipv6_addr: "{{ current_network.json.IPv6Addresses[0].Address | default('') }}"
+    #current_ipv6_addr: "{{ current_network.json.IPv6Addresses[0].Address | default('') if current_network.json.IPv6Addresses | default([]) | length > 0 else '' }}"
     current_dhcp: "{{ current_network.json.DHCPv4.DHCPEnabled | default(false) }}"
 
 - name: Display current network configuration

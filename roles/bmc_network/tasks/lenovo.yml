@@ -1,77 +1,59 @@
 ---
-# Get VPD (Vital Product Data) system information from IMM using Ansible Redfish modules
-# Equivalent to: imm.getVpdSysInfo()
-# Uses community.general.redfish_info module instead of direct REST API
+- name: Get System VPD Information via Redfish API (No Modules)
+  hosts: baremetal
+  connection: local
+  gather_facts: false
+  vars:
+    redfish_base_uri: "https://{{ ansible_host }}"
+    # Credentials (should be overridden by vault/inventory)
+    redfish_username: "{{ ansible_user }}"
+    redfish_password: "{{ ansible_password }}"
 
-- name: Get system VPD information via Redfish module
-  community.general.redfish_info:
-    category: Systems
-    command: GetSystemInventory
-    baseuri: "{{ ansible_host }}"
-    username: "{{ ansible_user }}"
-    password: "{{ ansible_password }}"
-    timeout: 30
-  register: system_inventory
-  delegate_to: localhost
+  tasks:
+    # 1. Discover Systems URI
+    # Redfish root -> /redfish/v1 -> "Systems": {"@odata.id": "/redfish/v1/Systems"}
+    - name: Get Redfish Systems Collection
+      uri:
+        url: "{{ redfish_base_uri }}/redfish/v1/Systems"
+        method: GET
+        user: "{{ redfish_username }}"
+        password: "{{ redfish_password }}"
+        force_basic_auth: yes
+        validate_certs: no
+        return_content: yes
+      register: systems_collection
+      delegate_to: localhost
 
-- name: Extract VPD information from system inventory
-  set_fact:
-    vpd_mtm: "{{ system_inventory.redfish_facts.system.entries[0].Model | default('Unknown') }}"
-    vpd_serial: "{{ system_inventory.redfish_facts.system.entries[0].SerialNumber | default('Unknown') }}"
-    vpd_manufacturer: "{{ system_inventory.redfish_facts.system.entries[0].Manufacturer | default('Unknown') }}"
-    vpd_uuid: "{{ system_inventory.redfish_facts.system.entries[0].UUID | default('Unknown') }}"
-    vpd_part_number: "{{ system_inventory.redfish_facts.system.entries[0].PartNumber | default('Unknown') }}"
+    # 2. Get the first system member URI
+    # Response: {"Members": [{"@odata.id": "/redfish/v1/Systems/1"}, ...]}
+    - name: Get System URI
+      set_fact:
+        system_uri: "{{ systems_collection.json.Members[0]['@odata.id'] }}"
+      when: systems_collection.json.Members | length > 0
 
-- name: Display VPD information
-  debug:
-    msg: 
-      - "========================================="
-      - "System VPD Information"
-      - "========================================="
-      - "Machine Type/Model: {{ vpd_mtm }}"
-      - "Serial Number: {{ vpd_serial }}"
-      - "Manufacturer: {{ vpd_manufacturer }}"
-      - "UUID: {{ vpd_uuid }}"
-      - "Part Number: {{ vpd_part_number }}"
-      - "========================================="
+    # 3. Retrieve Detail for that System
+    - name: Get System Detail
+      uri:
+        url: "{{ redfish_base_uri }}{{ system_uri }}"
+        method: GET
+        user: "{{ redfish_username }}"
+        password: "{{ redfish_password }}"
+        force_basic_auth: yes
+        validate_certs: no
+        return_content: yes
+      register: system_detail
+      delegate_to: localhost
+      when: system_uri is defined
 
-- name: Get BMC firmware information via Redfish module
-  community.general.redfish_info:
-    category: Manager
-    command: GetManagerInventory
-    baseuri: "{{ ansible_host }}"
-    username: "{{ ansible_user }}"
-    password: "{{ ansible_password }}"
-    timeout: 30
-  register: manager_inventory
-  delegate_to: localhost
-
-- name: Extract BMC firmware version
-  set_fact:
-    bmc_firmware_version: "{{ manager_inventory.redfish_facts.manager.entries[0].FirmwareVersion | default('Unknown') }}"
-    bmc_model: "{{ manager_inventory.redfish_facts.manager.entries[0].Model | default('Unknown') }}"
-    bmc_status: "{{ manager_inventory.redfish_facts.manager.entries[0].Status.State | default('Unknown') }}"
-
-- name: Display BMC firmware information
-  debug:
-    msg:
-      - "========================================="
-      - "BMC Information"
-      - "========================================="
-      - "BMC Model: {{ bmc_model }}"
-      - "BMC Firmware Version: {{ bmc_firmware_version }}"
-      - "BMC Status: {{ bmc_status }}"
-      - "========================================="
-
-- name: Store VPD facts for use in other tasks
-  set_fact:
-    system_vpd:
-      mtm: "{{ vpd_mtm }}"
-      serial: "{{ vpd_serial }}"
-      manufacturer: "{{ vpd_manufacturer }}"
-      uuid: "{{ vpd_uuid }}"
-      part_number: "{{ vpd_part_number }}"
-      bmc_firmware: "{{ bmc_firmware_version }}"
-      bmc_model: "{{ bmc_model }}"
-      bmc_status: "{{ bmc_status }}"
-    cacheable: yes
+    # 4. Display Info
+    - name: Display VPD Information
+      debug:
+        msg:
+          - "Manufacturer: {{ system_detail.json.Manufacturer | default('Unknown') }}"
+          - "Model: {{ system_detail.json.Model | default('Unknown') }}"
+          - "Serial Number: {{ system_detail.json.SerialNumber | default('Unknown') }}"
+          - "UUID: {{ system_detail.json.UUID | default('Unknown') }}"
+          - "BIOS Version: {{ system_detail.json.BiosVersion | default('Unknown') }}"
+          - "Processor Count: {{ system_detail.json.ProcessorSummary.Count | default('Unknown') }}"
+          - "Total Memory: {{ system_detail.json.MemorySummary.TotalSystemMemoryGiB | default('Unknown') }} GiB"
+      when: system_detail.json is defined

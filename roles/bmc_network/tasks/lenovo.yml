@@ -112,9 +112,10 @@
     force_basic_auth: yes
     body_format: json
     body:
-      IPv6Addresses:
+      IPv4StaticAddresses:
         - Address: "{{ ipv6_address }}"
-          PrefixLength: "{{ ipv6_prefix | default(64) }}"
+          SubnetMask: "{{ ipv6_netmask | default('255.255.255.0') }}"
+          Gateway: "{{ ipv6_gateway | default('') }}"
     status_code: [200, 202, 204]
   register: ipv6_config
   delegate_to: localhost

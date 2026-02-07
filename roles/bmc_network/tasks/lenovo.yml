@@ -45,7 +45,7 @@
 - name: Display VPD Information
   debug:
     msg:
-      - "system detail": {{ system_detail.json }}
+      - "system detail": {{ system_detail }}
       - "Manufacturer: {{ system_detail.json.Manufacturer | default('Unknown') }}"
       - "Model: {{ system_detail.json.Model | default('Unknown') }}"
       - "Serial Number: {{ system_detail.json.SerialNumber | default('Unknown') }}"

@@ -1,4 +1,5 @@
 ---
 collections:
   - name: nvidia.nvue
+  - name: community.general
 

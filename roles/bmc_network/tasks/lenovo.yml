@@ -62,9 +62,27 @@
   register: current_network
   delegate_to: localhost
 
+- name: Get the first network interface URL
+  set_fact:
+    network_interface_uri: "{{ current_network.json.Members[0]['@odata.id'] }}"
+  when: current_network.json.Members | length > 0
+
+- name: Get first network interface details
+  uri:
+    url: "{{ redfish_host }}{{ network_interface_uri }}"
+    method: GET
+    user: "{{ redfish_user }}"
+    password: "{{ redfish_password }}"
+    force_basic_auth: yes
+    validate_certs: no
+    return_content: yes
+  register: network_interface_detail
+  delegate_to: localhost
+  when: network_interface_uri is defined
+  
 - name: Extract current network settings from Redfish response
   set_fact:
-    current_mac: "{{ current_network.json.MACAddress | default('Not available') }}"
+    current_mac: "{{ network_interface_detail.json.MACAddress | default('Not available') }}"
     current_ipv6_addresses: "{{ current_network.json.IPv6Addresses | default([]) }}"
     current_ipv6_addr: "{{ current_network.json.IPv6Addresses[0].Address | default('') if current_network.json.IPv6Addresses | default([]) | length > 0 else '' }}"
     current_dhcp: "{{ current_network.json.DHCPv4.DHCPEnabled | default(false) }}"

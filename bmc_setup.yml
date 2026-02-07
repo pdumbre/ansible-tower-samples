@@ -1,6 +1,6 @@
 
 - name: BMC Setup (Network/Management)
-  hosts: baremetal
+  hosts: all
   connection: local
   gather_facts: false
   vars:

@@ -22,12 +22,8 @@
     system_uri: "{{ systems_collection.json.Members[0]['@odata.id'] }}"
   when: systems_collection.json.Members | length > 0
 
-# 3. Debug the first system member URI
-- name: Get System URI
-  ansible.builtin.debug:
-    var: "The value of system_uri is {{ system_uri }}"
 
-# 4. Retrieve Detail for that System
+# 3. Retrieve Detail for that System
 - name: Get System Detail
   uri:
     url: "{{ redfish_host }}{{ system_uri }}"
@@ -41,7 +37,7 @@
   delegate_to: localhost
   when: system_uri is defined
 
-# 5. Display Info
+# 4. Display Info
 - name: Display VPD Information
   debug:
     msg:
@@ -52,4 +48,3 @@
       - "BIOS Version: {{ system_detail.json.BiosVersion | default('Unknown') }}"
       - "Processor Count: {{ system_detail.json.ProcessorSummary.Count | default('Unknown') }}"
       - "Total Memory: {{ system_detail.json.MemorySummary.TotalSystemMemoryGiB | default('Unknown') }} GiB"
-  when: system_detail.json is defined

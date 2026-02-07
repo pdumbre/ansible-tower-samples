@@ -102,6 +102,11 @@
   set_fact:
     ipv6_needs_update: "{{ ipv6_address is defined and current_ipv6_addr != ipv6_address }}"
 
+- debug:
+    msg:
+      - "ipv6_address={{ ipv6_address }}"
+      - "type={{ ipv6_address | type_debug }}"
+
 - name: Configure IPv6 on IMM using Redfish API
   uri:
     url: "{{ redfish_host }}{{ network_interface_uri }}"
@@ -112,7 +117,7 @@
     force_basic_auth: yes
     body_format: json
     body:
-      IPv4StaticAddresses:
+      IPv6StaticAddresses:
         - Address: "{{ ipv6_address }}"
           SubnetMask: "{{ ipv6_netmask | default('255.255.255.0') }}"
           Gateway: "{{ ipv6_gateway | default('') }}"

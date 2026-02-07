@@ -1,59 +1,50 @@
+---
+# roles/system_vpd/tasks/main.yml
+# Retrieves System VPD via Redfish URI
 
-- name: Get System VPD Information via Redfish API (No Modules)
-  hosts: all
-  connection: local
-  gather_facts: false
-  vars:
-    redfish_base_uri: "https://{{ ansible_host }}"
-    # Credentials (should be overridden by vault/inventory)
-    redfish_username: "{{ ansible_user }}"
-    redfish_password: "{{ ansible_password }}"
+# 1. Discover Systems URI
+# Redfish root -> /redfish/v1 -> "Systems": {"@odata.id": "/redfish/v1/Systems"}
+- name: Get Redfish Systems Collection
+  uri:
+    url: "{{ redfish_base_uri }}/redfish/v1/Systems"
+    method: GET
+    user: "{{ redfish_username }}"
+    password: "{{ redfish_password }}"
+    force_basic_auth: yes
+    validate_certs: no
+    return_content: yes
+  register: systems_collection
+  delegate_to: localhost
 
-  tasks:
-    # 1. Discover Systems URI
-    # Redfish root -> /redfish/v1 -> "Systems": {"@odata.id": "/redfish/v1/Systems"}
-    - name: Get Redfish Systems Collection
-      uri:
-        url: "{{ redfish_base_uri }}/redfish/v1/Systems"
-        method: GET
-        user: "{{ redfish_username }}"
-        password: "{{ redfish_password }}"
-        force_basic_auth: yes
-        validate_certs: no
-        return_content: yes
-      register: systems_collection
-      delegate_to: localhost
+# 2. Get the first system member URI
+- name: Get System URI
+  set_fact:
+    system_uri: "{{ systems_collection.json.Members[0]['@odata.id'] }}"
+  when: systems_collection.json.Members | length > 0
 
-    # 2. Get the first system member URI
-    # Response: {"Members": [{"@odata.id": "/redfish/v1/Systems/1"}, ...]}
-    - name: Get System URI
-      set_fact:
-        system_uri: "{{ systems_collection.json.Members[0]['@odata.id'] }}"
-      when: systems_collection.json.Members | length > 0
+# 3. Retrieve Detail for that System
+- name: Get System Detail
+  uri:
+    url: "{{ redfish_base_uri }}{{ system_uri }}"
+    method: GET
+    user: "{{ redfish_username }}"
+    password: "{{ redfish_password }}"
+    force_basic_auth: yes
+    validate_certs: no
+    return_content: yes
+  register: system_detail
+  delegate_to: localhost
+  when: system_uri is defined
 
-    # 3. Retrieve Detail for that System
-    - name: Get System Detail
-      uri:
-        url: "{{ redfish_base_uri }}{{ system_uri }}"
-        method: GET
-        user: "{{ redfish_username }}"
-        password: "{{ redfish_password }}"
-        force_basic_auth: yes
-        validate_certs: no
-        return_content: yes
-      register: system_detail
-      delegate_to: localhost
-      when: system_uri is defined
-
-    # 4. Display Info
-    - name: Display VPD Information
-      debug:
-        msg:
-          - "Manufacturer: {{ system_detail.json.Manufacturer | default('Unknown') }}"
-          - "Model: {{ system_detail.json.Model | default('Unknown') }}"
-          - "Serial Number: {{ system_detail.json.SerialNumber | default('Unknown') }}"
-          - "UUID: {{ system_detail.json.UUID | default('Unknown') }}"
-          - "BIOS Version: {{ system_detail.json.BiosVersion | default('Unknown') }}"
-          - "Processor Count: {{ system_detail.json.ProcessorSummary.Count | default('Unknown') }}"
-          - "Total Memory: {{ system_detail.json.MemorySummary.TotalSystemMemoryGiB | default('Unknown') }} GiB"
-      when: system_detail.json is defined
+# 4. Display Info
+- name: Display VPD Information
+  debug:
+    msg:
+      - "Manufacturer: {{ system_detail.json.Manufacturer | default('Unknown') }}"
+      - "Model: {{ system_detail.json.Model | default('Unknown') }}"
+      - "Serial Number: {{ system_detail.json.SerialNumber | default('Unknown') }}"
+      - "UUID: {{ system_detail.json.UUID | default('Unknown') }}"
+      - "BIOS Version: {{ system_detail.json.BiosVersion | default('Unknown') }}"
+      - "Processor Count: {{ system_detail.json.ProcessorSummary.Count | default('Unknown') }}"
+      - "Total Memory: {{ system_detail.json.MemorySummary.TotalSystemMemoryGiB | default('Unknown') }} GiB"
+  when: system_detail.json is defined

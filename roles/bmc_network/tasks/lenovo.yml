@@ -51,7 +51,7 @@
 
 - name: Get current network interface configuration using Redfish API
   uri:
-    url: "{{ redfish_host }}/redfish/v1/Managers/1/EthernetInterfaces/1"
+    url: "{{ redfish_host }}/redfish/v1/Managers/1/EthernetInterfaces"
     method: GET
     user: "{{ redfish_user }}"
     password: "{{ redfish_password }}"

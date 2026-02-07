@@ -37,17 +37,10 @@
   delegate_to: localhost
   when: system_uri is defined
 
-# 4. Display Info
-- name: Display VPD Information
-  debug:
-    msg:
-      - "Manufacturer: {{ system_detail.json.Manufacturer | default('Unknown') }}"
-      - "Model: {{ system_detail.json.Model | default('Unknown') }}"
-      - "Serial Number: {{ system_detail.json.SerialNumber | default('Unknown') }}"
-      - "UUID: {{ system_detail.json.UUID | default('Unknown') }}"
-      - "BIOS Version: {{ system_detail.json.BiosVersion | default('Unknown') }}"
-      - "Processor Count: {{ system_detail.json.ProcessorSummary.Count | default('Unknown') }}"
-      - "Total Memory: {{ system_detail.json.MemorySummary.TotalSystemMemoryGiB | default('Unknown') }} GiB"
+
+- name: Get mtm Information
+  set_fact:
+     Model: "{{ system_detail.json.Model | default('Unknown') }}"
 
 - name: Get current network interface configuration using Redfish API
   uri:

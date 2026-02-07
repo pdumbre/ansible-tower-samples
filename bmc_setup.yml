@@ -1,0 +1,10 @@
+
+- name: BMC Setup (Network/Management)
+  hosts: baremetal
+  connection: local
+  gather_facts: false
+  vars:
+    step_number: 1
+    
+  roles:
+    - role: bmc_network

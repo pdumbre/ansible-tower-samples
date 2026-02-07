@@ -53,9 +53,9 @@
   community.general.redfish_info:
     category: Manager
     command: GetEthernetInterfaces
-    baseuri: "{{ ansible_host }}"
-    username: "{{ ansible_user }}"
-    password: "{{ ansible_password }}"
+    baseuri: "{{ red_host }}"
+    username: "{{ redfish_user }}"
+    password: "{{ redfish_password }}"
     timeout: 30
   register: current_network
   delegate_to: localhost

@@ -6,10 +6,10 @@
 # Redfish root -> /redfish/v1 -> "Systems": {"@odata.id": "/redfish/v1/Systems"}
 - name: Get Redfish Systems Collection
   uri:
-    url: "{{ redfish_base_uri }}/redfish/v1/Systems"
+    url: "{{ ansible_host }}/redfish/v1/Systems"
     method: GET
-    user: "{{ redfish_username }}"
-    password: "{{ redfish_password }}"
+    user: "{{ ansible_user }}"
+    password: "{{ ansible_password }}"
     force_basic_auth: yes
     validate_certs: no
     return_content: yes
@@ -25,10 +25,10 @@
 # 3. Retrieve Detail for that System
 - name: Get System Detail
   uri:
-    url: "{{ redfish_base_uri }}{{ system_uri }}"
+    url: "{{ ansible_host }}{{ system_uri }}"
     method: GET
-    user: "{{ redfish_username }}"
-    password: "{{ redfish_password }}"
+    user: "{{ ansible_user }}"
+    password: "{{ ansible_password }}"
     force_basic_auth: yes
     validate_certs: no
     return_content: yes

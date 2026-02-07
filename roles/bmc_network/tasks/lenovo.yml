@@ -48,3 +48,64 @@
       - "BIOS Version: {{ system_detail.json.BiosVersion | default('Unknown') }}"
       - "Processor Count: {{ system_detail.json.ProcessorSummary.Count | default('Unknown') }}"
       - "Total Memory: {{ system_detail.json.MemorySummary.TotalSystemMemoryGiB | default('Unknown') }} GiB"
+
+# 5. Network Config (Standard)
+- name: Configure IMM Hostname
+  lenovo.thinksystem.onecli_config:
+    command: set
+    option: IMM.HostName
+    value: "{{ imm_hostname }}"
+    transport: "{{ transport | default('https') }}"
+    ip: "{{ ansible_host }}"
+    username: "{{ ansible_user }}"
+    password: "{{ ansible_password }}"
+  delegate_to: localhost
+
+# 6. Network Config (Refactored to use onecli_config for Idempotency)
+- name: Configure DHCP (IPv4)
+  lenovo.thinksystem.onecli_config:
+    command: set
+    option: IMM.DHCP1
+    value: "{{ 'Enable' if imm_dhcp_enabled | default(imm_use_dhcp) | default(false) else 'Disable' }}"
+    transport: "{{ transport | default('https') }}"
+    ip: "{{ ansible_host }}"
+    username: "{{ ansible_user }}"
+    password: "{{ ansible_password }}"
+  delegate_to: localhost
+
+- name: Configure IPv6 Settings
+  when: imm_ipv6_address is defined
+  block:
+    - name: Enable IPv6
+      lenovo.thinksystem.onecli_config:
+        command: set
+        option: IMM.IPv6_Enable
+        value: "Enable"
+        transport: "{{ transport | default('https') }}"
+        ip: "{{ ansible_host }}"
+        username: "{{ ansible_user }}"
+        password: "{{ ansible_password }}"
+      delegate_to: localhost
+
+    - name: Set IPv6 Address
+      lenovo.thinksystem.onecli_config:
+        command: set
+        option: IMM.IPv6Address1
+        value: "{{ imm_ipv6_address }}"
+        transport: "{{ transport | default('https') }}"
+        ip: "{{ ansible_host }}"
+        username: "{{ ansible_user }}"
+        password: "{{ ansible_password }}"
+      delegate_to: localhost
+
+    - name: Set IPv6 Prefix
+      lenovo.thinksystem.onecli_config:
+        command: set
+        option: IMM.IPv6Prefix1
+        value: "{{ imm_ipv6_prefix | default(64) }}"
+        transport: "{{ transport | default('https') }}"
+        ip: "{{ ansible_host }}"
+        username: "{{ ansible_user }}"
+        password: "{{ ansible_password }}"
+      delegate_to: localhost
+

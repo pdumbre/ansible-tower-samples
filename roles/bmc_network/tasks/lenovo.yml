@@ -50,7 +50,7 @@
       - "Total Memory: {{ system_detail.json.MemorySummary.TotalSystemMemoryGiB | default('Unknown') }} GiB"
 
 - name: Get current network interface configuration using Redfish module
-  community.general.redfish_info:
+  community.redfish.redfish_info:
     category: Manager
     command: GetManagerNICInventory
     baseuri: "{{ red_host }}"

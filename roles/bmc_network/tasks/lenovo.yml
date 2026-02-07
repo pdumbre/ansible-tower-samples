@@ -22,7 +22,13 @@
     system_uri: "{{ systems_collection.json.Members[0]['@odata.id'] }}"
   when: systems_collection.json.Members | length > 0
 
-# 3. Retrieve Detail for that System
+# 3. Debug the first system member URI
+- name: Get System URI
+  debug:
+    msg:
+      - "system url": {{ system_uri }}
+
+# 4. Retrieve Detail for that System
 - name: Get System Detail
   uri:
     url: "{{ redfish_host }}{{ system_uri }}"
@@ -36,10 +42,11 @@
   delegate_to: localhost
   when: system_uri is defined
 
-# 4. Display Info
+# 5. Display Info
 - name: Display VPD Information
   debug:
     msg:
+      - "system detail": {{ system_detail.json }}
       - "Manufacturer: {{ system_detail.json.Manufacturer | default('Unknown') }}"
       - "Model: {{ system_detail.json.Model | default('Unknown') }}"
       - "Serial Number: {{ system_detail.json.SerialNumber | default('Unknown') }}"

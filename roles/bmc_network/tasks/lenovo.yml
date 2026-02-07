@@ -56,9 +56,9 @@
     option: IMM.HostName
     value: "{{ imm_hostname }}"
     transport: "{{ transport | default('https') }}"
-    ip: "{{ ansible_host }}"
-    username: "{{ ansible_user }}"
-    password: "{{ ansible_password }}"
+    ip: "{{ redfish_host }}"
+    username: "{{ redfish_user }}"
+    password: "{{ redfish_password }}"
   delegate_to: localhost
 
 # 6. Network Config (Refactored to use onecli_config for Idempotency)
@@ -68,9 +68,9 @@
     option: IMM.DHCP1
     value: "{{ 'Enable' if imm_dhcp_enabled | default(imm_use_dhcp) | default(false) else 'Disable' }}"
     transport: "{{ transport | default('https') }}"
-    ip: "{{ ansible_host }}"
-    username: "{{ ansible_user }}"
-    password: "{{ ansible_password }}"
+    ip: "{{ redfish_host  }}"
+    username: "{{ redfish_user }}"
+    password: "{{ redfish_password }}"
   delegate_to: localhost
 
 - name: Configure IPv6 Settings
@@ -82,9 +82,9 @@
         option: IMM.IPv6_Enable
         value: "Enable"
         transport: "{{ transport | default('https') }}"
-        ip: "{{ ansible_host }}"
-        username: "{{ ansible_user }}"
-        password: "{{ ansible_password }}"
+        ip: "{{ redfish_host }}"
+        username: "{{ redfish_user }}"
+        password: "{{ redfish_password }}"
       delegate_to: localhost
 
     - name: Set IPv6 Address
@@ -93,9 +93,9 @@
         option: IMM.IPv6Address1
         value: "{{ imm_ipv6_address }}"
         transport: "{{ transport | default('https') }}"
-        ip: "{{ ansible_host }}"
-        username: "{{ ansible_user }}"
-        password: "{{ ansible_password }}"
+        ip: "{{ redfish_host }}"
+        username: "{{ redfish_user }}"
+        password: "{{ redfish_password }}"
       delegate_to: localhost
 
     - name: Set IPv6 Prefix
@@ -104,8 +104,8 @@
         option: IMM.IPv6Prefix1
         value: "{{ imm_ipv6_prefix | default(64) }}"
         transport: "{{ transport | default('https') }}"
-        ip: "{{ ansible_host }}"
-        username: "{{ ansible_user }}"
-        password: "{{ ansible_password }}"
+        ip: "{{ redfish_host }}"
+        username: "{{ redfish_user }}"
+        password: "{{ redfish_password }}"
       delegate_to: localhost
 

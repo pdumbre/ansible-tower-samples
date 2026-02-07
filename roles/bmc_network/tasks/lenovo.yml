@@ -82,7 +82,7 @@
         option: IMM.IPv6_Enable
         value: "Enable"
         transport: "{{ transport | default('https') }}"
-        ip: "{{ redfish_host }}"
+        ip: "{{ red_host }}"
         username: "{{ redfish_user }}"
         password: "{{ redfish_password }}"
       delegate_to: localhost
@@ -93,7 +93,7 @@
         option: IMM.IPv6Address1
         value: "{{ imm_ipv6_address }}"
         transport: "{{ transport | default('https') }}"
-        ip: "{{ redfish_host }}"
+        ip: "{{ red_host }}"
         username: "{{ redfish_user }}"
         password: "{{ redfish_password }}"
       delegate_to: localhost
@@ -104,7 +104,7 @@
         option: IMM.IPv6Prefix1
         value: "{{ imm_ipv6_prefix | default(64) }}"
         transport: "{{ transport | default('https') }}"
-        ip: "{{ redfish_host }}"
+        ip: "{{ red_host }}"
         username: "{{ redfish_user }}"
         password: "{{ redfish_password }}"
       delegate_to: localhost

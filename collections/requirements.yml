@@ -3,5 +3,4 @@ collections:
   - name: nvidia.nvue
   - name: community.general
     version: "<6.0.0"
-  - name: lenovo.thinksystem
 

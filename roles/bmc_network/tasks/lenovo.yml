@@ -85,7 +85,6 @@
     current_mac: "{{ network_interface_detail.json.MACAddress | default('Not available') }}"
     current_ipv6_addresses: "{{ network_interface_detail.json.IPv6Addresses | default([]) }}"
     current_ipv6_addr: "{{ network_interface_detail.json.IPv6Addresses[0].Address | default('') }}"
-    #current_ipv6_addr: "{{ network_interface_detail.json.IPv6Addresses[0].Address | default('') if current_network.json.IPv6Addresses | default([]) | length > 0 else '' }}"
     current_dhcp: "{{ network_interface_detail.json.DHCPv4.DHCPEnabled | default(false) }}"
     
 - name: Display current network configuration
@@ -95,7 +94,39 @@
       - "Current Network Configuration"
       - "========================================="
       - "MAC Address: {{ current_mac }}"
-      - "IPv6 Addresses: {{ current_ipv6_addresses }}"
       - "IPv6 Address: {{ current_ipv6_addr if current_ipv6_addr else 'Not configured' }}"
       - "DHCP Enabled: {{ current_dhcp }}"
       - "========================================="
+
+- name: Check if IPv6 needs update
+  set_fact:
+    ipv6_needs_update: "{{ ipv6_address is defined and current_ipv6_addr != ipv6_address }}"
+
+- name: Configure IPv6 on IMM using Redfish API
+  uri:
+    url: "{{ redfish_host }}{{ network_interface_uri }}"
+    method: PATCH
+    user: "{{ redfish_user }}"
+    password: "{{ redfish_password }}"
+    validate_certs: no
+    force_basic_auth: yes
+    body_format: json
+    body:
+      IPv6Addresses:
+        - Address: "{{ ipv6_address }}"
+          PrefixLength: "{{ ipv6_prefix | default(64) }}"
+    status_code: [200, 202, 204]
+  register: ipv6_config
+  delegate_to: localhost
+  when:
+    - ipv6_address is defined
+    - ipv6_needs_update | bool
+  changed_when: ipv6_config.status in [200, 202, 204]
+
+- name: IPv6 already configured
+  debug:
+    msg: "IPv6 address already set to {{ ipv6_address }} - no change needed"
+  when:
+    - ipv6_address is defined
+    - not (ipv6_needs_update | bool)
+

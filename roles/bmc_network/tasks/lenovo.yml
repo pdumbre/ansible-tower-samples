@@ -24,9 +24,8 @@
 
 # 3. Debug the first system member URI
 - name: Get System URI
-  debug:
-    msg:
-      - "system url": {{ system_uri }}
+  ansible.builtin.debug:
+    var: "The value of system_uri is {{ system_uri }}"
 
 # 4. Retrieve Detail for that System
 - name: Get System Detail

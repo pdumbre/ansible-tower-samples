@@ -1,6 +1,6 @@
 
 - name: Get System VPD Information via Redfish API (No Modules)
-  hosts: baremetal
+  hosts: all
   connection: local
   gather_facts: false
   vars:

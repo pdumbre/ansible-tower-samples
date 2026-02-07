@@ -49,23 +49,25 @@
       - "Processor Count: {{ system_detail.json.ProcessorSummary.Count | default('Unknown') }}"
       - "Total Memory: {{ system_detail.json.MemorySummary.TotalSystemMemoryGiB | default('Unknown') }} GiB"
 
-- name: Get current network interface configuration using Redfish module
-  community.general.redfish_info:
-    category: Manager
-    command: GetEthernetInterfaces
-    baseuri: "{{ red_host }}"
-    username: "{{ redfish_user }}"
-    password: "{{ redfish_password }}"
-    timeout: 30
+- name: Get current network interface configuration using Redfish API
+  uri:
+    url: "{{ redfish_host }}/redfish/v1/Managers/1/EthernetInterfaces/1"
+    method: GET
+    user: "{{ ansible_user }}"
+    password: "{{ ansible_password }}"
+    validate_certs: no
+    force_basic_auth: yes
+    return_content: yes
+    status_code: [200]
   register: current_network
   delegate_to: localhost
 
-- name: Extract current network settings from Redfish facts
+- name: Extract current network settings from Redfish response
   set_fact:
-    current_mac: "{{ current_network.redfish_facts.ethernet_interfaces[0].MACAddress | default('Not available') }}"
-    current_ipv6_addresses: "{{ current_network.redfish_facts.ethernet_interfaces[0].IPv6Addresses | default([]) }}"
-    current_ipv6_addr: "{{ current_network.redfish_facts.ethernet_interfaces[0].IPv6Addresses[0].Address | default('') if current_network.redfish_facts.ethernet_interfaces[0].IPv6Addresses | default([]) | length > 0 else '' }}"
-    current_dhcp: "{{ current_network.redfish_facts.ethernet_interfaces[0].DHCPv4.DHCPEnabled | default(false) }}"
+    current_mac: "{{ current_network.json.MACAddress | default('Not available') }}"
+    current_ipv6_addresses: "{{ current_network.json.IPv6Addresses | default([]) }}"
+    current_ipv6_addr: "{{ current_network.json.IPv6Addresses[0].Address | default('') if current_network.json.IPv6Addresses | default([]) | length > 0 else '' }}"
+    current_dhcp: "{{ current_network.json.DHCPv4.DHCPEnabled | default(false) }}"
 
 - name: Display current network configuration
   debug:
@@ -77,4 +79,3 @@
       - "IPv6 Address: {{ current_ipv6_addr if current_ipv6_addr else 'Not configured' }}"
       - "DHCP Enabled: {{ current_dhcp }}"
       - "========================================="
-   

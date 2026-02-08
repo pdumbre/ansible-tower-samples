@@ -159,20 +159,6 @@
 
 # M6 Server Configuration (7X02, 7D2X, 7D2V, 7D76, 7D9R, 7D73)
 # accseccfg -am local -lp 0 -pe 0 -pew 0 -pc on -pl 10 -ci 0 -lf 0 -chgnew off -rc 0
-- name: Configure account security for M6 servers using Redfish command
-  community.general.redfish_command:
-    category: Accounts
-    command: UpdateAccountServiceProperties
-    baseuri: "{{ bmc_ip }}"
-    username: "{{ redfish_user }}"
-    password: "{{ redfish_password }}"
-    timeout: 30
-    account_properties:
-      MinPasswordLength: 10       # -pl 10: password length
-  register: m6_account_config
-  delegate_to: localhost
-  when: is_m6_server | bool
-  ignore_errors: yes
 
 - name: Configure M6 account security via direct API (fallback)
   uri:
@@ -195,7 +181,6 @@
   delegate_to: localhost
   when:
     - is_m6_server | bool
-    - m6_account_config is failed
   changed_when: m6_account_config_api.status in [200, 202, 204]
 
 - name: M6 account security configured
@@ -203,7 +188,7 @@
     msg: "Account security configured for M6 server {{ system_mtm }}"
   when:
     - is_m6_server | bool
-    - (m6_account_config is succeeded or m6_account_config_api is changed)
+    - (m6_account_config_api is changed)
 
 # SN550 Configuration (7X16)
 # accseccfg -lp 0 -pe 0 -pew 0 -pc off -pl 8 -ci 0 -lf 0 -chgdft off -chgnew off -rc 0
@@ -270,6 +255,6 @@
       - "System MTM: {{ system_mtm }}"
       - "Is M6 Server: {{ is_m6_server }}"
       - "Is SN550: {{ is_sn550 }}"
-      - "Module Method: {{ 'Success' if (m6_account_config is succeeded or sn550_account_config is succeeded) else 'Used API Fallback' }}"
+      - "Module Method: {{ 'Success' if (m6_account_config_api is succeeded or sn550_account_config is succeeded) else 'Used API Fallback' }}"
       - "========================================="
 

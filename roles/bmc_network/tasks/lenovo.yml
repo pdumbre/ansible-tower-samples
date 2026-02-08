@@ -288,6 +288,23 @@
   debug:
     msg: "Network services configured - SSH: Enabled, HTTPS: Enabled, HTTP: Disabled, SNMP: Enabled"
 
+- name: Get current PowerRestorePolicy
+  community.general.redfish_info:
+    category: Systems
+    command: GetSystemInventory
+    baseuri: "{{ bmc_ip }}"
+    username: "{{ redfish_user }}"
+    password: "{{ redfish_password }}"
+    validate_certs: false
+  register: system_info
+
+- set_fact:
+    current_power_policy: "{{ system_info.redfish_facts }}"
+    
+- name: Display current power restore policy module
+  debug:
+    msg: "Current PowerRestorePolicy: {{ current_power_policy }}"
+
 - name: Get current power restore policy
   uri:
     url: "https://{{ bmc_ip }}/redfish/v1/Systems/1"

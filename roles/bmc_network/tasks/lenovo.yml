@@ -258,9 +258,6 @@
       - "Module Method: {{ 'Success' if (m6_account_config_api is succeeded or sn550_account_config is succeeded) else 'Used API Fallback' }}"
       - "========================================="
 
----
-# Configure ports
-
 - name: Configure network services on IMM
   uri:
     url: "https://{{ bmc_ip }}/redfish/v1/Managers/1/NetworkProtocol"

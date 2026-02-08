@@ -151,7 +151,7 @@
   community.general.redfish_info:
     category: Accounts
     command: ListUsers
-    baseuri: "{{ redfish_host }}"
+    baseuri: "{{ bmc_ip }}"
     username: "{{ redfish_user }}"
     password: "{{ redfish_password }}"
     timeout: 30
@@ -170,7 +170,7 @@
   community.general.redfish_command:
     category: Accounts
     command: UpdateAccountServiceProperties
-    baseuri: "{{ redfish_host }}"
+    baseuri: "{{ bmc_ip }}"
     username: "{{ redfish_user }}"
     password: "{{ redfish_password }}"
     timeout: 30
@@ -185,7 +185,7 @@
 
 - name: Configure M6 account security via direct API (fallback)
   uri:
-    url: "https://{{ redfish_host }}/redfish/v1/AccountService"
+    url: "https://{{ bmc_ip }}/redfish/v1/AccountService"
     method: PATCH
     user: "{{ redfish_user }}"
     password: "{{ redfish_password }}"
@@ -222,7 +222,7 @@
   community.general.redfish_command:
     category: Accounts
     command: UpdateAccountServiceProperties
-    baseuri: "{{ redfish_host }}"
+    baseuri: "{{ bmc_ip }}"
     username: "{{ redfish_user }}"
     password: "{{ redfish_password }}"
     timeout: 30
@@ -237,7 +237,7 @@
 
 - name: Configure SN550 account security via direct API (fallback)
   uri:
-    url: "https://{{ redfish_host }}/redfish/v1/AccountService"
+    url: "https://{{ bmc_ip }}/redfish/v1/AccountService"
     method: PATCH
     user: "{{ redfish_user }}"
     password: "{{ redfish_password }}"

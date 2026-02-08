@@ -326,7 +326,6 @@
   delegate_to: localhost
   when:
     - policy_needs_update | bool
-    - power_policy_oem is failed
   changed_when: power_policy_bios.status in [200, 202, 204]
   ignore_errors: yes
 
@@ -342,8 +341,7 @@
       - "Power Restore Policy Configuration"
       - "========================================="
       - "Requested Policy: {{ power_restore_policy | default('LastState') }}"
-      - "OEM Method: {{ 'Success' if (power_policy_oem is changed) else 'Failed or Skipped' }}"
       - "BIOS Method: {{ 'Success' if (power_policy_bios is changed) else 'Failed or Skipped' }}"
-      - "Status: {{ 'Configured' if (power_policy_oem is changed or power_policy_bios is changed) else 'Check manually' }}"
+      - "Status: {{ 'Configured' if (power_policy_bios is changed) else 'Check manually' }}"
       - "========================================="
   when: policy_needs_update | bool

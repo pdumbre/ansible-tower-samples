@@ -151,9 +151,9 @@
   community.general.redfish_info:
     category: Accounts
     command: ListUsers
-    baseuri: "{{ ansible_host }}"
-    username: "{{ ansible_user }}"
-    password: "{{ ansible_password }}"
+    baseuri: "{{ redfish_host }}"
+    username: "{{ redfish_user }}"
+    password: "{{ redfish_password }}"
     timeout: 30
   register: current_accounts
   delegate_to: localhost
@@ -170,9 +170,9 @@
   community.general.redfish_command:
     category: Accounts
     command: UpdateAccountServiceProperties
-    baseuri: "{{ ansible_host }}"
-    username: "{{ ansible_user }}"
-    password: "{{ ansible_password }}"
+    baseuri: "{{ redfish_host }}"
+    username: "{{ redfish_user }}"
+    password: "{{ redfish_password }}"
     timeout: 30
     account_properties:
       AccountLockoutThreshold: 0  # -lp 0: lockout policy disabled
@@ -185,10 +185,10 @@
 
 - name: Configure M6 account security via direct API (fallback)
   uri:
-    url: "https://{{ ansible_host }}/redfish/v1/AccountService"
+    url: "https://{{ redfish_host }}/redfish/v1/AccountService"
     method: PATCH
-    user: "{{ ansible_user }}"
-    password: "{{ ansible_password }}"
+    user: "{{ redfish_user }}"
+    password: "{{ redfish_password }}"
     validate_certs: no
     force_basic_auth: yes
     body_format: json
@@ -222,9 +222,9 @@
   community.general.redfish_command:
     category: Accounts
     command: UpdateAccountServiceProperties
-    baseuri: "{{ ansible_host }}"
-    username: "{{ ansible_user }}"
-    password: "{{ ansible_password }}"
+    baseuri: "{{ redfish_host }}"
+    username: "{{ redfish_user }}"
+    password: "{{ redfish_password }}"
     timeout: 30
     account_properties:
       AccountLockoutThreshold: 0  # -lp 0: lockout policy disabled
@@ -237,10 +237,10 @@
 
 - name: Configure SN550 account security via direct API (fallback)
   uri:
-    url: "https://{{ ansible_host }}/redfish/v1/AccountService"
+    url: "https://{{ redfish_host }}/redfish/v1/AccountService"
     method: PATCH
-    user: "{{ ansible_user }}"
-    password: "{{ ansible_password }}"
+    user: "{{ redfish_user }}"
+    password: "{{ redfish_password }}"
     validate_certs: no
     force_basic_auth: yes
     body_format: json

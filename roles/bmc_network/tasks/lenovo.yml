@@ -1,46 +1,6 @@
 ---
 # roles/system_vpd/tasks/main.yml
-# Retrieves System VPD via Redfish URI
-
-# 1. Discover Systems URI
-# Redfish root -> /redfish/v1 -> "Systems": {"@odata.id": "/redfish/v1/Systems"}
-- name: Get Redfish Systems Collection
-  uri:
-    url: "{{ redfish_host }}/redfish/v1/Systems"
-    method: GET
-    user: "{{ redfish_user }}"
-    password: "{{ redfish_password }}"
-    force_basic_auth: yes
-    validate_certs: no
-    return_content: yes
-  register: systems_collection
-  delegate_to: localhost
-
-# 2. Get the first system member URI
-- name: Get System URI
-  set_fact:
-    system_uri: "{{ systems_collection.json.Members[0]['@odata.id'] }}"
-  when: systems_collection.json.Members | length > 0
-
-
-# 3. Retrieve Detail for that System
-- name: Get System Detail
-  uri:
-    url: "{{ redfish_host }}{{ system_uri }}"
-    method: GET
-    user: "{{ redfish_user }}"
-    password: "{{ redfish_password }}"
-    force_basic_auth: yes
-    validate_certs: no
-    return_content: yes
-  register: system_detail
-  delegate_to: localhost
-  when: system_uri is defined
-
-
-- name: Get mtm Information
-  set_fact:
-     system_mtm: "{{ system_detail.json.Model | default('Unknown') }}"
+# Retrieves system mtm 
 
 - name: Get Redfish system info
   community.general.redfish_info:
@@ -52,7 +12,7 @@
     validate_certs: false
   register: rf_info
     
-- name: Extract Lenovo MTM (safe)
+- name: Extract MTM
   set_fact:
     mtm: >-
       {{
@@ -62,13 +22,18 @@
           | select('defined')
           | list
           | first
+          | default(
+              rf_info.redfish_facts.system.entries
+              | json_query('[].SubModel')
+              | select('defined')
+              | list
+              | first
+            )
         )[0:4] | upper
       }}
 
-
 - debug:
     msg: "Detected MTM: {{ mtm }}"
-
 
 - name: Display system MTM
   debug:

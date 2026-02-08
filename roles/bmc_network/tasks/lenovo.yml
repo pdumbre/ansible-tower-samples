@@ -14,7 +14,7 @@
     
 - name: Extract MTM
   set_fact:
-    mtm: >-
+    system_mtm: >-
       {{
         (
           rf_info.redfish_facts.system.entries
@@ -33,7 +33,7 @@
       }}
 
 - debug:
-    msg: "Detected MTM: {{ mtm }}"
+    msg: "Detected MTM: {{ system_mtm }}"
 
 - name: Display system MTM
   debug:

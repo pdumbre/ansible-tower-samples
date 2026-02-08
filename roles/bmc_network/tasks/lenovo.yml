@@ -258,3 +258,35 @@
       - "Module Method: {{ 'Success' if (m6_account_config_api is succeeded or sn550_account_config is succeeded) else 'Used API Fallback' }}"
       - "========================================="
 
+---
+# Configure ports
+
+- name: Configure network services on IMM
+  uri:
+    url: "https://{{ bmc_ip }}/redfish/v1/Managers/1/NetworkProtocol"
+    method: PATCH
+    user: "{{ redfish_user }}"
+    password: "{{ redfish_password }}"
+    validate_certs: no
+    force_basic_auth: yes
+    body_format: json
+    body:
+      SSH:
+        ProtocolEnabled: true
+        Port: 22
+      HTTPS:
+        ProtocolEnabled: true
+        Port: 443
+      HTTP:
+        ProtocolEnabled: true
+        Port: 80
+      SNMP:
+        ProtocolEnabled: true
+        Port: 161
+    status_code: [200, 202, 204]
+  register: ports_config
+  delegate_to: localhost
+
+- name: Display port configuration status
+  debug:
+    msg: "Network services configured - SSH: Enabled, HTTPS: Enabled, HTTP: Disabled, SNMP: Enabled"

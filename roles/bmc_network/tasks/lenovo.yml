@@ -168,8 +168,6 @@
     password: "{{ redfish_password }}"
     timeout: 30
     account_properties:
-      AccountLockoutThreshold: 0  # -lp 0: lockout policy disabled
-      AccountLockoutDuration: 0   # -lf 0: lockout duration
       MinPasswordLength: 10       # -pl 10: password length
   register: m6_account_config
   delegate_to: localhost
@@ -186,8 +184,6 @@
     force_basic_auth: yes
     body_format: json
     body:
-      AccountLockoutThreshold: 0
-      AccountLockoutDuration: 0
       MinPasswordLength: 10
       Oem:
         Lenovo:
@@ -220,8 +216,6 @@
     password: "{{ redfish_password }}"
     timeout: 30
     account_properties:
-      AccountLockoutThreshold: 0  # -lp 0: lockout policy disabled
-      AccountLockoutDuration: 0   # -lf 0: lockout duration
       MinPasswordLength: 8        # -pl 8: password length
   register: sn550_account_config
   delegate_to: localhost
@@ -238,8 +232,6 @@
     force_basic_auth: yes
     body_format: json
     body:
-      AccountLockoutThreshold: 0
-      AccountLockoutDuration: 0
       MinPasswordLength: 8
       Oem:
         Lenovo:

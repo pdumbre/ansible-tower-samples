@@ -308,26 +308,15 @@
 - name: Check if policy needs update
   set_fact:
     policy_needs_update: "{{ current_system.json.PowerRestorePolicy | default('') != (power_restore_policy | default('LastState')) }}"
+    
+- name: Set PowerRestorePolicy via Lenovo CLI
+  ansible.builtin.command: >
+    cfgimm -am local -rp "{{ power_restore_policy | default('AlwaysOn') }}"
+  when: current_system.json.PowerRestorePolicy != power_restore_policy
+  register: power_out
+  changed_when: "'success' in power_out.stdout"
+  failed_when: "'success' not in power_out.stdout"
 
-- name: Configure power restore policy using BIOS settings (fallback)
-  uri:
-    url: "https://{{ bmc_ip }}/redfish/v1/Systems/1/Bios/Settings"
-    method: PATCH
-    user: "{{ redfish_user }}"
-    password: "{{ redfish_password }}"
-    validate_certs: no
-    force_basic_auth: yes
-    body_format: json
-    body:
-      Attributes:
-        PowerRestorePolicy: "{{ power_restore_policy | default('LastState') }}"
-    status_code: [200, 202, 204]
-  register: power_policy_bios
-  delegate_to: localhost
-  when:
-    - policy_needs_update | bool
-  changed_when: power_policy_bios.status in [200, 202, 204]
-  ignore_errors: yes
 
 - name: Power restore policy already configured
   debug:

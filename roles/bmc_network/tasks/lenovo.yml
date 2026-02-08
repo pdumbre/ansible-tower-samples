@@ -287,3 +287,22 @@
 - name: Display port configuration status
   debug:
     msg: "Network services configured - SSH: Enabled, HTTPS: Enabled, HTTP: Disabled, SNMP: Enabled"
+
+- name: Configure power restore policy
+  uri:
+    url: "https://{{ bmc_ip }}/redfish/v1/Systems/1"
+    method: PATCH
+    user: "{{ redfish_user }}"
+    password: "{{ redfish_password }}"
+    validate_certs: no
+    force_basic_auth: yes
+    body_format: json
+    body:
+      PowerRestorePolicy: "{{ power_restore_policy | default('LastState') }}"
+    status_code: [200, 202, 204]
+  register: power_policy
+  delegate_to: localhost
+
+- name: Display power restore policy
+  debug:
+    msg: "Power restore policy set to: {{ power_restore_policy | default('LastState') }}"

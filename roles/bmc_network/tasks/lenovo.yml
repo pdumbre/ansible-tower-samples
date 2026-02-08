@@ -309,26 +309,6 @@
   set_fact:
     policy_needs_update: "{{ current_system.json.PowerRestorePolicy | default('') != (power_restore_policy | default('LastState')) }}"
 
-- name: Configure power restore policy using Lenovo OEM extension
-  uri:
-    url: "https://{{ bmc_ip }}/redfish/v1/Systems/1"
-    method: PATCH
-    user: "{{ redfish_user }}"
-    password: "{{ redfish_password }}"
-    validate_certs: no
-    force_basic_auth: yes
-    body_format: json
-    body:
-      Oem:
-        Lenovo:
-          PowerRestorePolicy: "{{ power_restore_policy | default('LastState') }}"
-    status_code: [200, 202, 204]
-  register: power_policy_oem
-  delegate_to: localhost
-  when: policy_needs_update | bool
-  changed_when: power_policy_oem.status in [200, 202, 204]
-  ignore_errors: yes
-
 - name: Configure power restore policy using BIOS settings (fallback)
   uri:
     url: "https://{{ bmc_ip }}/redfish/v1/Systems/1/Bios/Settings"

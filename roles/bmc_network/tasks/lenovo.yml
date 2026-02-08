@@ -42,6 +42,24 @@
   set_fact:
      system_mtm: "{{ system_detail.json.Model | default('Unknown') }}"
 
+- name: Get Redfish system info
+  community.general.redfish_info:
+    category: Systems
+    command: GetSystemInventory
+    baseuri: "{{ bmc_ip }}"
+    username: "{{ redfish_user }}"
+    password: "{{ redfish_password }}"
+    validate_certs: false
+  register: rf_info
+
+- name: Extract MTM
+  set_fact:
+    mtm: "{{ rf_info.redfish_facts.system.entries[0].Model | upper }}"
+
+- debug:
+    msg: "Detected MTM: {{ mtm }}"
+
+
 - name: Display system MTM
   debug:
     msg: "Configuring account security for MTM: {{ system_mtm }}"

@@ -306,3 +306,83 @@
 - name: Display power restore policy
   debug:
     msg: "Power restore policy set to: {{ power_restore_policy | default('LastState') }}"
+
+- name: Get current power restore policy
+  uri:
+    url: "https://{{ bmc_ip }}/redfish/v1/Systems/1"
+    method: GET
+    user: "{{ redfish_user }}"
+    password: "{{ redfish_password }}"
+    validate_certs: no
+    force_basic_auth: yes
+    return_content: yes
+    status_code: [200]
+  register: current_system
+  delegate_to: localhost
+
+- name: Display current power restore policy
+  debug:
+    msg: "Current PowerRestorePolicy: {{ current_system.json.PowerRestorePolicy | default('Not available') }}"
+
+- name: Check if policy needs update
+  set_fact:
+    policy_needs_update: "{{ current_system.json.PowerRestorePolicy | default('') != (power_restore_policy | default('LastState')) }}"
+
+- name: Configure power restore policy using Lenovo OEM extension
+  uri:
+    url: "https://{{ bmc_ip }}/redfish/v1/Systems/1"
+    method: PATCH
+    user: "{{ redfish_user }}"
+    password: "{{ redfish_password }}"
+    validate_certs: no
+    force_basic_auth: yes
+    body_format: json
+    body:
+      Oem:
+        Lenovo:
+          PowerRestorePolicy: "{{ power_restore_policy | default('LastState') }}"
+    status_code: [200, 202, 204]
+  register: power_policy_oem
+  delegate_to: localhost
+  when: policy_needs_update | bool
+  changed_when: power_policy_oem.status in [200, 202, 204]
+  ignore_errors: yes
+
+- name: Configure power restore policy using BIOS settings (fallback)
+  uri:
+    url: "https://{{ bmc_ip }}/redfish/v1/Systems/1/Bios/Settings"
+    method: PATCH
+    user: "{{ redfish_user }}"
+    password: "{{ redfish_password }}"
+    validate_certs: no
+    force_basic_auth: yes
+    body_format: json
+    body:
+      Attributes:
+        PowerRestorePolicy: "{{ power_restore_policy | default('LastState') }}"
+    status_code: [200, 202, 204]
+  register: power_policy_bios
+  delegate_to: localhost
+  when:
+    - policy_needs_update | bool
+    - power_policy_oem is failed
+  changed_when: power_policy_bios.status in [200, 202, 204]
+  ignore_errors: yes
+
+- name: Power restore policy already configured
+  debug:
+    msg: "Power restore policy already set to {{ power_restore_policy | default('LastState') }} - no change needed"
+  when: not (policy_needs_update | bool)
+
+- name: Display power restore policy configuration result
+  debug:
+    msg:
+      - "========================================="
+      - "Power Restore Policy Configuration"
+      - "========================================="
+      - "Requested Policy: {{ power_restore_policy | default('LastState') }}"
+      - "OEM Method: {{ 'Success' if (power_policy_oem is changed) else 'Failed or Skipped' }}"
+      - "BIOS Method: {{ 'Success' if (power_policy_bios is changed) else 'Failed or Skipped' }}"
+      - "Status: {{ 'Configured' if (power_policy_oem is changed or power_policy_bios is changed) else 'Check manually' }}"
+      - "========================================="
+  when: policy_needs_update | bool

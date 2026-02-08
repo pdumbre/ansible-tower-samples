@@ -52,9 +52,19 @@
     validate_certs: false
   register: rf_info
     
-- name: Extract MTM 
+- name: Extract Lenovo MTM (safe)
   set_fact:
-    mtm: "{{ rf_info.redfish_facts.system.entries[0]['SKU'][0:4] }}"
+    mtm: >-
+      {{
+        (
+          rf_info.redfish_facts.system.entries
+          | json_query('[].SKU')
+          | select('defined')
+          | list
+          | first
+        )[0:4] | upper
+      }}
+
 
 - debug:
     msg: "Detected MTM: {{ mtm }}"

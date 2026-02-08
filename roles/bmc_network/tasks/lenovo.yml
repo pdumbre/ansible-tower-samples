@@ -51,10 +51,19 @@
     password: "{{ redfish_password }}"
     validate_certs: false
   register: rf_info
-
-- name: Extract MTM
+    
+- name: Extract MTM 
   set_fact:
-    mtm: "{{ rf_info.redfish_facts.system.entries[0].SKU }}"
+    mtm: >-
+      {{
+        (
+          rf_info.redfish_facts.system.entries[0]['SKU'][0:4]
+          | default(rf_info.redfish_facts.system.entries[0]['SubModel'])
+          | default('')
+        )
+        | upper
+      }}
+
 
 - debug:
     msg: "Detected MTM: {{ mtm }}"

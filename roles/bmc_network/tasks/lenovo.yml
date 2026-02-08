@@ -54,7 +54,7 @@
 
 - name: Extract MTM
   set_fact:
-    mtm: "{{ rf_info.redfish_facts.system.entries[0] }}"
+    mtm: "{{ rf_info.redfish_facts.system.entries[0].SKU }}"
 
 - debug:
     msg: "Detected MTM: {{ mtm }}"

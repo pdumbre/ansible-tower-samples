@@ -446,42 +446,12 @@
 # Enable USB Ethernet for inband operations on IMM
 # Equivalent to: imm.command("usbeth -en enabled")
 
-- name: Check if USB Ethernet is supported
-  uri:
-    url: "https://{{ bmc_ip }}/redfish/v1/Managers/1"
-    method: GET
-    user: "{{ redfish_user }}"
-    password: "{{ redfish_password }}"
-    validate_certs: no
-    force_basic_auth: yes
-    return_content: yes
-    status_code: [200]
-  register: manager_info
-  delegate_to: localhost
-
-- name: Enable USB Ethernet via Lenovo OEM extension
-  uri:
-    url: "https://{{ bmc_ip }}/redfish/v1/Managers/1"
-    method: PATCH
-    user: "{{ redfish_user }}"
-    password: "{{ redfish_password }}"
-    validate_certs: no
-    force_basic_auth: yes
-    body_format: json
-    body:
-      Oem:
-        Lenovo:
-          USBEthernet:
-            Enabled: true
-    status_code: [200, 202, 204]
-  register: usb_ethernet_config
-  delegate_to: localhost
-  ignore_errors: yes
-
-- name: Display USB Ethernet configuration status
-  debug:
-    msg: "USB Ethernet configuration attempted"
-  when: usb_ethernet_config is changed
+- name: Enable USB Ethernet using Lenovo CLI (authoritative)
+  ansible.builtin.raw: |
+    portcontrol -usbeth enable
+  register: usb_eth_result
+  changed_when: "'Success' in usb_eth_result.stdout or usb_eth_result.rc == 0"
+  failed_when: usb_eth_result.rc != 0
 
 - name: Get current BIOS settings
   uri:

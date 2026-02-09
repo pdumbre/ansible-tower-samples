@@ -294,8 +294,8 @@
   delegate_to: "{{ bmc_host }}"
   vars:
     ansible_connection: ssh
-    ansible_user: "{{ bmc_user }}"
-    ansible_password: "{{ bmc_password }}"
+    ansible_user: "{{ redfish_user }}"
+    ansible_password: "{{ redfish_password }}"
   changed_when: false
   failed_when: false
   

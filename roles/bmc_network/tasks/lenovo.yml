@@ -32,28 +32,6 @@
         )[0:4] | upper
       }}
 
-    system_serial: >-
-      {{
-        (
-          rf_info.redfish_facts.system.entries
-          | json_query('[].SerialNumber')
-          | select('defined')
-          | list
-          | first
-        )[0:4] | upper
-      }}
-
-    system_uuid: >-
-      {{
-        (
-          rf_info.redfish_facts.system.entries
-          | json_query('[].UUID')
-          | select('defined')
-          | list
-          | first
-        )[0:4] | upper
-      }}
-
 - debug:
     msg: "Detected MTM: {{ system_mtm }}"
 

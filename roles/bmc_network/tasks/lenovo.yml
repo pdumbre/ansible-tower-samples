@@ -32,6 +32,19 @@
         )[0:4] | upper
       }}
 
+- name: Extract system identifiers
+  ansible.builtin.set_fact:
+    system_serial: >-
+      {{
+        (
+          rf_info.redfish_facts.system.entries
+          | json_query('[].SerialNumber')
+          | select('defined')
+          | list
+          | first
+        )[0:4] | upper
+      }}
+
 - debug:
     msg: "Detected MTM: {{ system_mtm }}"
 

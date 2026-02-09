@@ -602,3 +602,85 @@
     - has_performance_settings | bool
     - (bios_patch_result is succeeded or bios_patch_fallback_result is succeeded)
 
+# Configure Mellanox 100G adapter to Ethernet mode
+# Equivalent to: imm.setMellanox100Gadapter("Slot3", "Ethernet")
+# Only applies to specific models: 7D2X, 7D2V, 7D73
+
+- name: Check if Mellanox adapter configuration is needed
+  set_fact:
+    configure_mellanox: "{{ vpd_mtm is defined and (vpd_mtm.startswith('7D2X') or vpd_mtm.startswith('7D2V') or vpd_mtm.startswith('7D73')) }}"
+
+- name: Get adapter list from system
+  uri:
+    url: "https://{{ bmc_ip }}/redfish/v1/Systems/1/NetworkInterfaces"
+    method: GET
+    user: "{{ redfish_user }}"
+    password: "{{ redfish_password }}"
+    validate_certs: no
+    force_basic_auth: yes
+    return_content: yes
+    status_code: [200]
+  register: network_interfaces
+  delegate_to: localhost
+  when: configure_mellanox | default(false)
+
+- name: Check for Mellanox ConnectX-6 adapter in Slot 3
+  set_fact:
+    mellanox_adapter_found: true
+    mellanox_ethernet_only: "{{ item.Name is search('Ethernet Adapter') }}"
+  loop: "{{ network_interfaces.json.Members | default([]) }}"
+  when:
+    - configure_mellanox | default(false)
+    - network_interfaces.json is defined
+    - item.Name is defined
+    - "'Mellanox ConnectX-6' in item.Name"
+    - "'Slot 3' in item.Name or 'slot-3' in item.Name"
+
+- name: Display Mellanox adapter status
+  debug:
+    msg: "Mellanox ConnectX-6 adapter found in Slot 3. Ethernet-only: {{ mellanox_ethernet_only | default(false) }}"
+  when: 
+    - configure_mellanox | default(false)
+    - mellanox_adapter_found | default(false)
+
+- name: Configure Mellanox adapter to Ethernet mode
+  uri:
+    url: "https://{{ bmc_ip }}/redfish/v1/Systems/1/NetworkInterfaces/Slot3"
+    method: PATCH
+    user: "{{ redfish_user }}"
+    password: "{{ redfish_password }}"
+    validate_certs: no
+    force_basic_auth: yes
+    body_format: json
+    body:
+      Oem:
+        Lenovo:
+          PortMode: "Ethernet"
+    status_code: [200, 202, 204]
+  register: mellanox_config
+  delegate_to: localhost
+  when:
+    - configure_mellanox | default(false)
+    - mellanox_adapter_found | default(false)
+    - not (mellanox_ethernet_only | default(false))
+
+- name: Mellanox adapter already in Ethernet mode
+  debug:
+    msg: "Mellanox adapter already supports Ethernet mode only"
+  when:
+    - configure_mellanox | default(false)
+    - mellanox_adapter_found | default(false)
+    - mellanox_ethernet_only | default(false)
+
+- name: Fail if Mellanox adapter not found but required
+  fail:
+    msg: "Mellanox ConnectX-6 100GbE adapter not found in Slot 3"
+  when:
+    - configure_mellanox | default(false)
+    - not (mellanox_adapter_found | default(false))
+    - fail_on_missing_mellanox | default(false)
+
+- name: Skip Mellanox configuration
+  debug:
+    msg: "Mellanox adapter configuration not required for this system model"
+  when: not (configure_mellanox | default(false))

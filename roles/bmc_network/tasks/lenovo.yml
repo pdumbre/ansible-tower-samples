@@ -288,44 +288,35 @@
   debug:
     msg: "Network services configured - SSH: Enabled, HTTPS: Enabled, HTTP: Disabled, SNMP: Enabled"
 
-- name: Get current PowerRestorePolicy
-  community.general.redfish_info:
-    category: Systems
-    command: GetSystemInventory
-    baseuri: "{{ bmc_ip }}"
-    username: "{{ redfish_user }}"
-    password: "{{ redfish_password }}"
-    validate_certs: false
-  register: system_info
-
-- set_fact:
-    current_power_policy: "{{ system_info.redfish_facts }}"
     
-- name: Display current power restore policy module
-  debug:
-    msg: "Current PowerRestorePolicy: {{ current_power_policy }}"
+- name: Get Power Restore Policy (Lenovo CLI)
+  ansible.builtin.command: cfgimm -am local -g power
+  register: power_policy_out
+  changed_when: false
 
-- name: Get current power restore policy
-  uri:
-    url: "https://{{ bmc_ip }}/redfish/v1/Systems/1"
-    method: GET
-    user: "{{ redfish_user }}"
-    password: "{{ redfish_password }}"
-    validate_certs: no
-    force_basic_auth: yes
-    return_content: yes
-    status_code: [200]
-  register: current_system
-  delegate_to: localhost
 
-- name: Display current power restore policy
-  debug:
-    msg: "Current PowerRestorePolicy: {{ current_system.json.PowerRestorePolicy | default('Not available') }}"
-
-- name: Check if policy needs update
+- name: Extract PowerRestorePolicy
   set_fact:
-    policy_needs_update: "{{ current_system.json.PowerRestorePolicy | default('') != (power_restore_policy | default('LastState')) }}"
+    current_power_policy: >-
+      {{
+        power_policy_out.stdout_lines
+        | select('search', 'PowerRestorePolicy')
+        | list
+        | first
+        | regex_replace('.*:\\s*', '')
+      }}
+
+  - name: Display current power restore policy
+  debug:
+    msg:
+      - "Current Power Restore Policy: {{ current_power_policy }}"
     
+- name: Parse current power restore policy
+  set_fact:
+    current_policy: "{{ current_power_policy.stdout | regex_search('(alwayson|alwaysoff|restore)', ignorecase=True) | default('unknown') | lower }}"
+  when: current_power_policy.rc == 0
+
+
 - name: Set PowerRestorePolicy via Lenovo CLI
   ansible.builtin.command: >
     cfgimm -am local -rp "{{ power_restore_policy | default('AlwaysOn') }}"

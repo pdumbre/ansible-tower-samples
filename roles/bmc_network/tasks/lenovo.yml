@@ -289,13 +289,9 @@
     msg: "Network services configured - SSH: Enabled, HTTPS: Enabled, HTTP: Disabled, SNMP: Enabled"  
       
 - name: Get current power restore policy via SSH CLI
-  ansible.builtin.raw: "power -rp"
+  ansible.builtin.command: >
+    power -rp
   register: current_power_policy
-  delegate_to: "{{ bmc_host }}"
-  vars:
-    ansible_connection: ssh
-    ansible_user: "{{ redfish_user }}"
-    ansible_password: "{{ redfish_password }}"
   changed_when: false
   failed_when: false
   

@@ -12,8 +12,8 @@
     validate_certs: false
   register: rf_info
     
-- name: Extract MTM
-  set_fact:
+- name: Extract system identifiers
+  ansible.builtin.set_fact:
     system_mtm: >-
       {{
         (
@@ -31,9 +31,8 @@
             )
         )[0:4] | upper
       }}
-  - name: Extract Serial
-    set_fact:  
-      system_serial: >-
+
+    system_serial: >-
       {{
         (
           rf_info.redfish_facts.system.entries
@@ -41,18 +40,10 @@
           | select('defined')
           | list
           | first
-          | default(
-              rf_info.redfish_facts.system.entries
-              | json_query('[].SerialNumber')
-              | select('defined')
-              | list
-              | first
-            )
         )[0:4] | upper
       }}
-  - name: Extract UUID
-    set_fact: 
-      system_uuid: >-
+
+    system_uuid: >-
       {{
         (
           rf_info.redfish_facts.system.entries
@@ -60,13 +51,6 @@
           | select('defined')
           | list
           | first
-          | default(
-              rf_info.redfish_facts.system.entries
-              | json_query('[].UUID')
-              | select('defined')
-              | list
-              | first
-            )
         )[0:4] | upper
       }}
 

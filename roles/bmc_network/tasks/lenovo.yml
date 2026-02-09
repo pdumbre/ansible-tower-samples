@@ -288,12 +288,24 @@
   debug:
     msg: "Network services configured - SSH: Enabled, HTTPS: Enabled, HTTP: Disabled, SNMP: Enabled"
 
-    
+- name: Get IMM config (private Lenovo API)
+  uri:
+    url: "https://{{ bmc_ip }}/config/genesis/mgen/imm/config"
+    method: GET
+    user: "{{ redfish_user }}"
+    password: "{{ redfish_password }}"
+    validate_certs: no
+  register: imm_cfg
+
+- name: Display current power restore policy
+  debug:
+    msg:
+      - "Current Power Restore Policy: {{ imm_cfg }}"      
+
 - name: Get Power Restore Policy (Lenovo CLI)
   ansible.builtin.command: cfgimm -am local -g power
   register: power_policy_out
   changed_when: false
-
 
 - name: Extract PowerRestorePolicy
   set_fact:

@@ -31,9 +31,23 @@
             )
         )[0:4] | upper
       }}
+      
+- name: Extract SerialNumber from Redfish output
+  ansible.builtin.set_fact:
+    system_serial: >-
+      {{
+        (
+          rf_info.redfish_facts.system.entries
+          | json_query('[].[1].SerialNumber')
+          | select('defined')
+          | list
+          | first
+          | default('UNKNOWN')
+        )[0:4] | upper
+      }}
 
 - debug:
-    msg: "Detected system: {{ rt_info.redfish_facts.system.SerialNumber | default('Unknown') }}"
+    msg: "Detected system: {{ system_serial }}"
 
 - name: Create selection_properties map for conditional settings
   set_fact:

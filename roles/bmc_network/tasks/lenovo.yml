@@ -510,7 +510,7 @@
 
 - name: Filter applicable performance settings based on conditions
   ansible.builtin.set_fact:
-    applicable_settings: "{{ performance_asu_settings | select_applicable_settings(system_vpd }}"
+    applicable_settings: "{{ performance_asu_settings | select_applicable_settings(system_vpd) }}"
   
 - name: Debug applicable performance settings
   ansible.builtin.debug:

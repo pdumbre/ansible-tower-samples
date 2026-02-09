@@ -442,3 +442,79 @@
   debug:
     msg: "IPMI over LAN enabled on port 623"
   when: ipmi_config is changed
+
+# Enable USB Ethernet for inband operations on IMM
+# Equivalent to: imm.command("usbeth -en enabled")
+
+- name: Check if USB Ethernet is supported
+  uri:
+    url: "https://{{ bmc_ip }}/redfish/v1/Managers/1"
+    method: GET
+    user: "{{ redfish_user }}"
+    password: "{{ redfish_password }}"
+    validate_certs: no
+    force_basic_auth: yes
+    return_content: yes
+    status_code: [200]
+  register: manager_info
+  delegate_to: localhost
+
+- name: Enable USB Ethernet via Lenovo OEM extension
+  uri:
+    url: "https://{{ bmc_ip }}/redfish/v1/Managers/1"
+    method: PATCH
+    user: "{{ redfish_user }}"
+    password: "{{ redfish_password }}"
+    validate_certs: no
+    force_basic_auth: yes
+    body_format: json
+    body:
+      Oem:
+        Lenovo:
+          USBEthernet:
+            Enabled: true
+    status_code: [200, 202, 204]
+  register: usb_ethernet_config
+  delegate_to: localhost
+  ignore_errors: yes
+
+- name: Display USB Ethernet configuration status
+  debug:
+    msg: "USB Ethernet configuration attempted"
+  when: usb_ethernet_config is changed
+
+- name: Get current BIOS settings
+  uri:
+    url: "https://{{ bmc_ip }}/redfish/v1/Systems/1/Bios"
+    method: GET
+    user: "{{ redfish_user }}"
+    password: "{{ redfish_password }}"
+    validate_certs: no
+    force_basic_auth: yes
+    return_content: yes
+    status_code: [200]
+  register: current_bios
+  delegate_to: localhost
+
+- name: Set operating mode to Maximum Performance
+  uri:
+    url: "https://{{ bmc_ip }}/redfish/v1/Systems/1/Bios/Settings"
+    method: PATCH
+    user: "{{ redfish_user }}"
+    password: "{{ redfish_password }}"
+    validate_certs: no
+    force_basic_auth: yes
+    body_format: json
+    body:
+      Attributes:
+        OperatingMode: "Maximum Performance"
+        PowerPerformanceProfile: "Max Performance"
+    status_code: [200, 202, 204]
+  register: operating_mode_config
+  delegate_to: localhost
+
+- name: Display operating mode configuration status
+  debug:
+    msg: "Operating mode set to Maximum Performance"
+  when: operating_mode_config is changed
+

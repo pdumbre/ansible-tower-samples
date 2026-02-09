@@ -32,13 +32,8 @@
         )[0:4] | upper
       }}
 
-- name: Extract system identifiers
-  ansible.builtin.set_fact:
-    system_serial: "{{ (rf_info.redfish_facts.system.entries | default([{}]))[0].SerialNumber | default((rf_info.redfish_facts.system | default([{}]))[0].SerialNumber | default('Unknown')) }}"
-    system_manufacturer: "{{ (rf_info.redfish_facts.system.entries | default([{}]))[0].Manufacturer | default((rf_info.redfish_facts.system | default([{}]))[0].Manufacturer | default('Unknown')) }}"
-    system_uuid: "{{ (rf_info.redfish_facts.system.entries | default([{}]))[0].UUID | default((rf_info.redfish_facts.system | default([{}]))[0].UUID | default('Unknown')) }}"
 - debug:
-    msg: "Detected MTM: {{ system_serial }}"
+    msg: "Detected system: {{ rf_info.redfish_facts.system.entries }}"
 
 - name: Create selection_properties map for conditional settings
   set_fact:

@@ -32,19 +32,19 @@
         )[0:4] | upper
       }}
       
-- name: Extract SerialNumber from Redfish output
+- name: Extract SerialNumber safely
   ansible.builtin.set_fact:
     system_serial: >-
       {{
         (
           rf_info.redfish_facts.system.entries
-          | json_query('[].[1].SerialNumber')
-          | select('defined')
-          | list
+          | json_query('[][1].SerialNumber')
+          | default([])
           | first
           | default('UNKNOWN')
         )[0:4] | upper
       }}
+
 
 - debug:
     msg: "Detected system: {{ system_serial }}"

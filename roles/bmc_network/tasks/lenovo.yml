@@ -294,7 +294,7 @@
     ansible_connection: ssh
     ansible_user: "{{ redfish_user }}"
     ansible_password: "{{ redfish_password }}"
-  register: raw_out
+  register: current_power_policy
 
 - name: Parse current power restore policy raw
   set_fact:

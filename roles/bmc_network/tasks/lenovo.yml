@@ -306,7 +306,7 @@
         | regex_replace('.*:\\s*', '')
       }}
 
-  - name: Display current power restore policy
+- name: Display current power restore policy
   debug:
     msg:
       - "Current Power Restore Policy: {{ current_power_policy }}"

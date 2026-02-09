@@ -289,12 +289,25 @@
     msg: "Network services configured - SSH: Enabled, HTTPS: Enabled, HTTP: Disabled, SNMP: Enabled"  
       
 - name: Get current power restore policy via SSH CLI
-  ansible.builtin.command: >
-    power -rp
+  ansible.builtin.command:
+    cmd: "power -rp"
   register: current_power_policy
   changed_when: false
   failed_when: false
   
+- name: Print current power restore policy
+  debug:
+    msg: "current policy: {{ current_power_policy.stdout }}"
+
+- name: Get current power restore policy via raw
+  ansible.builtin.raw: power -rp
+  register: raw_out
+
+- name: Print current power restore policy raw
+  debug:
+    msg: "raw: {{ raw_out.stdout }}"
+
+    
 - name: Parse current power restore policy
   set_fact:
     current_policy: "{{ current_power_policy.stdout | regex_search('(alwayson|alwaysoff|restore)', ignorecase=True) | default('unknown') | lower }}"

@@ -448,7 +448,7 @@
 
 - name: Enable USB Ethernet using Lenovo CLI (authoritative)
   ansible.builtin.raw: |
-    portcontrol -usbeth enable
+    usbeth -en enabled
   register: usb_eth_result
   changed_when: "'Success' in usb_eth_result.stdout or usb_eth_result.rc == 0"
   failed_when: usb_eth_result.rc != 0

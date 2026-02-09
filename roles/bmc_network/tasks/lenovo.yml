@@ -53,8 +53,8 @@
   set_fact:
     selection_properties:
       mtm: "{{ system_mtm }}"
-      serial: "{{ system_serial }}"
-      uuid: "{{ system_uuid }}"
+      serial: "JZ004CRA"
+      uuid: "59a49098-441b-11ef-a549-765d22e41ce6"
 
 - name: Display system MTM
   debug:

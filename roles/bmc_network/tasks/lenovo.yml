@@ -549,3 +549,56 @@
 - name: Check if performance settings need to be applied
   ansible.builtin.set_fact:
     has_performance_settings: "{{ applicable_settings | length > 0 }}"
+
+# Apply BIOS settings via Redfish PATCH to pending configuration
+- name: Apply performance BIOS settings via Redfish
+  ansible.builtin.uri:
+    url: "https://{{ bmc_ip }}/redfish/v1/Systems/1/Bios/Settings"
+    method: PATCH
+    user: "{{ redfish_user }}"
+    password: "{{ redfish_password }}"
+    body_format: json
+    body:
+      Attributes: "{{ settings_to_apply | default(applicable_settings) }}"
+    validate_certs: false
+    force_basic_auth: true
+    status_code: [200, 204]
+  register: bios_patch_result
+  when:
+    - has_performance_settings | bool
+    - (settings_to_apply | default(applicable_settings) | length > 0)
+  failed_when: false
+
+# Fallback: Try direct BIOS endpoint if Settings endpoint fails
+- name: Apply performance BIOS settings via Redfish (fallback)
+  ansible.builtin.uri:
+    url: "https://{{ bmc_ip }}/redfish/v1/Systems/1/Bios"
+    method: PATCH
+    user: "{{ redfish_user }}"
+    password: "{{ redfish_password }}"
+    body_format: json
+    body:
+      Attributes: "{{ settings_to_apply | default(applicable_settings) }}"
+    validate_certs: false
+    force_basic_auth: true
+    status_code: [200, 204]
+  register: bios_patch_fallback_result
+  when:
+    - has_performance_settings | bool
+    - bios_patch_result is failed
+    - (settings_to_apply | default(applicable_settings) | length > 0)
+
+- name: Log performance settings applied
+  ansible.builtin.debug:
+    msg: "Applied BIOS settings via Redfish: {{ settings_to_apply | default(applicable_settings) | list }}"
+  when:
+    - has_performance_settings | bool
+    - (bios_patch_result is succeeded or bios_patch_fallback_result is succeeded)
+
+- name: Check if system reboot is required
+  ansible.builtin.debug:
+    msg: "BIOS settings have been updated. System reboot may be required for changes to take effect."
+  when:
+    - has_performance_settings | bool
+    - (bios_patch_result is succeeded or bios_patch_fallback_result is succeeded)
+

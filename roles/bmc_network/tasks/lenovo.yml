@@ -529,9 +529,6 @@
       - "NOTE: Changes may require a system reboot to take effect"
       - "========================================="
 
-- name: Include VPD info gathering
-  ansible.builtin.include_tasks: get_vpd_info.yml
-
 - name: Load performance settings configuration
   ansible.builtin.set_fact:
     perf_config: "{{ performance_asu_settings | default({}) }}"

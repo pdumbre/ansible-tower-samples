@@ -40,7 +40,7 @@ performance_asu_settings:
       "Processors.PreferredIOBusNumber": "81"
     conditionOperator: "or"
     conditions:
-      - mtm: "7D2XCTO1WW"
+      - mtm: "7D73"
   
   # SR665 Performance Settings
   perf_sr665:

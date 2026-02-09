@@ -33,7 +33,7 @@
       }}
 
 - debug:
-    msg: "Detected system: {{ system_inventory.redfish_facts.system.SerialNumber | default('Unknown) }}"
+    msg: "Detected system: {{ system_inventory.redfish_facts.system.SerialNumber | default('Unknown') }}"
 
 - name: Create selection_properties map for conditional settings
   set_fact:

@@ -327,14 +327,14 @@
     msg: "Power restore policy already set to '{{ desired_policy }}' - no change needed"
   when: not (policy_needs_update | bool)
 
-  - name: Configure power restore policy via SSH CLI
+- name: Configure power restore policy via SSH CLI
   ansible.builtin.raw: "power -rp {{ desired_policy }}"
   register: power_policy_result
   delegate_to: "{{ ansible_host }}"
   vars:
     ansible_connection: ssh
-    ansible_user: "{{ ansible_user }}"
-    ansible_password: "{{ ansible_password }}"
+    ansible_user: "{{ redfish_user }}"
+    ansible_password: "{{ redfish_password }}"
     ansible_ssh_common_args: '-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null'
   when: policy_needs_update | bool
   changed_when: "'ok' in power_policy_result.stdout | lower or power_policy_result.rc == 0"

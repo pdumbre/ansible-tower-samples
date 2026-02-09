@@ -382,4 +382,58 @@
       - "CLI Output: {{ verify_power_policy.stdout | default('Not verified') | trim }}"
   when: policy_needs_update | bool
 
-    
+# Enable IPMI over LAN on IMM using Ansible Redfish module
+
+- name: Get current network protocol configuration
+  community.general.redfish_info:
+    category: Manager
+    command: GetManagerNetworkProtocol
+    baseuri: "{{ bmc_ip }}"
+    username: "{{ redfish_user }}"
+    password: "{{ redfish_password }}"
+    timeout: 30
+  register: current_protocols
+  delegate_to: localhost
+
+- name: Extract current IPMI status
+  set_fact:
+    current_ipmi_enabled: "{{ current_protocols.redfish_facts.network_protocols.IPMI.ProtocolEnabled | default(false) }}"
+    current_ipmi_port: "{{ current_protocols.redfish_facts.network_protocols.IPMI.Port | default(623) }}"
+
+- name: Check if IPMI needs to be enabled
+  set_fact:
+    ipmi_needs_update: "{{ not current_ipmi_enabled or current_ipmi_port != 623 }}"
+
+- name: Display current IPMI status
+  debug:
+    msg: 
+      - "IPMI over LAN current status: {{ 'Enabled' if current_ipmi_enabled else 'Disabled' }}"
+      - "IPMI Port: {{ current_ipmi_port }}"
+      - "Update needed: {{ ipmi_needs_update }}"
+
+- name: Enable IPMI over LAN using Redfish command
+  community.general.redfish_command:
+    category: Manager
+    command: SetManagerAttributes
+    baseuri: "{{ bmc_ip }}"
+    username: "{{ redfish_user }}"
+    password: "{{ redfish_password }}"
+    timeout: 30
+    manager_attributes:
+      NetworkProtocol:
+        IPMI:
+          ProtocolEnabled: true
+          Port: 623
+  register: ipmi_config
+  delegate_to: localhost
+  when: ipmi_needs_update | bool
+
+- name: IPMI already enabled
+  debug:
+    msg: "IPMI over LAN already enabled on port 623 - no change needed"
+  when: not (ipmi_needs_update | bool)
+
+- name: Display IPMI configuration status
+  debug:
+    msg: "IPMI over LAN enabled on port 623"
+  when: ipmi_config is changed

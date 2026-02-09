@@ -31,6 +31,8 @@
             )
         )[0:4] | upper
       }}
+  - name: Extract Serial
+    set_fact:  
       system_serial: >-
       {{
         (
@@ -48,6 +50,8 @@
             )
         )[0:4] | upper
       }}
+  - name: Extract UUID
+    set_fact: 
       system_uuid: >-
       {{
         (

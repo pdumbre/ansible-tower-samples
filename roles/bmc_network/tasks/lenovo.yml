@@ -508,11 +508,22 @@
       - "NOTE: Changes may require a system reboot to take effect"
       - "========================================="
 
+- name: Include VPD info gathering
+  ansible.builtin.include_tasks: get_vpd_info.yml
+
+- name: Load performance settings configuration
+  ansible.builtin.set_fact:
+    perf_config: "{{ performance_asu_settings | default({}) }}"
+
 - name: Filter applicable performance settings based on conditions
   ansible.builtin.set_fact:
-    applicable_settings: "{{ performance_asu_settings | select_applicable_settings(system_vpd) }}"
-  
+    applicable_settings: "{{ perf_config | select_applicable_settings(selection_properties) }}"
+
 - name: Debug applicable performance settings
   ansible.builtin.debug:
     msg: "Configuring Performance Settings: {{ applicable_settings }}"
   when: applicable_settings | length > 0
+
+- name: Check if performance settings need to be applied
+  ansible.builtin.set_fact:
+    has_performance_settings: "{{ applicable_settings | length > 0 }}"

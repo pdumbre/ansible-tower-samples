@@ -508,3 +508,11 @@
       - "NOTE: Changes may require a system reboot to take effect"
       - "========================================="
 
+- name: Filter applicable performance settings based on conditions
+  ansible.builtin.set_fact:
+    applicable_settings: "{{ performance_asu_settings | select_applicable_settings(system_vpd }}"
+  
+- name: Debug applicable performance settings
+  ansible.builtin.debug:
+    msg: "Configuring Performance Settings: {{ applicable_settings }}"
+  when: applicable_settings | length > 0

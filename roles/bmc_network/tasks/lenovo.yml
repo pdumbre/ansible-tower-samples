@@ -411,21 +411,26 @@
       - "IPMI Port: {{ current_ipmi_port }}"
       - "Update needed: {{ ipmi_needs_update }}"
 
-- name: Enable IPMI over LAN using Redfish command
-  community.general.redfish_command:
-    category: Manager
-    command: SetManagerAttributes
-    baseuri: "{{ bmc_ip }}"
-    username: "{{ redfish_user }}"
+- name: Enable IPMI over LAN
+  ansible.builtin.uri:
+    url: "https://{{ bmc_ip }}/redfish/v1/Managers/1/NetworkProtocol"
+    method: PATCH
+    user: "{{ redfish_user }}"
     password: "{{ redfish_password }}"
-    timeout: 30
-    manager_attributes:
-      NetworkProtocol:
-        IPMI:
-          ProtocolEnabled: true
-          Port: 623
-  register: ipmi_config
+    force_basic_auth: yes
+    validate_certs: false
+    headers:
+      Content-Type: application/json
+    body_format: json
+    body:
+      IPMI:
+        ProtocolEnabled: true
+        Port: 623
+    status_code:
+      - 200
+      - 204
   delegate_to: localhost
+  register: ipmi_config
   when: ipmi_needs_update | bool
 
 - name: IPMI already enabled

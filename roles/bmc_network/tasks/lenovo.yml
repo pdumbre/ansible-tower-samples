@@ -297,10 +297,14 @@
   
 - name: Print current power restore policy
   debug:
-    msg: "current policy: {{ current_power_policy.stdout }}"
+    msg: "current policy: {{ current_power_policy }}"
 
 - name: Get current power restore policy via raw
   ansible.builtin.raw: power -rp
+  vars:
+    ansible_connection: ssh
+    ansible_user: "{{ redfish_user }}"
+    ansible_password: "JUhWTiQ9l7"
   register: raw_out
 
 - name: Print current power restore policy raw
@@ -308,46 +312,3 @@
     msg: "raw: {{ raw_out.stdout }}"
 
     
-- name: Parse current power restore policy
-  set_fact:
-    current_policy: "{{ current_power_policy.stdout | regex_search('(alwayson|alwaysoff|restore)', ignorecase=True) | default('unknown') | lower }}"
-  when: current_power_policy.rc == 0
-
-- name: Display current power restore policy
-  debug:
-    msg:
-      - "Current Power Restore Policy: {{ current_policy | default('Unable to retrieve') }}"
-      - "CLI Output: {{ current_power_policy.stdout | default('No output') | trim }}"
-
-    
-- name: Parse current power restore policy
-  set_fact:
-    current_policy: "{{ current_power_policy.stdout | regex_search('(alwayson|alwaysoff|restore)', ignorecase=True) | default('unknown') | lower }}"
-  when: current_power_policy.rc == 0
-
-
-- name: Set PowerRestorePolicy via Lenovo CLI
-  ansible.builtin.command: >
-    cfgimm -am local -rp "{{ power_restore_policy | default('AlwaysOn') }}"
-  when: current_system.json.PowerRestorePolicy != power_restore_policy
-  register: power_out
-  changed_when: "'success' in power_out.stdout"
-  failed_when: "'success' not in power_out.stdout"
-
-
-- name: Power restore policy already configured
-  debug:
-    msg: "Power restore policy already set to {{ power_restore_policy | default('LastState') }} - no change needed"
-  when: not (policy_needs_update | bool)
-
-- name: Display power restore policy configuration result
-  debug:
-    msg:
-      - "========================================="
-      - "Power Restore Policy Configuration"
-      - "========================================="
-      - "Requested Policy: {{ power_restore_policy | default('LastState') }}"
-      - "BIOS Method: {{ 'Success' if (power_policy_bios is changed) else 'Failed or Skipped' }}"
-      - "Status: {{ 'Configured' if (power_policy_bios is changed) else 'Check manually' }}"
-      - "========================================="
-  when: policy_needs_update | bool

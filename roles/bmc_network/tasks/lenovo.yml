@@ -470,25 +470,41 @@
   register: current_bios
   delegate_to: localhost
 
-- name: Set operating mode to Maximum Performance
-  uri:
-    url: "https://{{ bmc_ip }}/redfish/v1/Systems/1/Bios/Settings"
-    method: PATCH
-    user: "{{ redfish_user }}"
-    password: "{{ redfish_password }}"
-    validate_certs: no
-    force_basic_auth: yes
-    body_format: json
-    body:
-      Attributes:
-        OperatingMode: "Maximum Performance"
-        PowerPerformanceProfile: "Max Performance"
-    status_code: [200, 202, 204]
-  register: operating_mode_config
-  delegate_to: localhost
 
-- name: Display operating mode configuration status
+# Configure Operating mode to Maximum Performance on IMM using SSH CLI
+
+- name: Set operating mode variable
+  set_fact:
+    operating_mode: "{{ imm_operating_mode | default('Maximum Performance') }}"
+
+- name: Display operating mode to be configured
   debug:
-    msg: "Operating mode set to Maximum Performance"
-  when: operating_mode_config is changed
+    msg: "Configuring operating mode to: {{ operating_mode }}"
+
+- name: Set operating mode to Maximum Performance via ASU command
+  ansible.builtin.raw: 'asu set OperatingModes.ChooseOperatingMode "{{ operating_mode }}"'
+  register: operating_mode_result
+  delegate_to: "{{ ansible_host }}"
+  vars:
+    ansible_connection: ssh
+    ansible_user: "{{ redfish_user }}"
+    ansible_password: "{{ redfish_password }}"
+  changed_when: "'successfully' in operating_mode_result.stdout | lower or operating_mode_result.rc == 0"
+  failed_when:
+    - operating_mode_result.rc != 0
+    - "'successfully' not in operating_mode_result.stdout | lower"
+
+- name: Display operating mode configuration result
+  debug:
+    msg:
+      - "========================================="
+      - "Operating Mode Configuration"
+      - "========================================="
+      - "Mode Set: {{ operating_mode }}"
+      - "Command: asu set OperatingModes.ChooseOperatingMode \"{{ operating_mode }}\""
+      - "Output: {{ operating_mode_result.stdout | default('No output') | trim }}"
+      - "Status: {{ 'Configured' if operating_mode_result is changed else 'Check output' }}"
+      - "========================================="
+      - "NOTE: Changes may require a system reboot to take effect"
+      - "========================================="
 

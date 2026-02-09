@@ -287,28 +287,99 @@
 - name: Display port configuration status
   debug:
     msg: "Network services configured - SSH: Enabled, HTTPS: Enabled, HTTP: Disabled, SNMP: Enabled"  
-      
-- name: Get current power restore policy via SSH CLI
-  ansible.builtin.command:
-    cmd: "power -rp"
-  register: current_power_policy
-  changed_when: false
-  failed_when: false
-  
-- name: Print current power restore policy
-  debug:
-    msg: "current policy: {{ current_power_policy }}"
 
 - name: Get current power restore policy via raw
   ansible.builtin.raw: power -rp
   vars:
     ansible_connection: ssh
     ansible_user: "{{ redfish_user }}"
-    ansible_password: "JUhWTiQ9l7"
+    ansible_password: "{{ redfish_password }}"
   register: raw_out
 
-- name: Print current power restore policy raw
+- name: Parse current power restore policy raw
+  set_fact:
+    current_policy: "{{ current_power_policy.stdout | regex_search('(alwayson|alwaysoff|restore)', ignorecase=True) | default('unknown') | lower }}"
+  when: current_power_policy.rc == 0
+
+- name: Display current power restore policy
   debug:
-    msg: "raw: {{ raw_out.stdout }}"
+    msg:
+      - "Current Power Restore Policy: {{ current_policy | default('Unable to retrieve') }}"
+      - "CLI Output: {{ current_power_policy.stdout | default('No output') | trim }}"
+
+- name: Set desired power restore policy variable
+  set_fact:
+    desired_policy: "{{ power_restore_policy | default('restore') | lower }}"
+
+- name: Validate power restore policy value
+  assert:
+    that:
+      - desired_policy in ['alwayson', 'alwaysoff', 'restore']
+    fail_msg: "Invalid power restore policy: {{ desired_policy }}. Must be one of: alwayson, alwaysoff, restore"
+    success_msg: "Power restore policy validated: {{ desired_policy }}"
+
+- name: Check if policy needs update
+  set_fact:
+    policy_needs_update: "{{ current_policy | default('unknown') != desired_policy }}"
+
+- name: Policy already configured
+  debug:
+    msg: "Power restore policy already set to '{{ desired_policy }}' - no change needed"
+  when: not (policy_needs_update | bool)
+
+  - name: Configure power restore policy via SSH CLI
+  ansible.builtin.raw: "power -rp {{ desired_policy }}"
+  register: power_policy_result
+  delegate_to: "{{ ansible_host }}"
+  vars:
+    ansible_connection: ssh
+    ansible_user: "{{ ansible_user }}"
+    ansible_password: "{{ ansible_password }}"
+    ansible_ssh_common_args: '-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null'
+  when: policy_needs_update | bool
+  changed_when: "'ok' in power_policy_result.stdout | lower or power_policy_result.rc == 0"
+  failed_when:
+    - power_policy_result.rc != 0
+    - "'ok' not in power_policy_result.stdout | lower"
+
+- name: Display power restore policy configuration result
+  debug:
+    msg:
+      - "========================================="
+      - "Power Restore Policy Configuration"
+      - "========================================="
+      - "Previous Policy: {{ current_policy | default('unknown') }}"
+      - "Desired Policy: {{ desired_policy }}"
+      - "Update Needed: {{ policy_needs_update }}"
+      - "Command: power -rp {{ desired_policy }}"
+      - "Output: {{ power_policy_result.stdout | default('No change - already configured') | trim }}"
+      - "Status: {{ 'Configured' if (policy_needs_update and power_policy_result is changed) else 'Already correct' }}"
+      - "========================================="
+
+- name: Verify power restore policy after configuration
+  ansible.builtin.raw: "power -rp"
+  register: verify_power_policy
+  delegate_to: "{{ ansible_host }}"
+  vars:
+    ansible_connection: ssh
+    ansible_user: "{{ redfish_user }}"
+    ansible_password: "{{ redfish_password }}"
+  changed_when: false
+  failed_when: false
+  when: policy_needs_update | bool
+
+- name: Parse verified power restore policy
+  set_fact:
+    verified_policy: "{{ verify_power_policy.stdout | regex_search('(alwayson|alwaysoff|restore)', ignorecase=True) | default('unknown') | lower }}"
+  when:
+    - policy_needs_update | bool
+    - verify_power_policy.rc == 0
+
+- name: Display verification result
+  debug:
+    msg:
+      - "Verification: Power restore policy is now set to '{{ verified_policy | default(desired_policy) }}'"
+      - "CLI Output: {{ verify_power_policy.stdout | default('Not verified') | trim }}"
+  when: policy_needs_update | bool
 
     

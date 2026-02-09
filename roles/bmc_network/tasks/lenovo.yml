@@ -300,28 +300,30 @@
 - name: Display current power restore policy
   debug:
     msg:
-      - "Current Power Restore Policy: {{ imm_cfg }}"      
-
-- name: Get Power Restore Policy (Lenovo CLI)
-  ansible.builtin.command: cfgimm -am local -g power
-  register: power_policy_out
+      - "Current Power Restore Policy: {{ imm_cfg }}"    
+      
+- name: Get current power restore policy via SSH CLI
+  ansible.builtin.raw: "power -rp"
+  register: current_power_policy
+  delegate_to: "{{ bmc_host }}"
+  vars:
+    ansible_connection: ssh
+    ansible_user: "{{ bmc_user }}"
+    ansible_password: "{{ bmc_password }}"
   changed_when: false
-
-- name: Extract PowerRestorePolicy
+  failed_when: false
+  
+- name: Parse current power restore policy
   set_fact:
-    current_power_policy: >-
-      {{
-        power_policy_out.stdout_lines
-        | select('search', 'PowerRestorePolicy')
-        | list
-        | first
-        | regex_replace('.*:\\s*', '')
-      }}
+    current_policy: "{{ current_power_policy.stdout | regex_search('(alwayson|alwaysoff|restore)', ignorecase=True) | default('unknown') | lower }}"
+  when: current_power_policy.rc == 0
 
 - name: Display current power restore policy
   debug:
     msg:
-      - "Current Power Restore Policy: {{ current_power_policy }}"
+      - "Current Power Restore Policy: {{ current_policy | default('Unable to retrieve') }}"
+      - "CLI Output: {{ current_power_policy.stdout | default('No output') | trim }}"
+
     
 - name: Parse current power restore policy
   set_fact:

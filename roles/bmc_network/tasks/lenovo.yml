@@ -37,11 +37,22 @@
     system_serial: "{{ rf_info.redfish_facts.system.entries[0][1].SerialNumber | default('UNKNOWN') }}"
 
 - name: Normalize system entries
-  set_fact:
-    systems: "{{ rf_info.redfish_facts.system.entries | map('last') }}"
+  ansible.builtin.set_fact:
+    systems: >-
+      {{
+        rf_info.redfish_facts.system.entries
+        | default([])
+        | map('last')
+        | list
+      }}
+  when:
+    - rf_info is defined
+    - rf_info.redfish_facts is defined
+    - rf_info.redfish_facts.system is defined
+
 
 - debug:
-    var: "{{ systems }}"
+    var: systems
     
 - name: Extract SerialNumber
   set_fact:

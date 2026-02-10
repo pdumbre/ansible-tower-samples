@@ -55,6 +55,13 @@
 - debug:
     var: system_serial
 
+- name: Store compressed artifact
+  ansible.builtin.set_stats:
+    data:
+      system_dump: "{{ systems }}"
+  run_once: true
+
+
 - debug:
     var: system_uid
 

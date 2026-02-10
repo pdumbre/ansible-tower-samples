@@ -36,7 +36,7 @@
   ansible.builtin.set_fact:
     system_serial: >-
       {{
-        system_info.json
+        rf_info.json
         | json_query('SerialNumber')
         | default('UNKNOWN')
       }}

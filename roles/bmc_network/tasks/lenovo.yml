@@ -31,6 +31,13 @@
             )
         )[0:4] | upper
       }}
+      
+- name: Extract SerialNumber safely
+  set_fact:
+    system_serial: "{{ rf_info.redfish_facts.system.entries[0][1].SerialNumber | default('UNKNOWN') }}"
+
+- debug:
+    var: system_serial
 
 - name: Extract SerialNumber safely
   ansible.builtin.set_fact:
@@ -40,10 +47,7 @@
         | json_query('[].SKU')
         | select('defined')
       }}
-
-- debug:
-    var: system_serial
-
+      
 - name: Dump rf_info to file
   copy:
     content: "{{ rf_info | to_nice_json }}"

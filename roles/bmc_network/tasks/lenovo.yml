@@ -36,16 +36,12 @@
   set_fact:
     system_serial: "{{ rf_info.redfish_facts.system.entries[0][1].SerialNumber | default('UNKNOWN') }}"
 
-- debug:
-    var: "{{ systems | map(attribute='SerialNumber') | list }}"
-
 - name: Normalize system entries
   set_fact:
     systems: "{{ rf_info.redfish_facts.system.entries | map('last') | list }}"
 
-
 - debug:
-    var: msg
+    var: "{{ systems | map(attribute='SerialNumber') | list }}"
     
 - name: Extract SerialNumber
   set_fact:

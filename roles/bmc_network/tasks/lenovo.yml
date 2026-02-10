@@ -37,13 +37,12 @@
     system_serial: >-
       {{
         rf_info
-        | json_query('SerialNumber')
+        | json_query('[].SerialNumber')
         | default('UNKNOWN')
       }}
 
 - debug:
-    var: rf_info
-    verbosity: 3
+    var: system_serial
 
 - name: Dump rf_info to file
   copy:
@@ -52,7 +51,7 @@
 
 - set_stats:
     data:
-      redfish_dump: "{{ rf_info | to_nice_json }}"
+      redfish_dump: "{{ rf_info }}"
     
 - name: Print rt_info in chunks
   debug:

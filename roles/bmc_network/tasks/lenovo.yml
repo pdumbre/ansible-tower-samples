@@ -52,7 +52,7 @@
 
 - set_stats:
     data:
-      redfish_dump: "{{ rt_info | to_nice_json }}"
+      redfish_dump: "{{ rf_info | to_nice_json }}"
     
 - name: Print rt_info in chunks
   debug:

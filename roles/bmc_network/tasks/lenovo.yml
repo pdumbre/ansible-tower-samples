@@ -49,28 +49,17 @@
 
 - name: Extract SerialNumber
   ansible.builtin.set_fact:
-    system_serial: "{{ systems | map(attribute='SerialNumber') | first | default('UNKNOWN') }}"
-    system_uid: "{{ systems | map(attribute='UUID') | first | default('UNKNOWN') }}"
+    system_serial: "{{ systems | map(attribute='SerialNumber') | first | default('UNKNOWN') }}
 
 - debug:
     var: system_serial
-
-- name: Store compressed artifact
-  ansible.builtin.set_stats:
-    data:
-      system_dump: "{{ systems }}"
-  run_once: true
-
-
-- debug:
-    var: system_uid
+  
 
 - name: Create selection_properties map for conditional settings
   set_fact:
     selection_properties:
       mtm: "{{ system_mtm }}"
-      serial: "JZ004CRA"
-      uuid: "59a49098-441b-11ef-a549-765d22e41ce6"
+      serial: "{{ system_serial }}"
 
 - name: Display system MTM
   debug:

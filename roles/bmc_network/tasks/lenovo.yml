@@ -37,7 +37,7 @@
     system_serial: >-
       {{
         rf_info.redfish_facts.system.entries
-        | json_query('[].SerialNumber')
+        | json_query('[].SKU')
         | select('defined')
       }}
 

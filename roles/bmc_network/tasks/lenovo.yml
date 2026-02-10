@@ -50,12 +50,9 @@
     content: "{{ rf_info | to_nice_json }}"
     dest: /tmp/rf_info_full.json
 
-- name: Fetch tmp file to controller
-  fetch:
-    src: /tmp/rt_info_full.json
-    dest: ./artifacts/rt_info_full.json
-    flat: yes
-
+- set_stats:
+    data:
+      redfish_dump: "{{ rt_info | to_nice_json }}"
     
 - name: Print rt_info in chunks
   debug:

@@ -32,10 +32,6 @@
         )[0:4] | upper
       }}
       
-- name: Extract SerialNumber safely
-  set_fact:
-    system_serial: "{{ rf_info.redfish_facts.system.entries[0][1].SerialNumber | default('UNKNOWN') }}"
-
 - name: Normalize system entries
   ansible.builtin.set_fact:
     systems: >-
@@ -51,43 +47,16 @@
     - rf_info.redfish_facts.system is defined
 
 
-- debug:
-    var: systems
-
 - name: Extract SerialNumber
   ansible.builtin.set_fact:
     system_serial: "{{ systems | map(attribute='SerialNumber') | first | default('UNKNOWN') }}"
+    system_uid: "{{ systems | map(attribute='UUID') | first | default('UNKNOWN') }}"
 
 - debug:
     var: system_serial
 
-
-- name: Extract SerialNumber safely
-  ansible.builtin.set_fact:
-    system_serial: >-
-      {{
-        rf_info.redfish_facts.system.entries
-        | json_query('[].SKU')
-        | select('defined')
-      }}
-      
-- name: Dump rf_info to file
-  copy:
-    content: "{{ rf_info | to_nice_json }}"
-    dest: /tmp/rf_info_full.json
-
-- set_stats:
-    data:
-      redfish_dump: "{{ rf_info }}"
-    
-- name: Print rt_info in chunks
-  debug:
-    msg: "{{ item }}"
-  loop: "{{ rf_info | to_nice_json }}"
-
-
 - debug:
-    msg: "Detected system: {{ system_serial }}"
+    var: system_uid
 
 - name: Create selection_properties map for conditional settings
   set_fact:

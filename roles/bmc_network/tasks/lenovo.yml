@@ -38,7 +38,7 @@
 
 - name: Normalize system entries
   set_fact:
-    systems: "{{ rf_info.redfish_facts.system.entries | map('last') | list }}"
+    systems: "{{ rf_info.redfish_facts.system.entries | map('last') }}"
 
 - debug:
     var: "{{ systems }}"

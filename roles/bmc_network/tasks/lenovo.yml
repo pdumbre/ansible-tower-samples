@@ -36,7 +36,7 @@
   ansible.builtin.set_fact:
     system_serial: >-
       {{
-        rt_info
+        rf_info
         | json_query('SerialNumber')
         | default('UNKNOWN')
       }}
@@ -44,7 +44,7 @@
 - name: Print rt_info in chunks
   debug:
     msg: "{{ item }}"
-  loop: "{{ rt_info | to_nice_json | split('\n') }}"
+  loop: "{{ rf_info | to_nice_json | split('\n') }}"
 
 
 - debug:

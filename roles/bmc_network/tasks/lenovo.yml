@@ -40,6 +40,12 @@
         | json_query('SerialNumber')
         | default('UNKNOWN')
       }}
+      
+- name: Print rt_info in chunks
+  debug:
+    msg: "{{ item }}"
+  loop: "{{ rt_info | to_nice_json | split('\n') }}"
+
 
 - debug:
     msg: "Detected system: {{ system_serial }}"

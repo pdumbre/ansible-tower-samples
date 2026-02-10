@@ -37,8 +37,15 @@
     system_serial: "{{ rf_info.redfish_facts.system.entries[0][1].SerialNumber | default('UNKNOWN') }}"
 
 - name: Extract SerialNumber
+  ansible.builtin.debug:
+    msg: "{{ rf_info.redfish_facts.system.entries | map(attribute='SerialNumber') | list }}"
+
+- debug:
+    var: msg
+    
+- name: Extract SerialNumber
   set_fact:
-    target_item: "{{ rf_info.redfish_facts.system.entries | selectattr('name', 'equalto', 'SerialNumber') | map(attribute='id') | list | first }}"
+    target_item: "{{ rf_info.redfish_facts.system.entries | json_query('SerialNumber')| list | first }}"
 
 - debug:
     var: system_serial

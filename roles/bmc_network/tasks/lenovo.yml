@@ -41,7 +41,7 @@
     systems: "{{ rf_info.redfish_facts.system.entries | map('last') | list }}"
 
 - debug:
-    var: "{{ systems | map(attribute='SerialNumber') | list }}"
+    var: "{{ systems | map(attribute='SerialNumber') }}"
     
 - name: Extract SerialNumber
   set_fact:

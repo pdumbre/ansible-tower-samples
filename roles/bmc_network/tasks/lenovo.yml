@@ -36,9 +36,9 @@
   ansible.builtin.set_fact:
     system_serial: >-
       {{
-        rf_info
+        rf_info.redfish_facts.system.entries
         | json_query('[].SerialNumber')
-        | default('UNKNOWN')
+        | select('defined')
       }}
 
 - debug:

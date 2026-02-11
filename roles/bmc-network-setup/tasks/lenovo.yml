@@ -119,10 +119,14 @@
     force_basic_auth: yes
     body_format: json
     body:
+      DHCPv6:
+        Enabled: "{{ bmc_network.dhcp6_enabled | bool }}"
       IPv6StaticAddresses:
         - Address: "{{ ipv6_address }}"
-          SubnetMask: "{{ ipv6_netmask | default('255.255.255.0') }}"
-          Gateway: "{{ ipv6_gateway | default('') }}"
+          PrefixLength: "{{ bmc_network.ipv6_prefix | int }}"        
+    IPv6DefaultGateway: "{{ bmc_network.ipv6_gateway }}"
+    StatelessAddressAutoConfig:
+        IPv6AutoConfigEnabled: "{{ bmc_network.stateless_autoconfig_enabled }}"
     status_code: [200, 202, 204]
   register: ipv6_config
   delegate_to: localhost

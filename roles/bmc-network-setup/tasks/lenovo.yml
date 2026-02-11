@@ -98,7 +98,7 @@
           Failover: "{{ 'Shared' if bmc_network.failover_mode == 'shared' }}"
           NameServerSync: "{{ bmc_network.name_server_sync_enabled | bool }}"
     status_code: [200, 204]
-    register: ipv6_oem_config
+  register: ipv6_oem_config
   when:
     - bmc_network.failover_mode is defined
     - bmc_network.name_server_sync_enabled is defined

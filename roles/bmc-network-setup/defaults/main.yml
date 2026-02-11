@@ -9,7 +9,7 @@ bmc_network:
   ipv6_gateway:  "0::0"                 # IPv6 gateway
   dhcp6_enabled: false                  # DHCPv6 enabled/disabled
   stateless_autoconfig_enabled: false   # Stateless autoconfig enabled/disabled
-  failover_mode: "shared"               # Failover mode
+  failover_mode: "Shared"               # Failover mode
   name_server_sync_enabled: true        # Name server sync enabled/disabled
 
 # Port Configuration

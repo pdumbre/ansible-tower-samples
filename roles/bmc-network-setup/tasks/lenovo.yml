@@ -16,6 +16,13 @@
     network_interface_uri: "{{ current_network.json.Members[0]['@odata.id'] }}"
   when: current_network.json.Members | length > 0
 
+- name: Set nic_value from first interface
+  set_fact:
+    nic_value: "{{ current_network.json.Members[0]['@odata.id'].split('/')[-1] }}"
+
+- debug:
+    var: "{{ nic_value }}"
+    
 - name: Get first network interface details
   uri:
     url: "{{ redfish_host }}{{ network_interface_uri }}"
@@ -97,7 +104,8 @@
         Lenovo:
           "NetworkSettingSync": "{{ bmc_network.name_server_sync_enabled }}"
           InterfaceFailoverMode:
-            FailoverMode: "{{ bmc_network.failover_mode }}"        
+            FailoverMode: "{{ bmc_network.failover_mode }}"   
+            NicValue: "{{ nic_value }}"
     status_code: [200, 204]
   register: ipv6_oem_config
   when:

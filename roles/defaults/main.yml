@@ -1,0 +1,155 @@
+---
+# Lenovo IMM Configuration Defaults
+# Original source: ipas.firmware.utils/config/imm.config
+# Equivalent to: gc.get("/config/genesis/mgen/imm/config")
+
+# SSL Settings
+ssl:
+  server: "on"
+  client: "on"
+  cim: "on"
+  server_csr_key_status: "Private Key and CA-signed cert installed"
+  client_ldap_key_status: "Private Key and CA-signed cert installed"
+  cim_csr_key_status: "Private Key and CA-signed cert installed"
+
+# SSL Configuration
+sslcfg:
+  server: "enabled"
+  client: "enabled"
+  cim: "enabled"
+  server_cert_status: "A self-signed certificate is not installed"
+  client_cert_status: "A self-signed certificate is not installed"
+  cim_cert_status: "A self-signed certificate is not installed"
+
+# BIOS Common Settings
+bios_common:
+  "BootModes.SystemBootMode": "UEFI Mode"
+  "OperatingModes.ChooseOperatingMode": "Maximum Performance"
+  "BootOrder.BootOrder": "Hard Disk=CD/DVD Rom=Network"
+  "IMM.CIMXMLOverHTTPS_Enable": "Enabled"
+  "IMM.CIMOverHttpsPortControl": "Open"
+
+# Performance ASU Settings Configuration
+# Conditional settings based on VPD system properties (MTM, model, etc.)
+# Uses Redfish API to configure BIOS performance parameters
+performance_asu_settings:
+  # SR645 Performance Settings
+  perf_sr645:
+    settings:
+      "Processors.PreferredIOBus": "Preferred"
+      "Processors.PreferredIOBusNumber": "81"
+    conditionOperator: "or"
+    conditions:
+      - mtm: "7D2XCTO1WW"
+  
+  # SR665 Performance Settings
+  perf_sr665:
+    settings:
+      "Processors.PreferredIOBus": "Preferred"
+      "Processors.PreferredIOBusNumber": "1"
+    conditionOperator: "or"
+    conditions:
+      - mtm: "7D2VCTO1WW"
+
+
+# Network Configuration Parameters
+# These are used by configure_network.yml (Redfish API, not CLI)
+bmc_network:
+  connection_type: "static"             # IPv6 address (-i6)
+  ipv6_address: "ula"                   # IPv6 address (or "ula" for link-local)
+  ipv6static: "enabled"                 # IPv6 static addressing
+  ipv6_prefix:  "64"                    # IPv6 prefix length
+  ipv6_gateway:  "0::0"                 # IPv6 gateway
+  dhcp6_enabled: false                  # DHCPv6 enabled/disabled
+  stateless_autoconfig_enabled: false   # Stateless autoconfig enabled/disabled
+  failover_mode: "shared"               # Failover mode
+  name_server_sync_enabled: true        # Name server sync enabled/disabled
+
+
+# Password Complexity Settings
+password_complexity:
+  am: "local"           # Authentication method
+  lp: "0"               # Lockout policy
+  pe: "0"               # Password expiration
+  pew: "0"              # Password expiration warning
+  pc: "on"              # Password complexity
+  pl: "10"              # Password length
+  ci: "0"               # Change interval
+  lf: "0"               # Lockout failure
+  chgnew: "off"         # Change new user password
+  rc: "0"               # Reuse cycle
+
+# Default Users Configuration (dfltusers mode)
+imm_default_users:
+  - n: "USERID"
+    a: "super"
+    r: "Administrator"
+    p: "generated"
+    ai: "all"
+    number: 1
+
+# Additional Users Configuration (users mode)
+imm_users:
+  - n: "CEUSER"
+    a: "super"
+    r: "Administrator"
+    p: "generated"
+    ai: "all"
+    number: 2
+  - n: "ISFUSER"
+    a: "super"
+    r: "Administrator"
+    p: "generated"
+    ai: "all"
+    number: 3
+
+# Access Security Configuration
+accseccfg:
+  level: "legacy"       # Default security setting
+
+# Alert Entries Configuration
+alertentries:
+  number: "1"
+  status: "on"
+  type: "syslog"
+  n: "Troy"
+
+# Port Configuration
+ports:
+  httpp: "80"           # HTTP port
+  httpsp: "443"         # HTTPS port
+  sshp: "22"            # SSH port
+  snmpap: "161"         # SNMP port
+  snmptp: "162"         # SNMP trap port
+  cimhsp: "5989"        # CIM port HTTPS
+
+# Power Restore Policy
+powerrp: "restore"      # Options: restore, off, on
+
+# User Management Configuration
+# Password generation length
+password_generation_length: 16
+
+# User management mode
+# Options: 'users' (create new users), 'dfltusers' (reset default user passwords)
+user_management_mode: "users"
+
+# Node type for determining user creation method
+# SR650, SR675, SR630v3 use advanced interface with roles and AI parameter
+# Standard nodes use basic user creation
+node_type: ""  # Set per host: sr650, sr675, sr630v3, etc.
+
+# Checkpointing for idempotency
+# Stores user information to track what has been configured
+imm_checkpoint_dir: "/var/lib/awx/imm_checkpoints"
+imm_checkpoint_enabled: true
+
+# VPD (Vital Product Data) properties for conditional matching
+# These should be set per host in inventory or discovered dynamically
+system_mtm: ""  # Machine Type Model (e.g., "7X02", "7D2X")
+system_model: ""  # Model name (e.g., "SR650", "SR675")
+system_serial: ""  # Serial number
+
+# IMM Connection Settings
+bmc_username: "USERID"
+bmc_password: "PASSW0RD"

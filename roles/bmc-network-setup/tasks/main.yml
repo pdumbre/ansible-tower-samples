@@ -1,0 +1,4 @@
+---
+# roles/bmc-network-setup/tasks/main.yml
+- name: Include Manufacturer Specific Tasks
+  include_tasks: "{{ vendor | lower }}.yml"

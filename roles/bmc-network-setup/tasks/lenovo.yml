@@ -111,7 +111,7 @@
   changed_when: ipv6_oem_config.status in [200, 202, 204]
 
 - name: Configure failover via XCC SSH CLI
-  ansible.builtin.shell: "network -failover shared"
+  ansible.builtin.shell: "ifconfig eth0 -failover shared"
   vars:
     ansible_host: "{{ bmc_ip }}"
     ansible_user: "{{ redfish_user }}"

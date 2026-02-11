@@ -98,6 +98,7 @@
       - "MAC Address: {{ current_mac }}"
       - "IPv6 Address: {{ current_ipv6_addr if current_ipv6_addr else 'Not configured' }}"
       - "DHCP Enabled: {{ current_dhcp }}"
+      - "Network details: {{ network_interface_detail.json }}
       - "========================================="
 
 - name: Check if IPv6 needs update

@@ -150,11 +150,8 @@
       Content-Type: "application/json"
     body_format: json
     body:
-      DHCPv4:
-        DHCPEnabled: "{{ bmc_network.connection_type == 'dhcp' }}"
-
       DHCPv6:
-        DHCPEnabled: "{{ bmc_network.dhcp6_enabled }}"
+        DHCPEnabled: "{{ bmc_network.dhcp6_enabled | bool }}"
 
       IPv6StaticAddresses: >-
         {{
@@ -179,4 +176,4 @@
 
     status_code: [200, 204]
   register: bmc_network_result
-  changed_when: ipv6_config.status in [200, 202, 204]
+  changed_when: bmc_network_result.status in [200, 202, 204]

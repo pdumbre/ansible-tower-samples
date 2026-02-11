@@ -67,6 +67,8 @@
     force_basic_auth: yes
     body_format: json
     body:
+      DHCPv6:
+        Enabled: "{{ bmc_network.dhcp6_enabled | bool }}"
       IPv6StaticAddresses:
         - Address: "{{ ipv6_address }}"
           SubnetMask: "{{ ipv6_netmask | default('255.255.255.0') }}"
@@ -77,7 +79,6 @@
   register: ipv6_config
   when:
     - ipv6_address is defined
-    - ipv6_needs_update | bool
   changed_when: ipv6_config.status in [200, 202, 204]
 
 - name: IPv6 already configured

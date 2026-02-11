@@ -22,5 +22,5 @@
         | first
       }}
 
-debug:
-  var: "{{ nic_info }}"
+- debug:
+    var: "{{ nic_info }}"

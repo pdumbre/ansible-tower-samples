@@ -95,8 +95,10 @@
     body:
       Oem:
         Lenovo:
-          Failover: "{{ 'Shared' if bmc_network.failover_mode == 'shared' }}"
-          NameServerSync: "{{ bmc_network.name_server_sync_enabled | bool }}"
+          "NetworkSettingSync": "{{ bmc_network.name_server_sync_enabled }}"
+          "InterfaceFailoverMode":{
+              "FailoverMode":"{{ bmc_network.failover_mode }}"
+          }
     status_code: [200, 204]
   register: ipv6_oem_config
   when:

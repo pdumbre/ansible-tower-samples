@@ -105,7 +105,7 @@
           "NetworkSettingSync": "{{ bmc_network.name_server_sync_enabled }}"
           InterfaceFailoverMode:
             FailoverMode: "{{ bmc_network.failover_mode }}"   
-            NicValue: "{{ nic_value }}"
+            NicValue: 1
     status_code: [200, 204]
   register: ipv6_oem_config
   when:

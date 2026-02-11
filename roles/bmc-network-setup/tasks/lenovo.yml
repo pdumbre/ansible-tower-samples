@@ -114,8 +114,8 @@
   ansible.builtin.shell: "network -failover shared"
   vars:
     ansible_host: "{{ bmc_ip }}"
-    ansible_user: "{{ bmc_user }}"
-    ansible_password: "{{ bmc_password }}"
+    ansible_user: "{{ redfish_user }}"
+    ansible_password: "{{ redfish_password }}"
     ansible_connection: ssh
   delegate_to: "{{ bmc_ip }}"
   register: ssh_result

@@ -104,7 +104,7 @@
         Lenovo:
           "NetworkSettingSync": "{{ bmc_network.name_server_sync_enabled }}"
           InterfaceFailoverMode:
-            FailoverMode: 1
+            FailoverMode: "Shared"
             NicValue: 1
     status_code: [200, 204]
   register: ipv6_oem_config

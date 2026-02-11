@@ -49,7 +49,7 @@
 
 - name: Extract SerialNumber
   ansible.builtin.set_fact:
-    system_serial: "{{ systems | map(attribute='SerialNumber') | first | default('UNKNOWN') }}
+    system_serial: "{{ systems | map(attribute='SerialNumber') | first | default('UNKNOWN') }}"
 
 - name: Get current network interface configuration using Redfish API
   uri:

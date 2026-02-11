@@ -151,14 +151,13 @@
     body_format: json
     body:
       DHCPv6:
-        DHCPEnabled: "{{ bmc_network.dhcp6_enabled | bool }}"
-
+        Enabled: "{{ bmc_network.dhcp6_enabled | bool }}"
+     
       IPv6StaticAddresses: >-
         {{
           [{
             "Address": bmc_network.ipv6_address,
             "PrefixLength": bmc_network.ipv6_prefix | int,
-            "AddressOrigin": "Static"
           }]
           if bmc_network.ipv6static == "enabled"
           else []

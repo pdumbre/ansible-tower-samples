@@ -113,18 +113,18 @@
     - bmc_network.name_server_sync_enabled is defined
   changed_when: ipv6_oem_config.status in [200, 202, 204]
 
-- name: Configure XCC failover mode
-  hosts: all
-  gather_facts: no
-  tasks:
-    - name: Set failover to shared
-      ansible.builtin.shell: network -failover shared
-      vars:
-        ansible_host: "{{ bmc_ip }}"
-        ansible_user: "{{ redfish_user }}"
-        ansible_password: "{{ redfish_password }}"
-        ansible_connection: ssh
-      delegate_to: "{{ bmc_ip }}"
+- name: Configure failover via XCC SSH CLI
+  ansible.builtin.shell: "network -failover shared"
+  vars:
+    ansible_host: "{{ bmc_ip }}"
+    ansible_user: "{{ bmc_user }}"
+    ansible_password: "{{ bmc_password }}"
+    ansible_connection: ssh
+  delegate_to: "{{ bmc_ip }}"
+  register: ssh_result
+  retries: 3
+  delay: 5
+  until: ssh_result.rc == 0
 
 - name: IPv6 already configured
   debug:

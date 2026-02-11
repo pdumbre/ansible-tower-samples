@@ -8,8 +8,8 @@
     command: GetEthernetInterfaces
   register: nic_info
 
-debug:
-  var: "{{ nic_info }}"
+- debug:
+    var: "{{ nic_info }}"
 
 - name: Find eth0 NIC ID
   set_fact:

@@ -170,13 +170,7 @@
       IPv6DefaultGateway: "{{ bmc_network.ipv6_gateway }}"
 
       StatelessAddressAutoConfig:
-        IPv6AutoConfigEnabled: "{{ bmc_network.stateless_autoconfig_enabled }}"
-
-      Oem:
-        Lenovo:
-          FailoverMode: "{{ bmc_network.failover_mode }}"
-          NameServerSyncEnabled: "{{ bmc_network.name_server_sync_enabled }}"
-
+        IPv6AutoConfigEnabled: "{{ bmc_network.stateless_autoconfig_enabled }}
     status_code: [200, 204]
   register: bmc_network_result
   changed_when: bmc_network_result.status in [200, 202, 204]

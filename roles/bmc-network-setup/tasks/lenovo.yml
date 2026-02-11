@@ -72,9 +72,9 @@
       IPv6StaticAddresses:
         - Address: "{{ ipv6_address }}"
           SubnetMask: "{{ ipv6_netmask | default('255.255.255.0') }}"
-          Gateway: "{{ bmc_network.ipv6_gateway | default('') }}"
+          Gateway: "{{ bmc_network.ipv6_gateway }}"
       StatelessAddressAutoConfig:
-        IPv6AutoConfigEnabled: "{{ bmc_network.sa6 == 'enabled' }}"
+        IPv6AutoConfigEnabled: "{{ bmc_network.stateless_autoconfig_enabled | bool }}"
     status_code: [200, 202, 204]
   register: ipv6_config
   when:

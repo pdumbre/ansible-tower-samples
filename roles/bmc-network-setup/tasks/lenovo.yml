@@ -1,177 +1,26 @@
----
-# roles/system_vpd/tasks/main.yml
-# Retrieves system mtm 
-
-- name: Get Redfish system info
+  
+- name: Get BMC Ethernet Interfaces
   community.general.redfish_info:
-    category: Systems
-    command: GetSystemInventory
-    baseuri: "{{ bmc_ip }}"
+    baseuri: "{{ redfish_host }}"
     username: "{{ redfish_user }}"
     password: "{{ redfish_password }}"
-    validate_certs: false
-  register: rf_info
-    
-- name: Extract system identifiers
-  ansible.builtin.set_fact:
-    system_mtm: >-
+    category: Manager
+    command: GetEthernetInterfaces
+  register: nic_info
+
+debug:
+  var: "{{ nic_info }}"
+
+- name: Find eth0 NIC ID
+  set_fact:
+    nic_id: >-
       {{
-        (
-          rf_info.redfish_facts.system.entries
-          | json_query('[].SKU')
-          | select('defined')
-          | list
-          | first
-          | default(
-              rf_info.redfish_facts.system.entries
-              | json_query('[].SubModel')
-              | select('defined')
-              | list
-              | first
-            )
-        )[0:4] | upper
-      }}
-      
-- name: Normalize system entries
-  ansible.builtin.set_fact:
-    systems: >-
-      {{
-        rf_info.redfish_facts.system.entries
-        | default([])
-        | map('last')
+        nic_info.redfish_facts.ethernet_interfaces.entries
+        | selectattr('Id', 'equalto', 'eth0')
+        | map(attribute='Id')
         | list
+        | first
       }}
-  when:
-    - rf_info is defined
-    - rf_info.redfish_facts is defined
-    - rf_info.redfish_facts.system is defined
 
-
-- name: Extract SerialNumber
-  ansible.builtin.set_fact:
-    system_serial: "{{ systems | map(attribute='SerialNumber') | first | default('UNKNOWN') }}"
-  
-- name: Get current network interface configuration using Redfish API
-  uri:
-    url: "{{ redfish_host }}/redfish/v1/Managers/1/EthernetInterfaces"
-    method: GET
-    user: "{{ redfish_user }}"
-    password: "{{ redfish_password }}"
-    validate_certs: no
-    force_basic_auth: yes
-    return_content: yes
-    status_code: [200]
-  register: current_network
-  delegate_to: localhost
-
-- name: Get the first network interface URL
-  set_fact:
-    network_interface_uri: "{{ current_network.json.Members[0]['@odata.id'] }}"
-  when: current_network.json.Members | length > 0
-
-- name: Get first network interface details
-  uri:
-    url: "{{ redfish_host }}{{ network_interface_uri }}"
-    method: GET
-    user: "{{ redfish_user }}"
-    password: "{{ redfish_password }}"
-    force_basic_auth: yes
-    validate_certs: no
-    return_content: yes
-  register: network_interface_detail
-  delegate_to: localhost
-  when: network_interface_uri is defined
-  
-- name: Extract current network settings from Redfish response
-  set_fact:
-    current_mac: "{{ network_interface_detail.json.MACAddress | default('Not available') }}"
-    current_ipv6_addresses: "{{ network_interface_detail.json.IPv6Addresses | default([]) }}"
-    current_ipv6_addr: "{{ network_interface_detail.json.IPv6Addresses[0].Address | default('') }}"
-    current_dhcp: "{{ network_interface_detail.json.DHCPv4.DHCPEnabled | default(false) }}"
-    
-- name: Display current network configuration
-  debug:
-    msg: 
-      - "========================================="
-      - "Current Network Configuration"
-      - "========================================="
-      - "MAC Address: {{ current_mac }}"
-      - "IPv6 Address: {{ current_ipv6_addr if current_ipv6_addr else 'Not configured' }}"
-      - "DHCP Enabled: {{ current_dhcp }}"
-      - "Network details: {{ network_interface_detail.json }}"
-      - "========================================="
-
-- name: Check if IPv6 needs update
-  set_fact:
-    ipv6_needs_update: "{{ ipv6_address is defined and current_ipv6_addr != ipv6_address }}"
-
-- debug:
-    msg:
-      - "ipv6_address={{ ipv6_address }}"
-      - "type={{ ipv6_address | type_debug }}"
-      
-- name: Configure IPv6 on IMM using Redfish API
-  uri:
-    url: "{{ redfish_host }}{{ network_interface_uri }}"
-    method: PATCH
-    user: "{{ redfish_user }}"
-    password: "{{ redfish_password }}"
-    validate_certs: no
-    force_basic_auth: yes
-    body_format: json
-    body:
-      DHCPv6:
-        Enabled: "{{ bmc_network.dhcp6_enabled | bool }}"
-      IPv6StaticAddresses:
-        - Address: "{{ ipv6_address }}"
-          PrefixLength: "{{ bmc_network.ipv6_prefix | int }}"        
-    IPv6DefaultGateway: "{{ bmc_network.ipv6_gateway }}"
-    StatelessAddressAutoConfig:
-        IPv6AutoConfigEnabled: "{{ bmc_network.stateless_autoconfig_enabled }}"
-    status_code: [200, 202, 204]
-  register: ipv6_config
-  delegate_to: localhost
-  when:
-    - ipv6_address is defined
-    - ipv6_needs_update | bool
-  changed_when: ipv6_config.status in [200, 202, 204]
-
-- name: IPv6 already configured
-  debug:
-    msg: "IPv6 address already set to {{ ipv6_address }} - no change needed"
-  when:
-    - ipv6_address is defined
-    - not (ipv6_needs_update | bool)
-
-- name: Configure BMC Network Interface
-  uri:
-    url: "{{ redfish_host }}{{ network_interface_uri }}"
-    method: PATCH
-    user: "{{ redfish_user }}"
-    password: "{{ redfish_password }}"
-    force_basic_auth: yes
-    validate_certs: no
-    headers:
-      Content-Type: "application/json"
-    body_format: json
-    body:
-      DHCPv6:
-        Enabled: "{{ bmc_network.dhcp6_enabled | bool }}"
-     
-      IPv6StaticAddresses: >-
-        {{
-          [{
-            "Address": bmc_network.ipv6_address,
-            "PrefixLength": bmc_network.ipv6_prefix | int,
-          }]
-          if bmc_network.ipv6static == "enabled"
-          else []
-        }}
-
-      IPv6DefaultGateway: "{{ bmc_network.ipv6_gateway }}"
-
-      StatelessAddressAutoConfig:
-        IPv6AutoConfigEnabled: "{{ bmc_network.stateless_autoconfig_enabled }}
-    status_code: [200, 204]
-  register: bmc_network_result
-  changed_when: bmc_network_result.status in [200, 202, 204]
+debug:
+  var: "{{ nic_info }}"

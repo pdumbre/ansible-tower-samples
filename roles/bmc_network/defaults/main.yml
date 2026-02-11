@@ -54,7 +54,7 @@ performance_asu_settings:
 
 # Network Configuration Parameters
 # These are used by configure_network.yml (Redfish API, not CLI)
-
+bmc_network:
   connection_type: "static"             # IPv6 address (-i6)
   ipv6_address: "ula"                   # IPv6 address (or "ula" for link-local)
   ipv6static: "enabled"                 # IPv6 static addressing

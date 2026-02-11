@@ -96,9 +96,8 @@
       Oem:
         Lenovo:
           "NetworkSettingSync": "{{ bmc_network.name_server_sync_enabled }}"
-          "InterfaceFailoverMode":{
-              "FailoverMode":"{{ bmc_network.failover_mode }}"
-          }
+          InterfaceFailoverMode:
+            FailoverMode: "{{ bmc_network.failover_mode }}"        
     status_code: [200, 204]
   register: ipv6_oem_config
   when:

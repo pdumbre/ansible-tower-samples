@@ -1,1 +1,20 @@
+# User management 
 
+- name: Get current IMM users via Redfish
+  community.general.redfish_info:
+    category: Accounts
+    command: ListUsers
+    baseuri: "{{ ansible_host }}"
+    username: "{{ imm_username }}"
+    password: "{{ imm_password }}"
+  register: current_users
+  failed_when: false
+  tags:
+    - imm_users
+
+- name: Debug current users
+  ansible.builtin.debug:
+    var: current_users
+    verbosity: 1
+  tags:
+    - imm_users

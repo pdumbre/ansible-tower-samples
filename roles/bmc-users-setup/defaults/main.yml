@@ -1,20 +1,16 @@
 
-#BMC Users to be added
-	"users" :  [
-		{
-			"n": "CEUSER",
-			"a": "super",
-			"r" : "Administrator",
-			"p": "generated",
-            "ai": "all",
-			"number": 2
-		},
-		{
-			"n": "ISFUSER",
-			"a": "super",
-			"r" : "Administrator",
-			"p": "generated",
-            "ai": "all",
-			"number": 3
-		}
-	],
+#BMC Users
+users:
+  - n: CEUSER
+    a: super
+    r: Administrator
+    p: generated
+    ai: all
+    number: 2
+  - n: ISFUSER
+    a: super
+    r: Administrator
+    p: generated
+    ai: all
+    number: 3
+

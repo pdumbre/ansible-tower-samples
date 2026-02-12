@@ -4,9 +4,9 @@
   community.general.redfish_info:
     category: Accounts
     command: ListUsers
-    baseuri: "{{ ansible_host }}"
-    username: "{{ imm_username }}"
-    password: "{{ imm_password }}"
+    baseuri: "{{ redfish_host }}"
+    username: "{{ redfish_username }}"
+    password: "{{ redfish_password }}"
   register: current_users
   failed_when: false
 

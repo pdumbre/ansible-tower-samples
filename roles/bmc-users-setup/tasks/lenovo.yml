@@ -19,8 +19,6 @@
       } ] }}"
   loop: "{{ current_users.redfish_facts.user.entries | default([]) }}"
 
-
-
 - name: Store BMC users as workflow artifact
   set_stats:
     data:
@@ -29,3 +27,22 @@
 - name: Debug current users
   ansible.builtin.debug:
     var: bmc_user_list
+
+- name: Create BMC user
+  community.general.redfish_command:
+    category: Accounts
+    command: CreateUser
+    baseuri: "{{ bmc_ip }}"
+    username: "{{ redfish_user }}"
+    password: "{{ redfish_password }}"
+    validate_certs: false
+
+    account_username: "ansibleuser"
+    account_password: "StrongPass123!"
+    roleid: "Administrator"
+    enabled: true
+  register: create_user_result
+
+- name: Debug current users
+  ansible.builtin.debug:
+    var: create_user_result

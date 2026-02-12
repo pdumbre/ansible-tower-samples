@@ -31,7 +31,7 @@
 - name: Create BMC user
   community.general.redfish_command:
     category: Accounts
-    command: CreateUser
+    command: AddUser
     baseuri: "{{ bmc_ip }}"
     username: "{{ redfish_user }}"
     password: "{{ redfish_password }}"
@@ -44,3 +44,29 @@
 - name: Debug current users
   ansible.builtin.debug:
     var: create_user_result
+
+- name: Get current BMC users via Redfish
+  community.general.redfish_info:
+    category: Accounts
+    command: ListUsers
+    baseuri: "{{ bmc_ip }}"
+    username: "{{ redfish_user}}"
+    password: "{{ redfish_password }}"
+  register: current_users
+  failed_when: false
+
+
+- name: Build structured BMC user list
+  set_fact:
+    bmc_user_list: "{{ bmc_user_list | default([]) + [ {
+        'UserName': item.UserName,
+        'RoleId': item.RoleId,
+        'Enabled': item.Enabled
+      } ] }}"
+  loop: "{{ current_users.redfish_facts.user.entries | default([]) }}"
+
+- name: Store BMC users as workflow artifact
+  set_stats:
+    data:
+      bmc_user_list: "{{ bmc_user_list }}"
+  

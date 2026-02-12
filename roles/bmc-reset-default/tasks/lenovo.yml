@@ -9,7 +9,7 @@
     validate_certs: no
     body_format: json
     body:
-      ResetToDefaultsType: "{{ xcc_reset_type }}"
+      ResetType: "{{ xcc_reset_type }}"
     status_code: [200, 204]
 
 - name: Pause before checking BMC availability

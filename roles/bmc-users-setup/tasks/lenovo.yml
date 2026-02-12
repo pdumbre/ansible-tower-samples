@@ -13,4 +13,4 @@
 - name: Debug current users
   ansible.builtin.debug:
     var: current_users
-    verbosity: 1
+   

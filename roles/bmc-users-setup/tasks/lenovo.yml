@@ -4,7 +4,7 @@
   community.general.redfish_info:
     category: Accounts
     command: ListUsers
-    baseuri: "{{ redfish_host }}"
+    baseuri: "{{ bmc_ip }}"
     username: "{{ redfish_user}}"
     password: "{{ redfish_password }}"
   register: current_users

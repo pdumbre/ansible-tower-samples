@@ -5,7 +5,7 @@
     category: Accounts
     command: ListUsers
     baseuri: "{{ redfish_host }}"
-    username: "{{ redfish_username }}"
+    username: "{{ redfish_user}}"
     password: "{{ redfish_password }}"
   register: current_users
   failed_when: false

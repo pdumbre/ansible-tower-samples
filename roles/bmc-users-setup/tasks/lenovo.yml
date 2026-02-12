@@ -23,9 +23,8 @@
 - name: Store BMC users as workflow artifact
   set_stats:
     data:
-      bmc_user_list: "{{ bmc_user_list }}"
-    per_host: false
-
+      bmc_user_list: "{{ current_users.redfish_facts.accounts }}"
+  
 - name: Debug current users
   ansible.builtin.debug:
     var: bmc_user_list

@@ -1,0 +1,5 @@
+
+# Lenovo BMC Reset Configuration Role - Main Tasks
+
+- name: Include Manufacturer Specific Tasks
+  include_tasks: "{{ vendor | lower }}.yml"

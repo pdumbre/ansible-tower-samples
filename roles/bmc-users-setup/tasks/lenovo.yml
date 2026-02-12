@@ -10,18 +10,11 @@
   register: current_users
   failed_when: false
    
-- name: Normalize BMC user list
-  set_fact:
-    bmc_user_list: >-
-      {{
-        current_users.redfish_facts.accounts
-      }}
-
 - name: Store BMC users as workflow artifact
   set_stats:
     data:
-      bmc_user_list: "{{ bmc_user_list }}"
+      bmc_user_list: "{{ current_users }}"
   
 - name: Debug current users
   ansible.builtin.debug:
-    var: bmc_user_list
+    var: current_users

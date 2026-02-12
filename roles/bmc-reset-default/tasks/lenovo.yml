@@ -1,0 +1,24 @@
+
+- name: Reset Lenovo XCC to factory defaults
+  uri:
+    url: "https://{{ bmc_ru7_ip }}/redfish/v1/Managers/1/Actions/Manager.ResetToDefaults"
+    method: POST
+    user: "{{ redfish_ru7_user }}"
+    password: "{{ redfish_ru7_password }}"
+    force_basic_auth: yes
+    validate_certs: no
+    body_format: json
+    body:
+      ResetToDefaultsType: "{{ xcc_reset_type }}"
+    status_code: [200, 204]
+
+- name: Pause before checking BMC availability
+  pause:
+    seconds: "{{ xcc_wait_delay }}"
+
+- name: Wait for BMC HTTPS to come back
+  wait_for:
+    host: "{{ bmc_ip }}"
+    port: 443
+    timeout: "{{ xcc_wait_timeout }}"
+  delegate_to: localhost

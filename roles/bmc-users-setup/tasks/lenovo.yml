@@ -1,6 +1,6 @@
 # User management 
 
-- name: Get current IMM users via Redfish
+- name: Get current BMC users via Redfish
   community.general.redfish_info:
     category: Accounts
     command: ListUsers
@@ -9,8 +9,23 @@
     password: "{{ redfish_password }}"
   register: current_users
   failed_when: false
+   
+- name: Normalize BMC user list
+  set_fact:
+    bmc_user_list: >-
+      {{
+        current_users.redfish_facts.accounts
+        | default([])
+        | map('combine', {})
+        | list
+      }}
+
+- name: Store as workflow artifact
+      set_stats:
+        data:
+          bmc_user_list: "{{ bmc_user_list }}"
+        per_host: false
 
 - name: Debug current users
   ansible.builtin.debug:
-    var: current_users
-   
+    var: bmc_user_list

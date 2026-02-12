@@ -18,7 +18,21 @@
 
 - name: Wait for BMC HTTPS to come back
   wait_for:
-    host: "{{ bmc_ip }}"
+    host: "{{ bmc_ru7_ip }}"
     port: 443
     timeout: "{{ xcc_wait_timeout }}"
   delegate_to: localhost
+  
+ - name: Wait until Redfish responds
+   uri:
+     url: "https://{{ bmc_ru7_ip }}/redfish/v1"
+     method: GET
+     user: "{{ redfish_ru7_user }}"
+     password: "{{ redfish_ru7_password }}"
+     validate_certs: no
+     force_basic_auth: yes
+     status_code: 200
+     register: redfish_ready
+     retries: 20
+     delay: 15
+     until: redfish_ready.status == 200

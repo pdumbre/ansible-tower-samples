@@ -3,7 +3,6 @@
 # This role configures Lenovo IMM users
 # IMPORTANT: This role should NOT run on Dell racks (9155-DLL)
 
----
 # roles/bmc-user-setup/tasks/main.yml
 - name: Include Manufacturer Specific Tasks
   include_tasks: "{{ vendor | lower }}.yml"

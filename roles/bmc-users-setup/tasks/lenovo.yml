@@ -15,15 +15,12 @@
     bmc_user_list: >-
       {{
         current_users.redfish_facts.accounts
-        | default([])
-        | map('combine', {})
-        | list
       }}
 
 - name: Store BMC users as workflow artifact
   set_stats:
     data:
-      bmc_user_list: "{{ current_users.redfish_facts.accounts }}"
+      bmc_user_list: "{{ bmc_user_list }}"
   
 - name: Debug current users
   ansible.builtin.debug:

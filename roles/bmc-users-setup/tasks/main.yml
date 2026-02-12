@@ -1,0 +1,35 @@
+---
+# Lenovo IMM User Configuration Role - Main Tasks
+# This role configures Lenovo IMM users
+# IMPORTANT: This role should NOT run on Dell racks (9155-DLL)
+
+
+
+- name: Load IMM configuration
+  include_tasks: load_imm_config.yml
+  when:
+    - is_lenovo_rack | bool
+    - hardware_vendor is defined
+    - hardware_vendor == 'ibm' or hardware_vendor == 'lenovo'
+    - management_interface is defined
+    - management_interface == 'imm'
+
+- name: Include Lenovo IMM configuration tasks
+  include_tasks: "{{ item }}"
+  loop:
+    - get_vpd_info.yml
+    - configure_network.yml
+    - configure_account_security.yml
+    - configure_ports.yml
+    - configure_power_policy.yml
+    - configure_ipmi.yml
+    - enable_usb_ethernet.yml
+    - configure_operating_mode.yml
+    - configure_performance.yml
+    - configure_mellanox_adapter.yml
+  when:
+    - is_lenovo_rack | bool
+    - hardware_vendor is defined
+    - hardware_vendor == 'ibm' or hardware_vendor == 'lenovo'
+    - management_interface is defined
+    - management_interface == 'imm'

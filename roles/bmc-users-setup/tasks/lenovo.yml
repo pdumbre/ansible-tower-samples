@@ -36,7 +36,6 @@
     username: "{{ redfish_user }}"
     password: "{{ redfish_password }}"
     validate_certs: false
-
     account_username: "ansibleuser"
     account_password: "StrongPass123!"
     account_roleid: "Administrator"

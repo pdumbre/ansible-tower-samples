@@ -1,2 +1,7 @@
 xcc_wait_delay: 30
 xcc_wait_timeout: 600
+bmc_ru7_ip: 169.253.1.7
+bmc_ru7_user: USERID
+bmc_ru7_password: NTU5dml2WTBTNg==
+bmc_ru7_lla: fe80::765d:22ff:fee4:18b6
+bmc_ru7_lla_password: PASSW0RD

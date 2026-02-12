@@ -3,8 +3,8 @@
   uri:
     url: "https://{{ bmc_ru7_ip }}/redfish/v1/Managers/1/Actions/Manager.ResetToDefaults"
     method: POST
-    user: "{{ redfish_ru7_user }}"
-    password: "{{ redfish_ru7_password }}"
+    user: "{{ bmc_ru7_user }}"
+    password: "{{ bmc_ru7_password }}"
     force_basic_auth: yes
     validate_certs: no
     body_format: json
@@ -27,8 +27,8 @@
   uri:
     url: "https://{{ bmc_ru7_ip }}/redfish/v1"
     method: GET
-    user: "{{ redfish_ru7_user }}"
-    password: "{{ redfish_ru7_password }}"
+    user: "{{ bmc_ru7_user }}"
+    password: "{{ bmc_ru7_password }}"
     validate_certs: no
     force_basic_auth: yes
     status_code: 200

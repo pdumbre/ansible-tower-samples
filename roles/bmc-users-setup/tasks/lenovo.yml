@@ -39,8 +39,7 @@
 
     account_username: "ansibleuser"
     account_password: "StrongPass123!"
-    roleid: "Administrator"
-    enabled: true
+    account_roleid: "Administrator"
   register: create_user_result
 
 - name: Debug current users

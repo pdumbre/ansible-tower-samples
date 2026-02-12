@@ -20,10 +20,11 @@
         | list
       }}
 
-- name: Store as workflow artifact
-      set_stats:
-        data:
-          bmc_user_list: "{{ bmc_user_list }}"
+- name: Store BMC users as workflow artifact
+  set_stats:
+    data:
+      bmc_user_list: "{{ bmc_user_list }}"
+    per_host: false
 
 - name: Debug current users
   ansible.builtin.debug:

@@ -89,26 +89,10 @@
     current_ipv6_addr: "{{ network_interface_detail.json.IPv6Addresses[0].Address | default('') }}"
     current_dhcp: "{{ network_interface_detail.json.DHCPv4.DHCPEnabled | default(false) }}"
     
-- name: Display current network configuration
-  debug:
-    msg: 
-      - "========================================="
-      - "Current Network Configuration"
-      - "========================================="
-      - "MAC Address: {{ current_mac }}"
-      - "IPv6 Address: {{ current_ipv6_addr if current_ipv6_addr else 'Not configured' }}"
-      - "DHCP Enabled: {{ current_dhcp }}"
-      - "========================================="
-
 - name: Check if IPv6 needs update
   set_fact:
     ipv6_needs_update: "{{ ipv6_address is defined and current_ipv6_addr != ipv6_address }}"
 
-- debug:
-    msg:
-      - "ipv6_address={{ ipv6_address }}"
-      - "type={{ ipv6_address | type_debug }}"
-      
 - name: Configure IPv6 on IMM using Redfish API
   uri:
     url: "{{ redfish_host }}{{ network_interface_uri }}"
@@ -258,18 +242,6 @@
     - not (is_m6_server | bool)
     - not (is_sn550 | bool)
 
-- name: Display account security configuration summary
-  debug:
-    msg:
-      - "========================================="
-      - "Account Security Configuration Summary"
-      - "========================================="
-      - "System MTM: {{ system_mtm }}"
-      - "Is M6 Server: {{ is_m6_server }}"
-      - "Is SN550: {{ is_sn550 }}"
-      - "Module Method: {{ 'Success' if (m6_account_config_api is succeeded or sn550_account_config is succeeded) else 'Used API Fallback' }}"
-      - "========================================="
-
 - name: Configure Ports
   uri:
     url: "https://{{ bmc_ip }}/redfish/v1/Managers/1/NetworkProtocol"
@@ -353,21 +325,7 @@
   failed_when:
     - power_policy_result.rc != 0
     - "'ok' not in power_policy_result.stdout | lower"
-
-- name: Display power restore policy configuration result
-  debug:
-    msg:
-      - "========================================="
-      - "Power Restore Policy Configuration"
-      - "========================================="
-      - "Previous Policy: {{ current_policy | default('unknown') }}"
-      - "Desired Policy: {{ desired_policy }}"
-      - "Update Needed: {{ policy_needs_update }}"
-      - "Command: power -rp {{ desired_policy }}"
-      - "Output: {{ power_policy_result.stdout | default('No change - already configured') | trim }}"
-      - "Status: {{ 'Configured' if (policy_needs_update and power_policy_result is changed) else 'Already correct' }}"
-      - "========================================="
-
+    
 - name: Verify power restore policy after configuration
   ansible.builtin.raw: "power -rp"
   register: verify_power_policy
@@ -391,7 +349,6 @@
   debug:
     msg:
       - "Verification: Power restore policy is now set to '{{ verified_policy | default(desired_policy) }}'"
-      - "CLI Output: {{ verify_power_policy.stdout | default('Not verified') | trim }}"
   when: policy_needs_update | bool
 
 # Enable IPMI over LAN on IMM using Ansible Redfish module
@@ -505,20 +462,6 @@
   failed_when:
     - operating_mode_result.rc != 0
     - "'successfully' not in operating_mode_result.stdout | lower"
-
-- name: Display operating mode configuration result
-  debug:
-    msg:
-      - "========================================="
-      - "Operating Mode Configuration"
-      - "========================================="
-      - "Mode Set: {{ operating_mode }}"
-      - "Command: asu set OperatingModes.ChooseOperatingMode \"{{ operating_mode }}\""
-      - "Output: {{ operating_mode_result.stdout | default('No output') | trim }}"
-      - "Status: {{ 'Configured' if operating_mode_result is changed else 'Check output' }}"
-      - "========================================="
-      - "NOTE: Changes may require a system reboot to take effect"
-      - "========================================="
 
 - name: Load performance settings configuration
   ansible.builtin.set_fact:

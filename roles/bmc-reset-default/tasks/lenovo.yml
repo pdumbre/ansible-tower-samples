@@ -8,6 +8,11 @@
     password: "{{ redfish_password }}"
     validate_certs: false
 
+
+- name: Give BMC a few seconds to initialize network
+  pause:
+    seconds: 15
+
 - name: Wait for BMC HTTPS to come back
   wait_for:
     host: "{{ bmc_ip }}"
@@ -35,20 +40,4 @@
     - redfish_check.json is defined
     - redfish_check.json.RedfishVersion is defined
   failed_when: false
-
-- name: Wait until Redfish responds
-  uri:
-    url: "https://{{ bmc_ip }}/redfish/v1"
-    method: GET
-    user: "{{ redfish_user }}"
-    password: "{{ redfish_password }}"
-    validate_certs: no
-    force_basic_auth: yes
-  register: redfish_ready
-  retries: "{{ xcc_wait_retries }}"
-  delay: "{{ xcc_wait_delay }}"
-  until: redfish_ready.status == 200
-
-- pause:
-    seconds: 30
 

@@ -7,7 +7,6 @@
     username: "{{ redfish_user }}"
     password: "{{ redfish_password }}"
     validate_certs: false
-    reset_type: GracefulRestart
 
 - name: Wait for BMC HTTPS to come back
   wait_for:

@@ -15,6 +15,25 @@
     timeout: "{{ xcc_wait_timeout }}"
   delegate_to: localhost
 
+- name: Wait for Redfish service to become ready
+  uri:
+    url: "https://{{ bmc_ip }}/redfish/v1"
+    method: GET
+    user: "{{ redfish_user }}"
+    password: "{{ redfish_password }}"
+    validate_certs: no
+    force_basic_auth: yes
+    return_content: yes
+  register: redfish_check
+  retries: 60
+  delay: 10
+  until:
+    - redfish_check.status == 200
+    - redfish_check.json is defined
+    - redfish_check.json.RedfishVersion is defined
+  failed_when: false
+  delegate_to: localhost
+
 - name: Wait until Redfish responds
   uri:
     url: "https://{{ bmc_ip }}/redfish/v1"

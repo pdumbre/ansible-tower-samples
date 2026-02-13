@@ -24,8 +24,8 @@
     validate_certs: no
     force_basic_auth: yes
     status_code: 200
-    register: redfish_ready
-    retries: 20
-    delay: 15
-    until: redfish_ready.status == 200
+  register: redfish_ready
+  retries: 20
+  delay: 15
+  until: redfish_ready.status == 200
   

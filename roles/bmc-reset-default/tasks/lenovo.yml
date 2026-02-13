@@ -17,15 +17,15 @@
 
 - name: Wait until Redfish responds
   uri:
-    url: "https://{{ bmc_ru7_ip }}/redfish/v1"
+    url: "https://{{ bmc_ip }}/redfish/v1"
     method: GET
-    user: "{{ bmc_ru7_user }}"
-    password: "{{ bmc_ru7_password }}"
+    user: "{{ redfish_user }}"
+    password: "{{ redfish_password }}"
     validate_certs: no
     force_basic_auth: yes
-    status_code: 200
   register: redfish_ready
-  retries: 20
-  delay: 15
+  retries: "{{ xcc_wait_retries }}"
+  delay: "{{ xcc_wait_delay }}"
   until: redfish_ready.status == 200
+
   

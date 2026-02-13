@@ -69,4 +69,46 @@
   set_stats:
     data:
       bmc_user_list: "{{ bmc_user_list }}"
-  
+
+- name: List existing BMC users
+  community.general.redfish_info:
+    category: Accounts
+    command: ListUsers
+    baseuri: "{{ bmc_ip }}"
+    username: "{{ redfish_user }}"
+    password: "{{ redfish_password }}"
+    validate_certs: false
+  register: existing_users
+
+- name: Ensure BMC users from inventory exist
+  community.general.redfish_command:
+    category: Accounts
+    command: AddUser
+    baseuri: "{{ bmc_ip }}"
+    username: "{{ redfish_user }}"
+    password: "{{ redfish_password }}"
+    validate_certs: false
+    account_username: "{{ item.username }}"
+    account_password: "{{ item.password }}"
+    account_roleid: "{{ item.roleid }}"
+  loop: "{{ bmc_users }}"
+  loop_control:
+    label: "{{ item.username }}"
+  when: >
+    existing_users.redfish_facts.accounts
+    | selectattr('UserName', 'equalto', item.username)
+    | list
+    | length == 0
+
+- name: Enable users (if BMC creates them disabled)
+  community.general.redfish_command:
+    category: Accounts
+    command: EnableUser
+    baseuri: "{{ bmc_ip }}"
+    username: "{{ redfish_user }}"
+    password: "{{ redfish_password }}"
+    validate_certs: false
+    account_username: "{{ item.username }}"
+  loop: "{{ bmc_users }}"
+  loop_control:
+    label: "{{ item.username }}"

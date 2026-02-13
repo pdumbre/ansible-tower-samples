@@ -1,55 +1,6 @@
 ---
 # roles/system_vpd/tasks/main.yml
 # Retrieves system mtm 
-
-- name: Get Redfish system info
-  community.general.redfish_info:
-    category: Systems
-    command: GetSystemInventory
-    baseuri: "{{ bmc_ip }}"
-    username: "{{ redfish_user }}"
-    password: "{{ redfish_password }}"
-    validate_certs: false
-  register: rf_info
-    
-- name: Extract system identifiers
-  ansible.builtin.set_fact:
-    system_mtm: >-
-      {{
-        (
-          rf_info.redfish_facts.system.entries
-          | json_query('[].SKU')
-          | select('defined')
-          | list
-          | first
-          | default(
-              rf_info.redfish_facts.system.entries
-              | json_query('[].SubModel')
-              | select('defined')
-              | list
-              | first
-            )
-        )[0:4] | upper
-      }}
-      
-- name: Normalize system entries
-  ansible.builtin.set_fact:
-    systems: >-
-      {{
-        rf_info.redfish_facts.system.entries
-        | default([])
-        | map('last')
-        | list
-      }}
-  when:
-    - rf_info is defined
-    - rf_info.redfish_facts is defined
-    - rf_info.redfish_facts.system is defined
-
-
-- name: Extract SerialNumber
-  ansible.builtin.set_fact:
-    system_serial: "{{ systems | map(attribute='SerialNumber') | first | default('UNKNOWN') }}"
   
 - name: Get current network interface configuration using Redfish API
   uri:
@@ -122,6 +73,54 @@
     - ipv6_address is defined
     - not (ipv6_needs_update | bool)
 
+- name: Get Redfish system info
+  community.general.redfish_info:
+    category: Systems
+    command: GetSystemInventory
+    baseuri: "{{ bmc_ip }}"
+    username: "{{ redfish_user }}"
+    password: "{{ redfish_password }}"
+    validate_certs: false
+  register: rf_info
+    
+- name: Extract system identifiers
+  ansible.builtin.set_fact:
+    system_mtm: >-
+      {{
+        (
+          rf_info.redfish_facts.system.entries
+          | json_query('[].SKU')
+          | select('defined')
+          | list
+          | first
+          | default(
+              rf_info.redfish_facts.system.entries
+              | json_query('[].SubModel')
+              | select('defined')
+              | list
+              | first
+            )
+        )[0:4] | upper
+      }}
+      
+- name: Normalize system entries
+  ansible.builtin.set_fact:
+    systems: >-
+      {{
+        rf_info.redfish_facts.system.entries
+        | default([])
+        | map('last')
+        | list
+      }}
+  when:
+    - rf_info is defined
+    - rf_info.redfish_facts is defined
+    - rf_info.redfish_facts.system is defined
+
+- name: Extract SerialNumber
+  ansible.builtin.set_fact:
+    system_serial: "{{ systems | map(attribute='SerialNumber') | first | default('UNKNOWN') }}"
+    
 - name: Determine if system is M6 compatible
   set_fact:
     is_m6_7x02: "{{ system_mtm.startswith('7X02') }}"

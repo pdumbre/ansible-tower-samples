@@ -46,4 +46,6 @@
   delay: "{{ xcc_wait_delay }}"
   until: redfish_ready.status == 200
 
-  
+- pause:
+    seconds: 30
+

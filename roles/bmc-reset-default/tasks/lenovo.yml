@@ -2,7 +2,7 @@
 - name: Reset BMC
   community.general.redfish_command:
     category: Manager
-    command: ResetManager
+    command: GracefulRestart
     baseuri: "{{ bmc_ip }}"
     username: "{{ redfish_user }}"
     password: "{{ redfish_password }}"

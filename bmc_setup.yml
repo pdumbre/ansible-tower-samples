@@ -3,8 +3,5 @@
   hosts: all
   connection: local
   gather_facts: false
-  vars:
-    step_number: 1
-
   roles:
-    - bmc-network
+    - role: bmc-network

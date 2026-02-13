@@ -13,8 +13,11 @@
     host: "{{ bmc_ip }}"
     port: 443
     timeout: "{{ xcc_wait_timeout }}"
+    delay: 20
+    state: started
+  delegate_to: localhost
 
-
+  
 - name: Wait for Redfish service to become ready
   uri:
     url: "https://{{ bmc_ip }}/redfish/v1"

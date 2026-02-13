@@ -1,7 +1,8 @@
 
-- name: BMC Setup (Network/Management)
+- name: BMC Setup
   hosts: all
   connection: local
   gather_facts: false
+    
   roles:
-    - role: bmc-network
+    - role: bmc_network

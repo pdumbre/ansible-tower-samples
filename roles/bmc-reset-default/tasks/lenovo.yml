@@ -13,7 +13,7 @@
     host: "{{ bmc_ip }}"
     port: 443
     timeout: "{{ xcc_wait_timeout }}"
-  delegate_to: localhost
+
 
 - name: Wait for Redfish service to become ready
   uri:
@@ -32,7 +32,6 @@
     - redfish_check.json is defined
     - redfish_check.json.RedfishVersion is defined
   failed_when: false
-  delegate_to: localhost
 
 - name: Wait until Redfish responds
   uri:

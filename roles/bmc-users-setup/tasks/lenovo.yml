@@ -95,7 +95,7 @@
   loop_control:
     label: "{{ item.username }}"
   when: >
-    existing_users.redfish_facts.accounts
+    existing_users.redfish_facts.user.entries
     | selectattr('UserName', 'equalto', item.username)
     | list
     | length == 0

@@ -466,10 +466,6 @@
   ansible.builtin.set_fact:
     perf_config: "{{ performance_asu_settings | default({}) }}"
 
-- name: Debug performance settings configuration
-  ansible.builtin.debug:
-    msg: "Configuring Performance Settings: {{ perf_config }}"
-
 - name: Filter applicable performance settings based on conditions
   ansible.builtin.set_fact:
     applicable_settings: "{{ perf_config | select_applicable_settings(selection_properties) }}"

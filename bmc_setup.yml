@@ -5,5 +5,4 @@
   gather_facts: false
     
   roles:
-    - role: bmc_network
-    - role: bmc-reset-default
+    - role: bmc_reset

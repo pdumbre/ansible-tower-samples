@@ -1,1 +1,24 @@
 
+- name: Identify LLA Interface
+  block:
+    - name: Get interface facts
+      ansible.builtin.setup:
+        gather_subset:
+          - network
+
+    - name: Find interface with bmc_lla_ip
+      set_fact:
+        lla_interface: "{{ item }}"
+      loop: "{{ ansible_interfaces }}"
+      when:
+          (ansible_facts[item]['ipv6'] is defined and bmc_lla_ip in ansible_facts[item]['ipv6'] | map(attribute='address') | list)
+      register: lla_interface_result
+
+    - name: Check if interface was found
+      fail:
+        msg: "Could not find interface with IP {{ host_lla_ip }}"
+      when: lla_interface is not defined
+
+    - name: Display identified LLA interface
+      debug:
+        msg: "Found LLA interface: {{ lla_interface }}"

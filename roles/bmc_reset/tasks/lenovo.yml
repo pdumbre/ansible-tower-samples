@@ -26,7 +26,7 @@
 
 - name: Show execution host
   command: hostname
-  delegate_to: baremetal
+  delegate_to: mgen
   register: host_out
 
 - debug:
@@ -34,11 +34,11 @@
 
 - name: Ping BMC via link-local
   command: ping6 -c 3 fe80::765d:22ff:fee4:18b6%eno2
-  delegate_to: baremetal
+  delegate_to: mgen
 
 - name: Ping BMC via link-local
   command: hostname
-  delegate_to: baremetal
+  delegate_to: mgen
  
 - name: Patch account via curl
   command: >

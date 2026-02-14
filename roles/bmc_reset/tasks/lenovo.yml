@@ -14,20 +14,7 @@
 
 - name: Debug interface fact
   debug:
-    msg: "{{ bmc_lla_interface_result }}"
-
-- name: Discover interface for BMC LLA
-  shell: ip -6 neigh show | grep -i {{ bmc_lla_ip }} | awk '{print $3}' | head -n1
-  register: bmc_lla_interface_result
-  changed_when: false
-
-- name: Set interface fact
-  set_fact:
-    bmc_lla_interface: "{{ bmc_lla_interface_result.stdout }}"
-
-- name: Debug interface fact
-  debug:
-    msg: "{{ bmc_lla_interface_result }}"
+    msg: "{{ bmc_lla_interface }}"
 
 - name: Generate new secure password
   set_fact:

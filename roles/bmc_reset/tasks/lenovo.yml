@@ -28,14 +28,19 @@
   uri:
     url: "https://[{{ bmc_lla_ip }}%{{ bmc_lla_interface }}]/redfish/v1/AccountService/Accounts/1"
     method: PATCH
-    user: "{{ redfish_user }}"
-    password: "{{ redfish_ru7_password }}"
-    validate_certs: no
-    force_basic_auth: yes
+    user: "{{ ru7_user }}"
+    password: "{{ ru7_password }}"
+    force_basic_auth: true
+    validate_certs: false
+    headers:
+      Content-Type: "application/json"
     body_format: json
     body:
-      Password: "{{ new_redfish_password }}"
+      Password: "{{ new_redfish_password  }}"
     status_code: [200, 204]
+  delegate_to: baremetal
+  register: patch_result
+
 
 - name: Update fact for later tasks
   set_fact:

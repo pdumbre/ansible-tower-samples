@@ -22,5 +22,6 @@
         | first
       }}
 
-- debug: Parse Ethernet interface corresponding to given LLA
-  var: "{{ bmc_eth_id }}"
+- name: Debug network interfaces
+  debug:
+    msg: "Available interfaces: {{ bmc_eth_id }}"

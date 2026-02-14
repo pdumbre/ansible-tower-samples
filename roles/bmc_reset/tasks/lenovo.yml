@@ -24,6 +24,14 @@
   debug:
     msg: "{{ new_redfish_password }}"
 
+- name: Ping BMC via link-local
+  command: ping6 -c 3 fe80::765d:22ff:fee4:18b6%eno2
+  delegate_to: baremetal
+
+- name: Ping BMC via link-local
+  command: hostname
+  delegate_to: baremetal
+ 
 - name: Patch account via curl
   command: >
     curl -k -u {{ ru7_user }}:{{ ru7_password }}

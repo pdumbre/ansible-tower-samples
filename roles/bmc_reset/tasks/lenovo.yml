@@ -1,27 +1,30 @@
 
-- name: Retrieve BMC network interfaces via Redfish
+- name: Discover interface for BMC LLA
+  shell: ip -6 neigh show | grep -i {{ bmc_mac }} | awk '{print $3}' | head -n1
+  register: bmc_lla_interface_result
+  changed_when: false
+
+- name: Set interface fact
+  set_fact:
+    bmc_lla_interface: "{{ bmc_lla_interface_result.stdout }}"
+
+- name: Generate new secure password
+  set_fact:
+    new_redfish_password: "{{ lookup('password', '/dev/null length=20 chars=ascii_letters,digits') }}"
+
+- name: Patch Redfish admin account with new password
   uri:
-    url: "https://{{ bmc_ip }}/redfish/v1/Managers/1/EthernetInterfaces"
-    method: GET
+    url: "https://[{{ bmc_lla_ip }}%{{ bmc_lla_interface }}]/redfish/v1/AccountService/Accounts/1"
+    method: PATCH
     user: "{{ redfish_user }}"
     password: "{{ redfish_password }}"
     validate_certs: no
     force_basic_auth: yes
-    return_content: yes
-    status_code: 200
-  register: bmc_eth_interfaces
+    body_format: json
+    body:
+      Password: "{{ new_redfish_password }}"
+    status_code: [200, 204]
 
-- name: Parse Ethernet interface corresponding to given LLA
+- name: Update fact for later tasks
   set_fact:
-    bmc_eth_id: >-
-      {{
-        bmc_eth_interfaces.json.Members
-        | map(attribute='@odata.id')
-        | select('search', bmc_lla_ip)
-        | list
-        | first
-      }}
-
-- name: Debug network interfaces
-  debug:
-    msg: "Available interfaces: {{ bmc_eth_id }}"
+    redfish_password: "{{ new_redfish_password }}"

@@ -1,24 +1,26 @@
 
-- name: Identify LLA Interface
-  block:
-    - name: Get interface facts
-      ansible.builtin.setup:
-        gather_subset:
-          - network
+- name: Retrieve BMC network interfaces via Redfish
+  uri:
+    url: "https://[{{ bmc_ip }}]/redfish/v1/Managers/1/EthernetInterfaces"
+    method: GET
+    user: "{{ redfish_user }}"
+    password: "{{ redfish_password }}"
+    validate_certs: no
+    force_basic_auth: yes
+    return_content: yes
+    status_code: 200
+  register: bmc_eth_interfaces
 
-    - name: Find interface with bmc_lla_ip
-      set_fact:
-        lla_interface: "{{ item }}"
-      loop: "{{ ansible_facts['interfaces'] | default([], true) }}"
-      when:
-          (ansible_facts[item]['ipv6'] is defined and bmc_lla_ip in ansible_facts[item]['ipv6'] | map(attribute='address') | list)
-      register: lla_interface_result
+- name: Parse Ethernet interface corresponding to given LLA
+  set_fact:
+    bmc_eth_id: >-
+      {{
+        bmc_eth_interfaces.json.Members
+        | map(attribute='@odata.id')
+        | select('search', bmc_lla_ip)
+        | list
+        | first
+      }}
 
-    - name: Check if interface was found
-      fail:
-        msg: "Could not find interface with IP {{ bmc_lla_ip }}"
-      when: lla_interface is not defined
-
-    - name: Display identified LLA interface
-      debug:
-        msg: "Found LLA interface: {{ lla_interface }}"
+- debug: Parse Ethernet interface corresponding to given LLA
+  var: {{ bmc_eth_id }}

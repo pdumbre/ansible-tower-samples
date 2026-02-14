@@ -10,7 +10,7 @@
 
 - name: Debug interface fact
   debug:
-    message: "{{ bmc_lla_interface_result.stdout }}"
+    msg: "{{ bmc_lla_interface_result.stdout }}"
 
 - name: Generate new secure password
   set_fact:
@@ -18,7 +18,7 @@
 
 - name: Debug pass
   debug:
-    message: "{{ new_redfish_password }}"
+    msg: "{{ new_redfish_password }}"
 
 - name: Patch Redfish admin account with new password
   uri:

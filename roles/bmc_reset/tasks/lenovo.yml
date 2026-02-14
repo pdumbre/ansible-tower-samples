@@ -10,7 +10,7 @@
 
 - name: Set interface fact
   set_fact:
-    bmc_lla_interface: "{{ bmc_lla_interface_result.stdout }}"
+    bmc_lla_interface: "{{ bmc_lla_interface_result.stdout | trim }}"
 
 - name: Debug interface fact
   debug:

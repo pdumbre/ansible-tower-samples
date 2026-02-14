@@ -1,7 +1,7 @@
 
 - name: Retrieve BMC network interfaces via Redfish
   uri:
-    url: "https://[{{ bmc_ip }}]/redfish/v1/Managers/1/EthernetInterfaces"
+    url: "https://{{ bmc_ip }}/redfish/v1/Managers/1/EthernetInterfaces"
     method: GET
     user: "{{ redfish_user }}"
     password: "{{ redfish_password }}"

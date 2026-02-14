@@ -3,7 +3,8 @@
   ansible.builtin.raw: ip -6 neigh show | grep -i {{ bmc_lla_ip }} | awk '{print $3}' | head -n1
   vars:
     ansible_connection: ssh
-    ansible_user: "{{ host }}"
+    ansible_host: "{{ host }}"
+    ansible_user: "{{ user }}"
     ansible_password: "{{ password }}"
   register: bmc_lla_interface_result
 

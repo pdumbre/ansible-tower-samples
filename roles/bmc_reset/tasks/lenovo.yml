@@ -1,10 +1,12 @@
 
-- name: Check where task is running
-  command: hostname
-  register: host_check
-
-- debug:
-    var: host_check.stdout
+- name: Discover host interface
+  hosts: mgmt_host
+  gather_facts: false
+  tasks:
+    - name: Get neighbor table
+      command: /usr/sbin/ip -6 neigh show
+      register: neigh_output
+      become: true
 
 - name: Discover interface for BMC LLA
   shell: ip -6 neigh show | grep -i {{ bmc_lla_ip }} | awk '{print $3}' | head -n1

@@ -36,7 +36,7 @@
   register: curl_result
 
 - debug:
-    var: host_out.stdout
+    var: curl_result
 
 - name: Get current network interface configuration using Redfish API
   uri:

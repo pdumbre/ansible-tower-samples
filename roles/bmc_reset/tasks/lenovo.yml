@@ -24,6 +24,14 @@
   debug:
     msg: "{{ new_redfish_password }}"
 
+- name: Show execution host
+  command: hostname
+  delegate_to: baremetal
+  register: host_out
+
+- debug:
+    var: host_out.stdout
+
 - name: Ping BMC via link-local
   command: ping6 -c 3 fe80::765d:22ff:fee4:18b6%eno2
   delegate_to: baremetal

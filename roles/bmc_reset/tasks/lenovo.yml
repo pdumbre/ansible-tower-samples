@@ -16,10 +16,6 @@
   debug:
     msg: "{{ bmc_lla_interface }}"
 
-- name: Generate new secure password
-  set_fact:
-    new_redfish_password: "{{ lookup('password', '/dev/null length=20 chars=ascii_letters,digits') }}"
-
 - name: Debug pass
   debug:
     msg: "{{ new_redfish_password }}"
@@ -49,24 +45,15 @@
     https://[{{ bmc_lla_ip }}%{{ bmc_lla_interface }}]/redfish/v1/AccountService/Accounts/1
   delegate_to: mgen
 
-  
-- name: Patch Redfish admin account with new password
-  uri:
-    url: "https://[{{ bmc_lla_ip }}%{{ bmc_lla_interface }}]/redfish/v1/AccountService/Accounts/1"
-    method: PATCH
-    user: "{{ ru7_user }}"
-    password: "{{ ru7_password }}"
-    force_basic_auth: true
-    validate_certs: false
-    headers:
-      Content-Type: "application/json"
-    body_format: json
-    body:
-      Password: "{{ new_redfish_password  }}"
-    status_code: [200, 204]
+- name: Patch account via curl
+  command: >
+    curl -k -u {{ ru7_user }}:{{ new_redfish_password }}
+    -X PATCH
+    -H "Content-Type: application/json"
+    -d '{"Password":"{{ ru7_password  }}"}'
+    https://[{{ bmc_lla_ip }}%{{ bmc_lla_interface }}]/redfish/v1/AccountService/Accounts/1
   delegate_to: mgen
-  register: patch_result
-  
+
 - name: Update fact for later tasks
   set_fact:
     redfish_password: "{{ new_redfish_password }}"

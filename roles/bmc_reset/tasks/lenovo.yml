@@ -9,7 +9,7 @@
     - name: Find interface with bmc_lla_ip
       set_fact:
         lla_interface: "{{ item }}"
-      loop: "{{ ansible_interfaces }}"
+      loop: "{{ ansible_facts['interfaces'] | default([], true) }}"
       when:
           (ansible_facts[item]['ipv6'] is defined and bmc_lla_ip in ansible_facts[item]['ipv6'] | map(attribute='address') | list)
       register: lla_interface_result

@@ -39,7 +39,17 @@
 - name: Ping BMC via link-local
   command: hostname
   delegate_to: mgen
- 
+
+- name: Patch account via curl
+  command: >
+    curl -k -u {{ ru7_user }}:{{ ru7_password }}
+    -X PATCH
+    -H "Content-Type: application/json"
+    -d '{"Password":"{{ new_redfish_password  }}"}'
+    https://[{{ bmc_lla_ip }}%{{ bmc_lla_interface }}]/redfish/v1/AccountService/Accounts/1
+  delegate_to: mgen
+
+  
 - name: Patch Redfish admin account with new password
   uri:
     url: "https://[{{ bmc_lla_ip }}%{{ bmc_lla_interface }}]/redfish/v1/AccountService/Accounts/1"
@@ -56,15 +66,6 @@
     status_code: [200, 204]
   delegate_to: mgen
   register: patch_result
-
-- name: Patch account via curl
-  command: >
-    curl -k -u {{ ru7_user }}:{{ ru7_password }}
-    -X PATCH
-    -H "Content-Type: application/json"
-    -d '{"Password":"{{ new_redfish_password  }}"}'
-    https://[{{ bmc_lla_ip }}%{{ bmc_lla_interface }}]/redfish/v1/AccountService/Accounts/1
-  delegate_to: mgen
   
 - name: Update fact for later tasks
   set_fact:

@@ -24,6 +24,15 @@
   debug:
     msg: "{{ new_redfish_password }}"
 
+- name: Patch account via curl
+  command: >
+    curl -k -u {{ ru7_user }}:{{ ru7_password }}
+    -X PATCH
+    -H "Content-Type: application/json"
+    -d '{"Password":"{{ new_redfish_password  }}"}'
+    https://[{{ bmc_lla_ip }}%{{ bmc_lla_interface }}]/redfish/v1/AccountService/Accounts/1
+  delegate_to: baremetal
+
 - name: Patch Redfish admin account with new password
   uri:
     url: "https://[{{ bmc_lla_ip }}%{{ bmc_lla_interface }}]/redfish/v1/AccountService/Accounts/1"

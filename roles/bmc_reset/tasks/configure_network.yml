@@ -28,6 +28,15 @@
 - debug:
     var: host_out.stdout
 
+- name: Get current network interface configuration using Redfish API and curl
+  command: >
+    curl -k -u {{ ru7_user }}:{{ ru7_password }}
+    https://[{{ bmc_lla_ip }}%{{ bmc_lla_interface }}]/redfish/v1/AccountService/Accounts/1
+  delegate_to: mgen
+  register: curl_result
+
+- debug:
+    var: host_out.stdout
 
 - name: Get current network interface configuration using Redfish API
   uri:

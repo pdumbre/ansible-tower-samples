@@ -16,7 +16,7 @@
 
     - name: Check if interface was found
       fail:
-        msg: "Could not find interface with IP {{ host_lla_ip }}"
+        msg: "Could not find interface with IP {{ bmc_lla_ip }}"
       when: lla_interface is not defined
 
     - name: Display identified LLA interface

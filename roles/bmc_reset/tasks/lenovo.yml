@@ -1,12 +1,16 @@
 
-- name: Discover host interface
-  hosts: mgmt_host
-  gather_facts: false
-  tasks:
-    - name: Get neighbor table
-      command: /usr/sbin/ip -6 neigh show
-      register: neigh_output
-      become: true
+- name: Get LLA from local interface
+  command: ip -6 neigh
+  register: bmc_lla_interface_result
+  delegate_to: localhost
+
+- name: Set interface fact
+  set_fact:
+    bmc_lla_interface: "{{ bmc_lla_interface_result.stdout }}"
+
+- name: Debug interface fact
+  debug:
+    msg: "{{ bmc_lla_interface_result }}"
 
 - name: Discover interface for BMC LLA
   shell: ip -6 neigh show | grep -i {{ bmc_lla_ip }} | awk '{print $3}' | head -n1

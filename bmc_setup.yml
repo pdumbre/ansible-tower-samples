@@ -1,7 +1,6 @@
 
 - name: BMC Setup
   hosts: all
-  connection: local
   gather_facts: false
     
   roles:

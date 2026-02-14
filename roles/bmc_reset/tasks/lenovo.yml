@@ -23,4 +23,4 @@
       }}
 
 - debug: Parse Ethernet interface corresponding to given LLA
-  var: {{ bmc_eth_id }}
+  var: "{{ bmc_eth_id }}"

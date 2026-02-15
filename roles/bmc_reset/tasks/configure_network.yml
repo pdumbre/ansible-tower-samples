@@ -84,3 +84,51 @@
       - "stateless address: {{ nic_config.StatelessAddressAutoConfig }}"
       - "dhcp6: {{ nic_config.DHCPv6 }}"
       - "gateway: {{ nic_config.IPv6StaticDefaultGateways }}"
+
+- name: Extract current relevant values
+  set_fact:
+    current_normalized:
+      DHCPv6: "{{ nic_config.DHCPv6.OperatingMode | default(false) }}"
+      IPv6StaticAddresses: "{{ nic_config.IPv6Addresses | default([]) }}"
+      IPv6Address: "{{ nic_config.IPv6Addresses[0].Address | default('') }}"
+
+- name: Extract current relevant values
+  set_fact:
+    desired_normalized:
+      DHCPv6: "{{ DHCPv6.OperatingMode | default(false) }}"
+      IPv6StaticAddresses: "{{ nic_config.IPv6Addresses | default([]) }}"
+      IPv6Address: "{{ nic_config.IPv6Addresses[0].Address | default('') }}"
+
+- name: Check if change required
+  set_fact:
+    network_change_required: "{{ desired_normalized != current_normalized }}"
+
+- name: Get current network interface configuration using curl
+  command: >
+    curl -k -u {{ ru7_user }}:{{ new_redfish_password }} \
+    -H "Content-Type: application/json" \
+    -X PATCH \
+     https://[{{ bmc_lla_ip }}%{{ bmc_lla_interface }}]/{{nic_url}} \
+     -d '{
+          "DHCPv6": {
+             "OperatingMode": "{{ bmc_network.dhcp6_enabled | bool }}"
+          },
+          "IPv6StaticAddresses": [
+          {
+             "Address": "{{ ipv6_address }}",
+             "PrefixLength": "{{ bmc_network.ipv6_prefix }},
+             "AddressOrigin": "Static"
+          }
+          ],
+          "IPv6DefaultGateway": "{{ bmc_network.ipv6_gateway }}",
+          "StatelessAddressAutoConfig":
+            "IPv6AutoConfigEnabled": "{{ bmc_network.stateless_autoconfig_enabled | bool }}"
+       }'
+
+  delegate_to: mgen
+  register: curl_nic_patch_result
+  when: {{ network_change_required | bool }}
+  changed_when: false
+    
+
+  

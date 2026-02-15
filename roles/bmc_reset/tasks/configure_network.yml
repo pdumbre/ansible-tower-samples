@@ -128,6 +128,7 @@
           "SubnetMask": "255.255.0.0"
         }
       ],
+      "IPv6StaticDefaultGateways": [],
       "StatelessAddressAutoConfig": {
         "IPv6AutoConfigEnabled": {{ bmc_network.stateless_autoconfig_enabled | lower }}
       }

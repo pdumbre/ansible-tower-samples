@@ -104,6 +104,15 @@
   set_fact:
     network_change_required: "{{ desired_normalized != current_normalized }}"
 
+- name: Execute SSH command on all BMCs from baremetal
+  delegate_to: mgen
+  command: >
+    sshpass -p '{{ hostvars[inventory_hostname].new_redfish_password }}'
+    ssh -o StrictHostKeyChecking=no
+    {{ hostvars[inventory_hostname].ru7_user }}@
+    [{{ hostvars[inventory_hostname].bmc_lla_ipv6 }}%{{ hostvars[inventory_hostname].bmc_lla_interface }}]
+    "ifconfig eth0 -ipv6static enabled"
+
 - name: Configure BMC via SSH from gen host
   ansible.builtin.shell: |
     ifconfig eth0 -ipv6static enabled

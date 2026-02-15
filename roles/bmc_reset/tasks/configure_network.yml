@@ -111,7 +111,7 @@
   vars:
     ansible_user: "{{ ru7_user }}"
     ansible_password: "{{ ru7_password }}"
-    ansible_host: "{{ bmc_lla_ipv6 }}%{{ bmc_lla_interface }}"
+    ansible_host: "{{ hostvars[inventory_hostname].bmc_lla_ipv6 }}%{{ hostvars[inventory_hostname].bmc_lla_interface }}"
     ansible_connection: ssh
     
 

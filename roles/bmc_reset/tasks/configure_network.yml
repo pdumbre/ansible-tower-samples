@@ -55,14 +55,16 @@
 - debug:
     var: nic_url
     
-- name: Get the first network interface URL
-  set_fact:
-    network_interface_uri: "{{ curl_result.stdout.json.Members[0]['@odata.id'] }}"
-  when: curl_result.stdout.json.Members | length > 0
+- name: Get current network interface configuration using curl
+  command: >
+    curl -k -u {{ ru7_user }}:{{ new_redfish_password }}
+    https://[{{ bmc_lla_ip }}%{{ bmc_lla_interface }}] {{nic_url}}
+  delegate_to: mgen
+  register: nic_result
 
-- name: Set nic_value from first interface
+- name: Parse curl JSON output
   set_fact:
-    nic_value: "{{ curl_result.stdout.json.Members[0]['@odata.id'].split('/')[-1] }}"
+    nic_json: "{{ nic_result.stdout | from_json }}"
 
 - debug:
-    var: "{{ nic_value }}"
+    var: "{{ nic_json }}"

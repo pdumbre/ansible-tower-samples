@@ -115,7 +115,7 @@
       },
       "IPv6StaticAddresses": [
         {
-          "Address": "{{ ipv6_address }}",
+          "Address": "{{ ru7_ipv6_address }}",
           "PrefixLength": {{ bmc_network.ipv6_prefix | int }}
         }
       ],
@@ -153,6 +153,14 @@
       Content-Type: "application/json"
     body_format: json
     body:
+      DHCPv6:
+        Enabled: "{{ bmc_network.dhcp6_enabled | bool }}"
+      IPv6StaticAddresses:
+        - Address: "{{ ru7_ipv6_address }}"
+          SubnetMask: "{{ ipv6_netmask | default('255.255.0.0') }}"
+          Gateway: "{{ bmc_network.ipv6_gateway }}"
+      StatelessAddressAutoConfig:
+        IPv6AutoConfigEnabled: "{{ bmc_network.stateless_autoconfig_enabled | bool }}"
       Oem:
         Lenovo:
           "NetworkSettingSync": "{{ bmc_network.name_server_sync_enabled }}"
@@ -166,7 +174,8 @@
   ansible.builtin.raw: ifconfig eth0 -failover shared
   vars:
     ansible_connection: ssh
-    ansible_user: "{{ redfish_user }}"
-    ansible_password: "{{ redfish_password }}"
+    ansible_host: "{{ ru7_ip }}"
+    ansible_user: "{{ ru7_user }}"
+    ansible_password: "{{ ru7_password }}"
   register: configure_failover
 

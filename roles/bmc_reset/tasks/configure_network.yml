@@ -117,7 +117,6 @@
         {
           "Address": "{{ ipv6_address }}",
           "PrefixLength": {{ bmc_network.ipv6_prefix | int }},
-          "AddressOrigin": "Static"
         }
       ],
       "StatelessAddressAutoConfig": {

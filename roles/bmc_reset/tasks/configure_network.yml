@@ -114,7 +114,7 @@
         "OperatingMode": "{{ "Enabled" if bmc_network.dhcp6_enabled else "Disabled" }}"
       },
       "DHCPv4": {
-        "DHCPEnabled": {{ bmc_network.dhcp4_enabled | lower }}
+        "DHCPEnabled": {{ bmc_network.dhcp6_enabled | lower }}
       },
       "IPv6StaticAddresses": [
         {

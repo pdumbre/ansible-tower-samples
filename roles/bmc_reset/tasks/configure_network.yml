@@ -110,8 +110,8 @@
   vars:
     ansible_connection: ssh
     ansible_host: "[{{ hostvars[inventory_hostname]['bmc_lla_ip'] }}%{{ hostvars[inventory_hostname].bmc_lla_interface }}]"
-    ansible_user: "{{ ru7_user }}"
-    ansible_password: "{{ ru7_password }}"
+    ansible_user: "{{ hostvars[inventory_hostname]['ru7_user'] }}"
+    ansible_password: "{{ hostvars[inventory_hostname]['ru7_password'] }}"
   delegate_to: mgen
   register: configure_static_ipv6
 

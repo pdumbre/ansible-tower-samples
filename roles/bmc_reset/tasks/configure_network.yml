@@ -16,23 +16,12 @@
   debug:
     msg: "{{ bmc_lla_interface }}"
 
-- name: Debug pass
-  debug:
-    msg: "{{ new_redfish_password }}"
-
-- name: Show execution host
-  command: hostname
-  delegate_to: mgen
-  register: host_out
-
-- debug:
-    var: host_out.stdout
-
 - name: Get current network interface configuration using Redfish API and curl
   command: >
     curl -k -u {{ ru7_user }}:{{ new_redfish_password }}
     https://[{{ bmc_lla_ip }}%{{ bmc_lla_interface }}]/redfish/v1/Managers/1/EthernetInterfaces
     
+  delegate_to: mgen 
   register: curl_result
   changed_when: false
 
@@ -53,9 +42,6 @@
 - name: Get first NIC URL
   set_fact:
     nic_url: "{{ nic_json.Members[0]['@odata.id'] }}"
-
-- debug:
-    var: nic_url
 
 - name: Debug variables
   debug:

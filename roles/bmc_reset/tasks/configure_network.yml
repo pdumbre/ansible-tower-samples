@@ -72,6 +72,7 @@
   set_fact:
     nic_config: "{{ curl_nic_result.stdout | from_json }}"
 
-- name: Debug NIC configuration
-  debug:
-    var: nic_config
+- name: Save Redfish result as workflow artifact
+  set_stats:
+    data:
+      redfish_body: "{{ nic_config }}"

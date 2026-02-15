@@ -109,8 +109,8 @@
     ifconfig eth0 -ipv6static enabled
   delegate_to: mgen
   vars:
-    ansible_user: "{{ ru7_user }}"
-    ansible_password: "{{ ru7_password }}"
+    ansible_user: "{{ hostvars[inventory_hostname].ru7_user }}"
+    ansible_password: "{{ hostvars[inventory_hostname].new_redfish_password }}"
     ansible_host: "{{ hostvars[inventory_hostname].bmc_lla_ipv6 }}%{{ hostvars[inventory_hostname].bmc_lla_interface }}"
     ansible_connection: ssh
     

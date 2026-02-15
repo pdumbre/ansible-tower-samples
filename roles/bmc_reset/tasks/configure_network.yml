@@ -157,7 +157,6 @@
       "IPv6StaticDefaultGateways": [
         {
           "Address": "fd8c:215d:178e:c0de::1",
-          "PrefixLength": 0
        }
       ]
     }'

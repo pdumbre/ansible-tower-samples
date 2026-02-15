@@ -36,7 +36,7 @@
   register: curl_result
 
 - debug:
-    var: curl_result
+    var: {{ curl_result }}
 
 - name: Save Redfish result as workflow artifact
   set_stats:
@@ -64,7 +64,7 @@
   changed_when: false
 
 - debug:
-    var: "{{ curl_result.stdout }}"
+    var: "{{ curl_result }}"
 
 - name: Parse curl JSON output
   set_fact:

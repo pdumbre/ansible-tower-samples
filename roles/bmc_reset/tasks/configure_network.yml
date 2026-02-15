@@ -11,6 +11,7 @@
 - name: Set interface fact
   set_fact:
     bmc_lla_interface: "{{ bmc_lla_interface_result.stdout | trim }}"
+    bmc_lla_ipv6: "{{ bmc_lla_ip }}"
 
 - name: Debug interface fact
   debug:
@@ -108,7 +109,7 @@
   ansible.builtin.raw: ifconfig eth0 -ipv6static enabled
   vars:
     ansible_connection: ssh
-    ansible_host: "[{{ bmc_lla_ip }}%25{{ bmc_lla_interface }}]"
+    ansible_host: "[{{ bmc_lla_ipv6 }}%25{{ bmc_lla_interface }}]"
     ansible_user: "{{ ru7_user }}"
     ansible_password: "{{ ru7_password }}"
   delegate_to: mgen

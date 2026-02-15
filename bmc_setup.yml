@@ -1,6 +1,6 @@
 
 - name: BMC Setup
-  hosts: baremetal
+  hosts: all
   gather_facts: false
     
   roles:

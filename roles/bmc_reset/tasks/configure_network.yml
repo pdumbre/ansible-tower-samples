@@ -141,6 +141,10 @@
     data:
       redfish_body: "{{ nic_patch_config }}"
 
+- name: Debug ru7 url
+  debug:
+    msg: "{{ ru7_host }}{{ nic_url }}"
+    
 - name: Configure Lenovo Failover and DNS Sync
   uri:
     url: "{{ ru7_host }}{{ nic_url }}"
@@ -168,8 +172,11 @@
   register: ipv6_oem_config
   when:
     - bmc_network.name_server_sync_enabled is defined
-  changed_when: ipv6_oem_config.status in [200, 202, 204]
 
+- name: Debug ru7 url
+  debug:
+    msg: "{{ ipv6_oem_config }}"
+    
 - name: Configure failover via XCC SSH CLI
   ansible.builtin.raw: ifconfig eth0 -failover shared
   vars:

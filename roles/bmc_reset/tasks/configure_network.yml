@@ -63,7 +63,7 @@
   register: nic_result
 
 - debug:
-    var: "{{ nic_result.stdout }}"
+    var: "{{ nic_result }}"
 
 - name: Parse curl JSON output
   set_fact:

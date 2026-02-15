@@ -38,6 +38,12 @@
 - debug:
     var: curl_result.stdout
 
+- name: Save Redfish result as workflow artifact
+  set_stats:
+    data:
+      redfish_body: "{{ curl_result.stdout }}"
+      redfish_success: "{{ curl_result.rc == 0 }}"
+
 - name: Get the first network interface URL
   set_fact:
     network_interface_uri: "{{ curl_result.stdout.json.Members[0]['@odata.id'] }}"

@@ -111,6 +111,7 @@
     ansible_host: "[{{ bmc_lla_ip }}%25{{ bmc_lla_interface }}]"
     ansible_user: "{{ ru7_user }}"
     ansible_password: "{{ ru7_password }}"
+  delegate_to: mgen
   register: configure_static_ipv6
 
 

@@ -32,7 +32,7 @@
   command: >
     curl -k -u {{ ru7_user }}:{{ new_redfish_password }}
     https://[{{ bmc_lla_ip }}%{{ bmc_lla_interface }}]/redfish/v1/Managers/1/EthernetInterfaces
-  delegate_to: mgen
+    
   register: curl_result
   changed_when: false
 

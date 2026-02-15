@@ -103,6 +103,64 @@
   set_fact:
     network_change_required: "{{ desired_normalized != current_normalized }}"
 
+- name: Set static IPv6 address
+  uri:
+    url: "https://[{{ bmc_lla_ip }}%25{{ bmc_lla_interface }}]/redfish/v1/Managers/1/EthernetInterfaces/NIC"
+    method: PATCH
+    user: "{{ ru7_user }}"
+    password: "{{ new_redfish_password }}"
+    validate_certs: no
+    force_basic_auth: yes
+    body_format: json
+    body:
+      IPv6StaticAddresses:
+        - Address: "{{ ru7_ipv6_address }}"
+          PrefixLength: "{{ ipv6_prefix | default(64) | int }}"
+    status_code: [200, 202, 204]
+  delegate_to: mgen
+  register: set_ipv6_static
+
+- name: Set static IPv6 gateway
+  uri:
+    url: "https://[{{ bmc_lla_ip }}%25{{ bmc_lla_interface }}]/redfish/v1/Managers/1/EthernetInterfaces/NIC"
+    method: PATCH
+    user: "{{ ru7_user }}"
+    password: "{{ new_redfish_password }}"
+    validate_certs: no
+    force_basic_auth: yes
+    body_format: json
+    body:
+      IPv6StaticDefaultGateways:
+        - Address: "fd8c:215d:178e:c0de::1"
+          PrefixLength: 0
+    status_code: [200, 202, 204]
+  delegate_to: mgen
+  register: set_ipv6_gateway
+
+- name: Wait for configuration to apply
+  pause:
+    seconds: 10
+
+- name: Verify IPv6 static is enabled
+  uri:
+    url: "https://[{{ bmc_lla_ip }}%25{{ bmc_lla_interface }}]/redfish/v1/Managers/1/EthernetInterfaces/NIC"
+    method: GET
+    user: "{{ ru7_user }}"
+    password: "{{ new_redfish_password }}"
+    validate_certs: no
+    return_content: yes
+  delegate_to: mgen
+  register: verify_ipv6
+
+- name: Display IPv6 configuration
+  debug:
+    msg:
+      - "IPv6 Static Address: {{ verify_ipv6.json.IPv6StaticAddresses[0].Address }}"
+      - "IPv6 Prefix: {{ verify_ipv6.json.IPv6StaticAddresses[0].PrefixLength }}"
+      - "IPv6 Gateway: {{ verify_ipv6.json.IPv6StaticDefaultGateways[0].Address }}"
+      - "DHCPv6 Mode: {{ verify_ipv6.json.DHCPv6.OperatingMode }}"
+      - "SLAAC Enabled: {{ verify_ipv6.json.StatelessAddressAutoConfig.IPv6AutoConfigEnabled }}"
+
 - name: Patch current network interface configuration using curl
   shell: >
     curl -k -u {{ ru7_user }}:{{ new_redfish_password }}

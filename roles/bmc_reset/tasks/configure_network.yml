@@ -135,4 +135,10 @@
 - name: Debug curl NIC patch result
   debug:
     var: nic_patch_config
+    
+- name: Save Redfish result as workflow artifact
+  set_stats:
+    data:
+      redfish_body: "{{ nic_patch_config }}"
+
   

@@ -127,7 +127,7 @@
 
   delegate_to: mgen
   register: curl_nic_patch_result
-  when: {{ network_change_required | bool }}
+  when: network_change_required
   changed_when: false
     
 

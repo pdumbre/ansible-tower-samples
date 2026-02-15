@@ -76,3 +76,11 @@
   set_stats:
     data:
       redfish_body: "{{ nic_config }}"
+
+- name: Debug variables before applying configuration
+  debug:
+    msg:
+      - "ipv6: {{ redfish_body.IPv6Addresses }}"
+      - "stateless address: {{ redfish_body.StatelessAddressAutoConfig }}"
+      - "dhcp6: {{ redfish_body.DHCPv6 }}"
+      - "gateway: {{ redfish_body.IPv6StaticDefaultGateways }}"

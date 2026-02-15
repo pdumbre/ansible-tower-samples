@@ -102,6 +102,12 @@
 - name: Check if change required
   set_fact:
     network_change_required: "{{ desired_normalized != current_normalized }}"
+    
+# Enable ipv6 static flag
+- name: Enable ipv6 static assignment
+  ansible.builtin.raw: ifconfig eth0 -ipv6static enabled
+  delegate_to: mgen
+  register: ipv6_static_enable
 
 - name: Patch current network interface configuration using curl
   shell: >

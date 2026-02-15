@@ -64,7 +64,7 @@
   changed_when: false
 
 - debug:
-    var: https://[{{ bmc_lla_ip }}%{{ bmc_lla_interface }}]/{{nic_url}}
+    var: "{{ https://[{{ bmc_lla_ip }}%{{ bmc_lla_interface }}]/{{nic_url}} }}"
 
 - debug:
     var: "{{ curl_result }}"

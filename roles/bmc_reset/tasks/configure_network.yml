@@ -54,7 +54,13 @@
 
 - debug:
     var: nic_url
-    
+
+- name: Debug variables
+  debug:
+    msg:
+      - "curl -k -u {{ ru7_user }}:{{ new_redfish_password }} --fail https://[{{ bmc_lla_ip }}%{{ bmc_lla_interface }}]/{{nic_url}}"
+ 
+
 - name: Get current network interface configuration using curl
   command: >
     curl -k -u {{ ru7_user }}:{{ new_redfish_password }} --fail

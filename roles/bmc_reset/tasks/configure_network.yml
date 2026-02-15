@@ -122,26 +122,11 @@
       "DHCPv6": {
         "OperatingMode": "{{ "Enabled" if bmc_network.dhcp6_enabled else "Disabled" }}"
       },
-      "DHCPv4": {
-        "DHCPEnabled": {{ bmc_network.dhcp6_enabled | lower }}
-      },
       "IPv6StaticAddresses": [
         {
           "Address": "{{ ru7_ipv6_address }}",
           "PrefixLength": {{ bmc_network.ipv6_prefix | int }}
         }
-      ],
-      "IPv4StaticAddresses": [
-        {
-          "Address": "{{ ru7_address }}",
-          "SubnetMask": "255.255.0.0"
-        }
-      ],
-      "IPv6StaticDefaultGateways": [
-        {
-          "Address": "fd8c:215d:178e:c0de::1",
-          "PrefixLength": 0
-       }
       ],
       "StatelessAddressAutoConfig": {
         "IPv6AutoConfigEnabled": {{ bmc_network.stateless_autoconfig_enabled | lower }}
@@ -196,21 +181,19 @@
     url: "{{ ru7_host }}{{ nic_url }}"
     method: PATCH
     user: "{{ ru7_user }}"
-    password: "{{ ru7_password }}"
+    password: "{{ new_redfish_password }}"
     validate_certs: no
     force_basic_auth: yes
     headers:
       Content-Type: "application/json"
     body_format: json
     body:
-      DHCPv6:
+      DHCPv4:
         Enabled: "{{ bmc_network.dhcp6_enabled | bool }}"
       IPv6StaticAddresses:
         - Address: "{{ ru7_ipv6_address }}"
           SubnetMask: "{{ ipv6_netmask | default('255.255.0.0') }}"
           Gateway: "{{ bmc_network.ipv6_gateway }}"
-      StatelessAddressAutoConfig:
-        IPv6AutoConfigEnabled: "{{ bmc_network.stateless_autoconfig_enabled | bool }}"
       Oem:
         Lenovo:
           "NetworkSettingSync": "{{ bmc_network.name_server_sync_enabled }}"

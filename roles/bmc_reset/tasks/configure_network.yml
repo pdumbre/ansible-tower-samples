@@ -174,7 +174,7 @@
   ansible.builtin.raw: ifconfig eth0 -failover shared
   vars:
     ansible_connection: ssh
-    ansible_host: "{{ ru7_ip }}"
+    ansible_host: "[{{ ru7_ipv6_address }}]"
     ansible_user: "{{ ru7_user }}"
     ansible_password: "{{ ru7_password }}"
   register: configure_failover

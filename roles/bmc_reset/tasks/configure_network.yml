@@ -20,7 +20,7 @@
 - name: Get current network interface configuration using Redfish API and curl
   command: >
     curl -k -u {{ ru7_user }}:{{ new_redfish_password }}
-    https://[{{ bmc_lla_ip }}%{{ bmc_lla_interface }}]/redfish/v1/Managers/1/EthernetInterfaces
+    https://[{{ bmc_lla_ip }}%{{  }}]/redfish/v1/Managers/1/EthernetInterfaces
     
   delegate_to: mgen 
   register: curl_result
@@ -109,7 +109,7 @@
   ansible.builtin.raw: ifconfig eth0 -ipv6static enabled
   vars:
     ansible_connection: ssh
-    ansible_host: "[{{ bmc_lla_ipv6 }}%25{{ bmc_lla_interface }}]"
+    ansible_host: "[{{ hostvars[inventory_hostname]['bmc_lla_ip'] }}%{{ bmc_lla_interface }}]"
     ansible_user: "{{ ru7_user }}"
     ansible_password: "{{ ru7_password }}"
   delegate_to: mgen

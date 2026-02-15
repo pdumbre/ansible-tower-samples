@@ -132,5 +132,5 @@
     
 - name: Debug curl NIC patch result
   debug:
-    var: url_nic_patch_result
+    var: curl_nic_patch_result
   

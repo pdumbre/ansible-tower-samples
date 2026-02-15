@@ -104,31 +104,16 @@
   set_fact:
     network_change_required: "{{ desired_normalized != current_normalized }}"
 
-- name: Dynamically register BMC host
-  add_host:
-    name: "bmc_{{ inventory_hostname }}"
-    groups: dynamic_bmc
-    ansible_host: "{{ bmc_lla_ipv6 }}%{{ bmc_lla_interface }}"
-    ansible_user: "{{ user }}"
-    ansible_password: "{{ password }}"
-    ansible_connection: ssh
-    ansible_ssh_common_args: "-o ProxyJump=mgen -o StrictHostKeyChecking=no"
-    
-- name: Enable ipv6 static flag
-  ansible.builtin.raw: ifconfig eth0 -ipv6static enabled
-  delegate_to: "bmc_{{ inventory_hostname }}"
-
-# Enable ipv6 static flag
-- name: Configure ipv6
-  ansible.builtin.raw: ifconfig eth0 -ipv6static enabled
-  vars:
-    ansible_connection: ssh
-    ansible_host: "[{{ hostvars[inventory_hostname]['bmc_lla_ip'] }}%{{ hostvars[inventory_hostname].bmc_lla_interface }}]"
-    ansible_user: "{{ hostvars[inventory_hostname]['ru7_user'] }}"
-    ansible_password: "{{ hostvars[inventory_hostname]['ru7_password'] }}"
+- name: Configure BMC via SSH from gen host
+  ansible.builtin.shell: |
+    ifconfig eth0 -ipv6static enabled
   delegate_to: mgen
-  register: configure_static_ipv6
-
+  vars:
+    ansible_user: "{{ ru7_user }}"
+    ansible_password: "{{ ru7_password }}"
+    ansible_host: "{{ bmc_lla_ipv6 }}%{{ bmc_lla_interface }}"
+    ansible_connection: ssh
+    
 
 - name: Patch current network interface configuration using curl
   shell: >

@@ -112,12 +112,11 @@
     ansible_user: "{{ user }}"
     ansible_password: "{{ password }}"
     ansible_connection: ssh
-    ansible_ssh_common_args: "-o ProxyJump=gen -o StrictHostKeyChecking=no"
+    ansible_ssh_common_args: "-o ProxyJump=mgen -o StrictHostKeyChecking=no"
     
 - name: Enable ipv6 static flag
   ansible.builtin.raw: ifconfig eth0 -ipv6static enabled
   delegate_to: "bmc_{{ inventory_hostname }}"
-  no_log: true
 
 # Enable ipv6 static flag
 - name: Configure ipv6

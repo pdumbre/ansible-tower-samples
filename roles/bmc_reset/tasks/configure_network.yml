@@ -36,7 +36,7 @@
   register: curl_result
 
 - debug:
-    var: curl_result.stdout
+    var: curl_result
 
 - name: Save Redfish result as workflow artifact
   set_stats:
@@ -57,10 +57,11 @@
     
 - name: Get current network interface configuration using curl
   command: >
-    curl -k -u {{ ru7_user }}:{{ new_redfish_password }}
+    curl -k -u {{ ru7_user }}:{{ new_redfish_password }} --fail
     https://[{{ bmc_lla_ip }}%{{ bmc_lla_interface }}]/{{nic_url}}
   delegate_to: mgen
   register: curl_result
+  changed_when: false
 
 - debug:
     var: "{{ curl_result.stdout }}"

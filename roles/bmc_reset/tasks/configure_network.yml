@@ -62,6 +62,9 @@
   delegate_to: mgen
   register: nic_result
 
+- debug:
+    var: "{{ nic_result.stdout }}"
+
 - name: Parse curl JSON output
   set_fact:
     nic_json: "{{ nic_result.stdout | from_json }}"

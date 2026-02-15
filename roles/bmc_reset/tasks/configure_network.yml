@@ -129,8 +129,12 @@
   register: curl_nic_patch_result
   when: network_change_required
   changed_when: false
-    
+
+- name: Parse curl JSON output
+  set_fact:
+    nic_patch_config: "{{ curl_nic_patch_result.stdout | from_json }}"
+
 - name: Debug curl NIC patch result
   debug:
-    var: curl_nic_patch_result
+    var: nic_patch_config
   

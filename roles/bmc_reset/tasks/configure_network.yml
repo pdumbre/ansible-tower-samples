@@ -30,7 +30,7 @@
 
 - name: Get current network interface configuration using Redfish API and curl
   command: >
-    curl -k -u {{ ru7_user }}:{{ ru7_password }}
+    curl -k -u {{ ru7_user }}:{{ new_redfish_password }}
     https://[{{ bmc_lla_ip }}%{{ bmc_lla_interface }}]/redfish/v1/AccountService/Accounts/1
   delegate_to: mgen
   register: curl_result
@@ -38,59 +38,14 @@
 - debug:
     var: curl_result.stdout
 
-- name: Get current network interface configuration using Redfish API
-  uri:
-    url: "https://[{{ bmc_lla_ip }}%{{ bmc_lla_interface }}]/redfish/v1/Managers/1/EthernetInterfaces"
-    method: GET
-    user: "{{ redfish_user }}"
-    password: "{{ redfish_password }}"
-    validate_certs: no
-    force_basic_auth: yes
-    return_content: yes
-    status_code: [200]
-  register: current_network
-  delegate_to: localhost
-
 - name: Get the first network interface URL
   set_fact:
-    network_interface_uri: "{{ current_network.json.Members[0]['@odata.id'] }}"
-  when: current_network.json.Members | length > 0
+    network_interface_uri: "{{ curl_result.stdout.json.Members[0]['@odata.id'] }}"
+  when: curl_result.stdout.json.Members | length > 0
 
 - name: Set nic_value from first interface
   set_fact:
-    nic_value: "{{ current_network.json.Members[0]['@odata.id'].split('/')[-1] }}"
+    nic_value: "{{ curl_result.stdout.json.Members[0]['@odata.id'].split('/')[-1] }}"
 
 - debug:
     var: "{{ nic_value }}"
-    
-- name: Get first network interface details
-  uri:
-    url: "{{ redfish_host }}{{ network_interface_uri }}"
-    method: GET
-    user: "{{ redfish_user }}"
-    password: "{{ redfish_password }}"
-    force_basic_auth: yes
-    validate_certs: no
-    return_content: yes
-  register: network_interface_detail
-  delegate_to: localhost
-  when: network_interface_uri is defined
-  
-- name: Extract current network settings from Redfish response
-  set_fact:
-    current_mac: "{{ network_interface_detail.json.MACAddress | default('Not available') }}"
-    current_ipv6_addresses: "{{ network_interface_detail.json.IPv6Addresses | default([]) }}"
-    current_ipv6_addr: "{{ network_interface_detail.json.IPv6Addresses[0].Address | default('') }}"
-    current_dhcp: "{{ network_interface_detail.json.DHCPv4.DHCPEnabled | default(false) }}"
-    
-- name: Display current network configuration
-  debug:
-    msg: 
-      - "========================================="
-      - "Current Network Configuration"
-      - "========================================="
-      - "MAC Address: {{ current_mac }}"
-      - "IPv6 Address: {{ current_ipv6_addr if current_ipv6_addr else 'Not configured' }}"
-      - "DHCP Enabled: {{ current_dhcp }}"
-      - "current config: {{ network_interface_detail.json }}"
-      - "========================================="

@@ -44,6 +44,17 @@
       redfish_body: "{{ curl_result.stdout }}"
       redfish_success: "{{ curl_result.rc == 0 }}"
 
+- name: Parse curl JSON output
+  set_fact:
+    nic_json: "{{ curl_result.stdout | from_json }}"
+
+- name: Get first NIC URL
+  set_fact:
+    nic_url: "{{ nic_json.Members[0]['@odata.id'] }}"
+
+- debug:
+    var: nic_url
+    
 - name: Get the first network interface URL
   set_fact:
     network_interface_uri: "{{ curl_result.stdout.json.Members[0]['@odata.id'] }}"

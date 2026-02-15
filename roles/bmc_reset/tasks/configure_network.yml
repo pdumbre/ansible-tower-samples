@@ -113,9 +113,18 @@
       "DHCPv6": {
         "OperatingMode": "{{ "Enabled" if bmc_network.dhcp6_enabled else "Disabled" }}"
       },
+      "DHCPv4": {
+        "DHCPEnabled": "{{ "Enabled" if bmc_network.dhcp6_enabled else "Disabled" }}"
+      },
       "IPv6StaticAddresses": [
         {
           "Address": "{{ ru7_ipv6_address }}",
+          "PrefixLength": {{ bmc_network.ipv6_prefix | int }}
+        },
+      "IPv4StaticAddresses": [
+        {
+          "Address": "{{ ru7_address }}",
+          "SubnetMask": "255.255.0.0"
           "PrefixLength": {{ bmc_network.ipv6_prefix | int }}
         }
       ],

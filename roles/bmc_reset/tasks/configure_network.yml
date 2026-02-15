@@ -60,14 +60,14 @@
     curl -k -u {{ ru7_user }}:{{ new_redfish_password }}
     https://[{{ bmc_lla_ip }}%{{ bmc_lla_interface }}]/{{nic_url}}
   delegate_to: mgen
-  register: nic_result
+  register: curl_result
 
 - debug:
-    var: "{{ nic_result }}"
+    var: "{{ curl_result.stdout }}"
 
 - name: Parse curl JSON output
   set_fact:
-    nic_json: "{{ nic_result.stdout | from_json }}"
+    nic_json: "{{ curl_result.stdout | from_json }}"
 
 - debug:
     var: "{{ nic_json }}"

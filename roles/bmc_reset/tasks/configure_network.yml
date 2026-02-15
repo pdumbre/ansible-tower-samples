@@ -52,7 +52,7 @@
       - "NIC URL: {{ nic_url }}"
       - "Full URL: https://[{{ bmc_lla_ip }}%{{ bmc_lla_interface }}]{{ nic_url }}"
 
-- name: Get current network interface configuration using curl
+- name: Patch current network interface configuration using curl
   command: >
     curl -k -u {{ ru7_user }}:{{ new_redfish_password }} --fail
     https://[{{ bmc_lla_ip }}%{{ bmc_lla_interface }}]/{{nic_url}}
@@ -103,7 +103,7 @@
   set_fact:
     network_change_required: "{{ desired_normalized != current_normalized }}"
 
-- name: Get current network interface configuration using curl
+- name: Patch current network interface configuration using curl
   command: >
     curl -k -u {{ ru7_user }}:{{ new_redfish_password }} \
     -H "Content-Type: application/json" \
@@ -130,5 +130,7 @@
   when: network_change_required
   changed_when: false
     
-
+- name: Debug curl NIC patch result
+  debug:
+    var: url_nic_patch_result
   

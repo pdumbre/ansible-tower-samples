@@ -117,10 +117,10 @@
         {
           "Address": "{{ ipv6_address }}",
           "PrefixLength": {{ bmc_network.ipv6_prefix }},
+          "Gateway": {{ bmc_network.ipv6_gateway }},
           "AddressOrigin": "Static"
         }
       ],
-      "IPv6DefaultGateway": "{{ bmc_network.ipv6_gateway }}",
       "StatelessAddressAutoConfig": {
         "IPv6AutoConfigEnabled": {{ bmc_network.stateless_autoconfig_enabled | lower }}
       }

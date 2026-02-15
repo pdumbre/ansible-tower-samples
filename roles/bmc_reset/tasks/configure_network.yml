@@ -110,7 +110,7 @@
     ssh -o StrictHostKeyChecking=no
     {{ ru7_user }}@[{{ bmc_lla_ipv6 }}%{{ bmc_lla_interface }}]
     "ifconfig eth0 -ipv6static enabled"
-  delegate_to: gen
+  delegate_to: mgen
   register: configure_static_ipv6
 
 # Enable ipv6 static flag

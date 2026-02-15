@@ -104,10 +104,15 @@
     network_change_required: "{{ desired_normalized != current_normalized }}"
     
 # Enable ipv6 static flag
-- name: Enable ipv6 static assignment
+- name: Configure ipv6
   ansible.builtin.raw: ifconfig eth0 -ipv6static enabled
-  delegate_to: mgen
-  register: ipv6_static_enable
+  vars:
+    ansible_connection: ssh
+    ansible_host: "[{{ bmc_lla_ip }}%25{{ bmc_lla_interface }}]"
+    ansible_user: "{{ ru7_user }}"
+    ansible_password: "{{ ru7_password }}"
+  register: configure_static_ipv6
+
 
 - name: Patch current network interface configuration using curl
   shell: >

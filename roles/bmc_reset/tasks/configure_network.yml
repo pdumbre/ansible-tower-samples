@@ -109,20 +109,8 @@
   command: >
     sshpass -p '{{ hostvars[inventory_hostname].new_redfish_password }}'
     ssh -o StrictHostKeyChecking=no
-    {{ hostvars[inventory_hostname].ru7_user }}@
-    [{{ hostvars[inventory_hostname].bmc_lla_ipv6 }}%{{ hostvars[inventory_hostname].bmc_lla_interface }}]
+    {{ hostvars[inventory_hostname].ru7_user }}@[{{ hostvars[inventory_hostname].bmc_lla_ipv6 }}%{{ hostvars[inventory_hostname].bmc_lla_interface }}]
     "ifconfig eth0 -ipv6static enabled"
-
-- name: Configure BMC via SSH from gen host
-  ansible.builtin.shell: |
-    ifconfig eth0 -ipv6static enabled
-  delegate_to: mgen
-  vars:
-    ansible_user: "{{ hostvars[inventory_hostname].ru7_user }}"
-    ansible_password: "{{ hostvars[inventory_hostname].new_redfish_password }}"
-    ansible_host: "{{ hostvars[inventory_hostname].bmc_lla_ipv6 }}%{{ hostvars[inventory_hostname].bmc_lla_interface }}"
-    ansible_connection: ssh
-    
 
 - name: Patch current network interface configuration using curl
   shell: >

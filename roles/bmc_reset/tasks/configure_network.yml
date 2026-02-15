@@ -116,7 +116,7 @@
       "IPv6StaticAddresses": [
         {
           "Address": "{{ ipv6_address }}",
-          "PrefixLength": "{{ bmc_network.ipv6_prefix }}",
+          "PrefixLength": {{ bmc_network.ipv6_prefix | int }},
           "Gateway": "{{ bmc_network.ipv6_gateway }}",
           "AddressOrigin": "Static"
         }

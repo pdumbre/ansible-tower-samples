@@ -34,9 +34,11 @@
     https://[{{ bmc_lla_ip }}%{{ bmc_lla_interface }}]/redfish/v1/Managers/1/EthernetInterfaces
   delegate_to: mgen
   register: curl_result
+  changed_when: false
 
-- debug:
-    var: "{{ curl_result }}"
+- name: Debug curl result
+  debug:
+    var: curl_result
 
 - name: Save Redfish result as workflow artifact
   set_stats:
@@ -58,26 +60,32 @@
 - name: Debug variables
   debug:
     msg:
-      - "curl -k -u {{ ru7_user }}:{{ new_redfish_password }} --fail https://[{{ bmc_lla_ip }}%{{ bmc_lla_interface }}]/{{nic_url}}"
- 
+      - "User: {{ ru7_user }}"
+      - "BMC LLA IP: {{ bmc_lla_ip }}"
+      - "Interface: {{ bmc_lla_interface }}"
+      - "NIC URL: {{ nic_url }}"
+      - "Full URL: https://[{{ bmc_lla_ip }}%{{ bmc_lla_interface }}]{{ nic_url }}"
 
 - name: Get current network interface configuration using curl
   command: >
     curl -k -u {{ ru7_user }}:{{ new_redfish_password }} --fail
     https://[{{ bmc_lla_ip }}%{{ bmc_lla_interface }}]/{{nic_url}}
   delegate_to: mgen
-  register: curl_result
+  register: curl_nic_result
   changed_when: false
 
-- debug:
-    var: "{{ https://[{{ bmc_lla_ip }}%{{ bmc_lla_interface }}]/{{nic_url}} }}"
+- name: Debug NIC URL being accessed
+  debug:
+    msg: "Accessing: https://[{{ bmc_lla_ip }}%{{ bmc_lla_interface }}]{{ nic_url }}"
 
-- debug:
-    var: "{{ curl_result }}"
+- name: Debug curl NIC result
+  debug:
+    var: curl_nic_result
 
 - name: Parse curl JSON output
   set_fact:
-    nic_json: "{{ curl_result.stdout | from_json }}"
+    nic_config: "{{ curl_nic_result.stdout | from_json }}"
 
-- debug:
-    var: "{{ nic_json }}"
+- name: Debug NIC configuration
+  debug:
+    var: nic_config

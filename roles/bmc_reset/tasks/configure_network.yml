@@ -109,7 +109,7 @@
   ansible.builtin.raw: ifconfig eth0 -ipv6static enabled
   vars:
     ansible_connection: ssh
-    ansible_host: "[{{ hostvars[inventory_hostname]['bmc_lla_ip'] }}%{{ bmc_lla_interface }}]"
+    ansible_host: "[{{ hostvars[inventory_hostname]['bmc_lla_ip'] }}%{{ hostvars[inventory_hostname].bmc_lla_interface }}]"
     ansible_user: "{{ ru7_user }}"
     ansible_password: "{{ ru7_password }}"
   delegate_to: mgen

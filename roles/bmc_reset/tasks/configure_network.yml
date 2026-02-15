@@ -175,7 +175,19 @@
 - name: Debug ru7 url
   debug:
     msg: "{{ ru7_host }}{{ nic_url }}"
-    
+
+- name: Test Redfish root
+  uri:
+    url: "{{ ru7_host }}/redfish/v1"
+    method: GET
+    validate_certs: no
+    return_content: yes
+  register: rf_test
+  failed_when: false
+
+- debug:
+    var: rf_test
+
 - name: Configure Lenovo Failover and DNS Sync
   uri:
     url: "{{ ru7_host }}{{ nic_url }}"

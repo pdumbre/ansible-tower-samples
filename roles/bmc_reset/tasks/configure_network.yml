@@ -141,4 +141,32 @@
     data:
       redfish_body: "{{ nic_patch_config }}"
 
-  
+- name: Configure Lenovo Failover and DNS Sync
+  uri:
+    url: "{{ ru7_host }}{{ nic_uri }}"
+    method: PATCH
+    user: "{{ ru7_user }}"
+    password: "{{ ru7_password }}"
+    validate_certs: no
+    force_basic_auth: yes
+    headers:
+      Content-Type: "application/json"
+    body_format: json
+    body:
+      Oem:
+        Lenovo:
+          "NetworkSettingSync": "{{ bmc_network.name_server_sync_enabled }}"
+    status_code: [200, 204]
+  register: ipv6_oem_config
+  when:
+    - bmc_network.name_server_sync_enabled is defined
+  changed_when: ipv6_oem_config.status in [200, 202, 204]
+
+- name: Configure failover via XCC SSH CLI
+  ansible.builtin.raw: ifconfig eth0 -failover shared
+  vars:
+    ansible_connection: ssh
+    ansible_user: "{{ redfish_user }}"
+    ansible_password: "{{ redfish_password }}"
+  register: configure_failover
+

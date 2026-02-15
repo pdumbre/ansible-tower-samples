@@ -58,7 +58,7 @@
 - name: Get current network interface configuration using curl
   command: >
     curl -k -u {{ ru7_user }}:{{ new_redfish_password }}
-    https://[{{ bmc_lla_ip }}%{{ bmc_lla_interface }}] {{nic_url}}
+    https://[{{ bmc_lla_ip }}%{{ bmc_lla_interface }}]/{{nic_url}}
   delegate_to: mgen
   register: nic_result
 

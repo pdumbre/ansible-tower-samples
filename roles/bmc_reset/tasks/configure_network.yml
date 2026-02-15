@@ -20,7 +20,7 @@
 - name: Get current network interface configuration using Redfish API and curl
   command: >
     curl -k -u {{ ru7_user }}:{{ new_redfish_password }}
-    https://[{{ bmc_lla_ip }}%{{  }}]/redfish/v1/Managers/1/EthernetInterfaces
+    https://[{{ bmc_lla_ip }}%{{ bmc_lla_interface }}]/redfish/v1/Managers/1/EthernetInterfaces
     
   delegate_to: mgen 
   register: curl_result

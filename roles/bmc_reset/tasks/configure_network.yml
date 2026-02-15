@@ -143,7 +143,7 @@
 
 - name: Configure Lenovo Failover and DNS Sync
   uri:
-    url: "{{ ru7_host }}{{ nic_uri }}"
+    url: "{{ ru7_host }}{{ nic_url }}"
     method: PATCH
     user: "{{ ru7_user }}"
     password: "{{ ru7_password }}"

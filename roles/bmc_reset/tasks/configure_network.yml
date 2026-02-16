@@ -146,24 +146,6 @@
   pause:
     seconds: 10
 
-- name: Patch current network interface configuration using curl
-  shell: >
-    curl -k -u {{ ru7_user }}:{{ new_redfish_password }}
-    -H "Content-Type: application/json"
-    -X PATCH
-    "https://[{{ bmc_lla_ip }}%25{{ bmc_lla_interface }}]/{{ nic_url }}"
-    --data-raw '{
-      "IPv6StaticDefaultGateways": [
-        {
-          "Address": "fd8c:215d:178e:c0de::1"
-       }
-      ]
-    }'
-  delegate_to: mgen
-  register: curl_nic_patch_result
-  when: network_change_required
-  changed_when: false
-    
 - name: Parse curl JSON output
   set_fact:
     nic_patch_config: "{{ curl_nic_patch_result.stdout | from_json }}"
@@ -212,6 +194,9 @@
         - Address: "{{ ru7_ipv6_address }}"
           SubnetMask: "{{ ipv6_netmask | default('255.255.0.0') }}"
           Gateway: "{{ bmc_network.ipv6_gateway }}"
+      IPv4StaticAddresses:
+        - Address: "{{ ru7_address }}"
+          SubnetMask: "{{ ipv4_netmask | default('255.255.0.0') }}"
       Oem:
         Lenovo:
           "NetworkSettingSync": "{{ bmc_network.name_server_sync_enabled }}"
@@ -220,7 +205,3 @@
   register: ipv6_oem_config
   when:
     - bmc_network.name_server_sync_enabled is defined
-
-- name: Debug ru7 url
-  debug:
-    msg: "{{ ipv6_oem_config }}"

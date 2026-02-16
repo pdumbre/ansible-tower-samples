@@ -451,7 +451,7 @@
   ansible.builtin.shell: >
     sshpass -p '{{ hostvars[inventory_hostname].new_redfish_password }}' \
     ssh -o StrictHostKeyChecking=no \
-    '{{ hostvars[inventory_hostname].ru7_user }}@[{{ hostvars[inventory_hostname].bmc_lla_ipv6 }}%{{ hostvars[inventory_hostname].bmc_lla_interface }}]' \
+    '{{ hostvars[inventory_hostname].ru7_user }}@[{{ hostvars[inventory_hostname].ru7_ipv6_address }}]' \
     "power -rp {{ bmc_network.powerrp }}"
     
 # Enable USB Ethernet for inband operations on IMM
@@ -461,6 +461,6 @@
   ansible.builtin.shell: >
     sshpass -p '{{ hostvars[inventory_hostname].new_redfish_password }}' \
     ssh -o StrictHostKeyChecking=no \
-    '{{ hostvars[inventory_hostname].ru7_user }}@[{{ hostvars[inventory_hostname].bmc_lla_ipv6 }}%{{ hostvars[inventory_hostname].bmc_lla_interface }}]' \
+    '{{ hostvars[inventory_hostname].ru7_user }}@[{{ hostvars[inventory_hostname].ru7_ipv6_address }}]' \
     "usbeth -en enabled"
 

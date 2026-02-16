@@ -1,19 +1,10 @@
 
-- name: Get hostname from local interface
-  ansible.builtin.raw: hostname
-  delegate_to: mgen
-  register: host_result
-
-- name: Debug host name
-  debug:
-    msg: "{{ host_result }}"
-    
-- name: Get LLA from local interface
+- name: Retrieve link local address(lla) interface 
   ansible.builtin.raw: ip -6 neigh show | grep -i {{ bmc_lla_ip }} | awk '{print $3}' | head -n1
   delegate_to: mgen
   register: bmc_lla_interface_result
 
-- name: Set interface fact
+- name: Configure lla interface
   set_fact:
     bmc_lla_interface: "{{ bmc_lla_interface_result.stdout | trim }}"
     bmc_lla_ipv6: "{{ bmc_lla_ip }}"

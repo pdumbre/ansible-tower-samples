@@ -7,7 +7,6 @@
 - name: Debug host name
   debug:
     msg: "{{ host_result }}"
-
     
 - name: Get LLA from local interface
   ansible.builtin.raw: ip -6 neigh show | grep -i {{ bmc_lla_ip }} | awk '{print $3}' | head -n1
@@ -116,7 +115,7 @@
     sshpass -p '{{ hostvars[inventory_hostname].new_redfish_password }}'
     ssh -o StrictHostKeyChecking=no
     {{ hostvars[inventory_hostname].ru7_user }}@{{ hostvars[inventory_hostname].bmc_lla_ipv6 }}%{{ hostvars[inventory_hostname].bmc_lla_interface }}
-    "ifconfig eth0 -ipv6static enabled"
+    "ifconfig {{ bmc_network_interface }} -ipv6static enabled -failover shared"
 
 - name: Patch current network interface configuration using curl
   shell: >
@@ -216,6 +215,7 @@
         Lenovo:
           "NetworkSettingSync": "{{ bmc_network.name_server_sync_enabled }}"
     status_code: [200, 204]
+  delegate_to: mgen  
   register: ipv6_oem_config
   when:
     - bmc_network.name_server_sync_enabled is defined
@@ -223,13 +223,3 @@
 - name: Debug ru7 url
   debug:
     msg: "{{ ipv6_oem_config }}"
-    
-- name: Configure failover via XCC SSH CLI
-  ansible.builtin.raw: ifconfig eth0 -failover shared
-  vars:
-    ansible_connection: ssh
-    ansible_host: "[{{ ru7_ipv6_address }}]"
-    ansible_user: "{{ ru7_user }}"
-    ansible_password: "{{ ru7_password }}"
-  register: configure_failover
-

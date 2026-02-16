@@ -70,7 +70,7 @@
     password: "{{ redfish_password }}"
     timeout: 30
   register: current_accounts
-  delegate_to: localhost
+  delegate_to: mgen
   ignore_errors: yes
 
 - name: Display current account information
@@ -99,7 +99,7 @@
           PasswordComplexityCheck: true
     status_code: [200, 202, 204]
   register: m6_account_config_api
-  delegate_to: localhost
+  delegate_to: mgen
   when:
     - is_m6_server | bool
   changed_when: m6_account_config_api.status in [200, 202, 204]

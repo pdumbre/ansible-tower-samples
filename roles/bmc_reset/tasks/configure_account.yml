@@ -65,7 +65,7 @@
   community.general.redfish_info:
     category: Accounts
     command: ListUsers
-    baseuri: "{{ ru7_ipv6_address }}"
+    baseuri: "[{{ ru7_ipv6_address }}]"
     username: "{{ redfish_user }}"
     password: "{{ redfish_password }}"
     timeout: 30
@@ -83,7 +83,7 @@
 
 - name: Configure M6 account security via direct API (fallback)
   uri:
-    url: "https://{{ ru7_ipv6_address }}/redfish/v1/AccountService"
+    url: "https://[{{ ru7_ipv6_address }}]/redfish/v1/AccountService"
     method: PATCH
     user: "{{ redfish_user }}"
     password: "{{ redfish_password }}"

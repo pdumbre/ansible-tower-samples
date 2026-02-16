@@ -20,6 +20,7 @@ bmc_network:
   stateless_autoconfig_enabled: false   # Stateless autoconfig enabled/disabled
   failover_mode: "Shared"               # Failover mode
   name_server_sync_enabled: true        # Name server sync enabled/disabled
+  bmc_network_interface: eth0           # bmc network interface
 
 # Port Configuration
 ports:

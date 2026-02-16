@@ -1,5 +1,5 @@
 
-- name: Retrieve link-local address interface 
+- name: Discover interface for BMC link local address
   ansible.builtin.raw: ip -6 neigh show | grep -i {{ bmc_lla_ip }} | awk '{print $3}' | head -n1
   delegate_to: mgen
   register: bmc_lla_interface_result
@@ -9,47 +9,34 @@
     bmc_lla_interface: "{{ bmc_lla_interface_result.stdout | trim }}"
     bmc_lla_ipv6: "{{ bmc_lla_ip }}"
 
-- name: Debug interface fact
-  debug:
-    msg: "{{ bmc_lla_interface }}"
+- name: Reset BMC to factory defaults
+  lenovo.ansible.lenovo.xcc_manager:
+    action: reset_to_defaults
+    reset_type: ResetAll
+    hostname: "{{ ru7_ipv6_address }}"
+    username: "{{ redfish_user }}"
+    password: "{{ redfish_password }}"
+    validate_certs: no
+  register: bmc_reset
 
-- name: Get current network interface configuration using Redfish API and curl
-  command: >
-    curl -k -u {{ ru7_user }}:{{ new_redfish_password }}
-    https://[{{ bmc_lla_ip }}%{{ bmc_lla_interface }}]/redfish/v1/Managers/1/EthernetInterfaces
-    
-  delegate_to: mgen 
-  register: curl_result
-  changed_when: false
+- name: Reset BIOS to factory defaults
+  lenovo.ansible.lenovo.xcc_bios:
+    action: reset
+    hostname: "{{ ru7_ipv6_address }}"
+    username: "{{ redfish_user }}"
+    password: "{{ redfish_password }}"
+    validate_certs: no
+  register: bios_reset
 
-- name: Debug curl result
-  debug:
-    var: curl_result
+- name: Wait for BMC to respond via LLA
+  ansible.builtin.wait_for:
+    host: "[{{ bmc_lla_ip }}%{{ bmc_lla_interface }}]"  # e.g., fe80::xxxx%eth0
+    port: 443
+    delay: 5
+    timeout: 300
+    state: started
 
-- name: Save Redfish result as workflow artifact
-  set_stats:
-    data:
-      redfish_body: "{{ curl_result.stdout }}"
-      redfish_success: "{{ curl_result.rc == 0 }}"
-
-- name: Parse curl JSON output
-  set_fact:
-    nic_json: "{{ curl_result.stdout | from_json }}"
-
-- name: Get first NIC URL
-  set_fact:
-    nic_url: "{{ nic_json.Members[0]['@odata.id'] }}"
-
-- name: Debug variables
-  debug:
-    msg:
-      - "User: {{ ru7_user }}"
-      - "BMC LLA IP: {{ bmc_lla_ip }}"
-      - "Interface: {{ bmc_lla_interface }}"
-      - "NIC URL: {{ nic_url }}"
-      - "Full URL: https://[{{ bmc_lla_ip }}%{{ bmc_lla_interface }}]{{ nic_url }}"
-
-- name: Patch current network interface configuration using curl
+- name: Retrieve existing network configuration of BMC
   command: >
     curl -k -u {{ ru7_user }}:{{ new_redfish_password }} --fail
     https://[{{ bmc_lla_ip }}%{{ bmc_lla_interface }}]/{{nic_url}}
@@ -57,50 +44,7 @@
   register: curl_nic_result
   changed_when: false
 
-- name: Debug NIC URL being accessed
-  debug:
-    msg: "Accessing: https://[{{ bmc_lla_ip }}%{{ bmc_lla_interface }}]{{ nic_url }}"
-
-- name: Debug curl NIC result
-  debug:
-    var: curl_nic_result
-
-- name: Parse curl JSON output
-  set_fact:
-    nic_config: "{{ curl_nic_result.stdout | from_json }}"
-
-- name: Save Redfish result as workflow artifact
-  set_stats:
-    data:
-      redfish_body: "{{ nic_config }}"
-
-- name: Debug variables before applying configuration
-  debug:
-    msg:
-      - "ipv6: {{ nic_config.IPv6Addresses }}"
-      - "stateless address: {{ nic_config.StatelessAddressAutoConfig }}"
-      - "dhcp6: {{ nic_config.DHCPv6 }}"
-      - "gateway: {{ nic_config.IPv6StaticDefaultGateways }}"
-
-- name: Extract current relevant values
-  set_fact:
-    current_normalized:
-      DHCPv6: "{{ nic_config.DHCPv6.OperatingMode | default(false) }}"
-      IPv6StaticAddresses: "{{ nic_config.IPv6Addresses | default([]) }}"
-      IPv6Address: "{{ nic_config.IPv6Addresses[0].Address | default('') }}"
-
-- name: Extract current relevant values
-  set_fact:
-    desired_normalized:
-      DHCPv6: "{{ DHCPv6.OperatingMode | default(false) }}"
-      IPv6StaticAddresses: "{{ nic_config.IPv6Addresses | default([]) }}"
-      IPv6Address: "{{ nic_config.IPv6Addresses[0].Address | default('') }}"
-
-- name: Check if change required
-  set_fact:
-    network_change_required: "{{ desired_normalized != current_normalized }}"
-
-- name: Execute SSH command on all BMCs from baremetal
+- name: Enable ipv6 static mode and power policy after successful BMC reset
   delegate_to: mgen
   command: >
     sshpass -p '{{ hostvars[inventory_hostname].new_redfish_password }}'
@@ -108,7 +52,7 @@
     {{ hostvars[inventory_hostname].ru7_user }}@{{ hostvars[inventory_hostname].bmc_lla_ipv6 }}%{{ hostvars[inventory_hostname].bmc_lla_interface }}
     "ifconfig {{ bmc_network.bmc_network_interface }} -ipv6static enabled -failover shared; usbeth -en enabled; power -rp {{ powerrp }}"
 
-- name: Patch current network interface configuration using curl
+- name: Configure ipv6 address and StatelessAddressAutoConfig setting
   shell: >
     curl -k -u {{ ru7_user }}:{{ new_redfish_password }}
     -H "Content-Type: application/json"
@@ -130,49 +74,18 @@
     }'
   delegate_to: mgen
   register: curl_nic_patch_result
-  when: network_change_required
   changed_when: false
 
 - name: Wait for configuration to apply
   pause:
     seconds: 10
 
-- name: Parse curl JSON output
-  set_fact:
-    nic_patch_config: "{{ curl_nic_patch_result.stdout | from_json }}"
-
-- name: Debug curl NIC patch result
-  debug:
-    var: nic_patch_config
-    
-- name: Save Redfish result as workflow artifact
-  set_stats:
-    data:
-      redfish_body: "{{ nic_patch_config }}"
-
-- name: Debug ru7 url
-  debug:
-    msg: "{{ ru7_host }}{{ nic_url }}"
-
-- name: Test Redfish root
-  uri:
-    url: "{{ ru7_host }}/redfish/v1"
-    method: GET
-    validate_certs: no
-    return_content: yes
-  delegate_to: mgen
-  register: rf_test
-  failed_when: false
-
-- debug:
-    var: rf_test
-
 - name: Configure Lenovo Failover and DNS Sync
   uri:
     url: "{{ ru7_host }}{{ nic_url }}"
     method: PATCH
-    user: "{{ ru7_user }}"
-    password: "{{ new_redfish_password }}"
+    user: "{{ redfish_user }}"
+    password: "{{ redfish_password }}"
     validate_certs: no
     force_basic_auth: yes
     headers:

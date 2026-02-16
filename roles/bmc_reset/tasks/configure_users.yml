@@ -4,9 +4,10 @@
   community.general.redfish_info:
     category: Accounts
     command: ListUsers
-    baseuri: "{{ bmc_ip }}"
+    baseuri: "{{ ru7_ipv6_address }}"
     username: "{{ redfish_user}}"
     password: "{{ redfish_password }}"
+  delegate_to: mgen
   register: current_users
   failed_when: false
 
@@ -32,13 +33,14 @@
   community.general.redfish_command:
     category: Accounts
     command: AddUser
-    baseuri: "{{ bmc_ip }}"
+    baseuri: "{{ ru7_ipv6_address }}"
     username: "{{ redfish_user }}"
     password: "{{ redfish_password }}"
     validate_certs: false
     account_username: "ansibleuser"
     account_password: "StrongPass123!"
     account_roleid: "Administrator"
+  delegate_to: mgen
   register: create_user_result
 
 - name: Debug current users
@@ -49,9 +51,10 @@
   community.general.redfish_info:
     category: Accounts
     command: ListUsers
-    baseuri: "{{ bmc_ip }}"
+    baseuri: "{{ ru7_ipv6_address }}"
     username: "{{ redfish_user}}"
     password: "{{ redfish_password }}"
+  delegate_to: mgen
   register: current_users
   failed_when: false
 
@@ -78,6 +81,7 @@
     username: "{{ redfish_user }}"
     password: "{{ redfish_password }}"
     validate_certs: false
+  delegate_to: mgen
   register: existing_users
 
 - name: Ensure BMC users from inventory exist

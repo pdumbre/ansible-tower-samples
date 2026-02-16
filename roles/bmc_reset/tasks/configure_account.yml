@@ -446,19 +446,20 @@
   debug:
     msg: "Mellanox adapter configuration not required for this system model"
 
- - name: Set PowerRestore policy
-      uri:
-        url: "https://[{{ ru7_ipv6_address }}]/redfish/v1/Chassis/1"
-        method: PATCH
-        user: "{{ redfish_user }}"
-        password: "{{ redfish_password }}"
-        validate_certs: no
-        force_basic_auth: yes
-        body_format: json
-        body:
-          PowerRestorePolicy: "{{ powerrp }}"
-        status_code: [200, 202, 204]
-      register: power_policy_result
+- name: Set PowerRestore policy via Redfish
+  uri:
+    url: "https://[{{ ru7_ipv6_address }}]/redfish/v1/Chassis/1"
+    method: PATCH
+    user: "{{ redfish_user }}"
+    password: "{{ redfish_password }}"
+    validate_certs: no
+    force_basic_auth: yes
+    body_format: json
+    body:
+      PowerRestorePolicy: "{{ powerrp }}"
+    status_code: [200, 202, 204]
+  register: power_policy_result
+  delegate_to: mgen
     
   debug:
     msg: "Power policy: {{ power_policy_result }}"

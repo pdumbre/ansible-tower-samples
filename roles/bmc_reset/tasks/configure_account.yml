@@ -446,21 +446,21 @@
   debug:
     msg: "Mellanox adapter configuration not required for this system model"
 
-- name: Set PowerRestore policy via Redfish
+- name: Set power restore policy (Lenovo XCC)
   uri:
-    url: "https://[{{ ru7_ipv6_address }}]/redfish/v1/Chassis/1"
+    url: "https://[{{ ru7_ipv6_address }}]/redfish/v1/Managers/1"
     method: PATCH
     user: "{{ redfish_user }}"
     password: "{{ redfish_password }}"
     validate_certs: no
-    force_basic_auth: yes
     body_format: json
     body:
-      PowerRestorePolicy: "{{ powerrp }}"
+      Oem:
+        Lenovo:
+          PowerRestorePolicy: "{{ powerrp | default('Restore') }}"
     status_code: [200, 202, 204]
-  register: power_policy_result
   delegate_to: mgen
-    
+  
 - name: Debug power patch
   debug:
     msg: "Power patch: {{ power_policy_result }}"

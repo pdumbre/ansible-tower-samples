@@ -448,20 +448,19 @@
 
 - name: Configure PowerRestore Policy
   delegate_to: mgen
-  command: >
-    sshpass -p '{{ hostvars[inventory_hostname].new_redfish_password }}'
-    ssh -o StrictHostKeyChecking=no
-    {{ hostvars[inventory_hostname].ru7_user }}@{{ hostvars[inventory_hostname].bmc_lla_ipv6 }}%{{ hostvars[inventory_hostname].bmc_lla_interface }}
-    "power -rp {{ bmc_network.powerrp }"
-
-
+  ansible.builtin.shell: >
+    sshpass -p '{{ hostvars[inventory_hostname].new_redfish_password }}' \
+    ssh -o StrictHostKeyChecking=no \
+    '{{ hostvars[inventory_hostname].ru7_user }}@[{{ hostvars[inventory_hostname].bmc_lla_ipv6 }}%{{ hostvars[inventory_hostname].bmc_lla_interface }}]' \
+    "power -rp {{ bmc_network.powerrp }}"
+    
 # Enable USB Ethernet for inband operations on IMM
 # Equivalent to: imm.command("usbeth -en enabled")
 - name: Execute SSH command on all BMCs from baremetal
   delegate_to: mgen
-  command: >
-    sshpass -p '{{ hostvars[inventory_hostname].new_redfish_password }}'
-    ssh -o StrictHostKeyChecking=no
-    {{ hostvars[inventory_hostname].ru7_user }}@{{ hostvars[inventory_hostname].bmc_lla_ipv6 }}%{{ hostvars[inventory_hostname].bmc_lla_interface }}
-    "usbeth -en enabled "
+  ansible.builtin.shell: >
+    sshpass -p '{{ hostvars[inventory_hostname].new_redfish_password }}' \
+    ssh -o StrictHostKeyChecking=no \
+    '{{ hostvars[inventory_hostname].ru7_user }}@[{{ hostvars[inventory_hostname].bmc_lla_ipv6 }}%{{ hostvars[inventory_hostname].bmc_lla_interface }}]' \
+    "usbeth -en enabled"
 

@@ -8,6 +8,7 @@
     username: "{{ redfish_user }}"
     password: "{{ redfish_password }}"
     validate_certs: false
+  delegate_to: mgen
   register: existing_users
 
 - name: Ensure BMC users from inventory exist
@@ -21,6 +22,7 @@
     account_username: "{{ item.username }}"
     account_password: "{{ item.password }}"
     account_roleid: "{{ item.roleid }}"
+  delegate_to: mgen
   loop: "{{ bmc_users }}"
   loop_control:
     label: "{{ item.username }}"
@@ -39,6 +41,7 @@
     password: "{{ redfish_password }}"
     validate_certs: false
     account_username: "{{ item.username }}"
+  delegate_to: mgen
   loop: "{{ bmc_users }}"
   loop_control:
     label: "{{ item.username }}"

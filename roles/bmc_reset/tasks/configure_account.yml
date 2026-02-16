@@ -1,12 +1,4 @@
 
-- name: Execute SSH command on all BMCs from baremetal
-  delegate_to: mgen
-  command: >
-    sshpass -p '{{ hostvars[inventory_hostname].new_redfish_password }}'
-    ssh '{{ hostvars[inventory_hostname].ru7_user }}@{{ hostvars[inventory_hostname].ru7_ipv6_address }}' \
-    "usbeth -en enabled; power -rp {{ powerrp }}"
-  failed_when: false
-
 - name: Get Redfish system info
   community.general.redfish_info:
     category: Systems

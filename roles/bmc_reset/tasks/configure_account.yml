@@ -446,6 +446,18 @@
   debug:
     msg: "Mellanox adapter configuration not required for this system model"
 
+- name: Set PowerRestore policy via Redfish
+  community.general.redfish:
+    baseuri: "https://{{ hostvars[inventory_hostname].ru7_ipv6_address }}"
+    username: "{{ hostvars[inventory_hostname].redfish_user }}"
+    password: "{{ hostvars[inventory_hostname].redfish_user }}"
+    resource: "/redfish/v1/Chassis/1"
+    method: PATCH
+    body:
+      PowerRestorePolicy: "{{ powerrp }}"
+  delegate_to: mgen
+
+
 - name: Configure PowerRestore Policy
   delegate_to: mgen
   ansible.builtin.shell: >

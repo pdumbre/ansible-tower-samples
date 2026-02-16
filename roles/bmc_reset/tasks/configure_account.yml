@@ -2,7 +2,7 @@
   community.general.redfish_info:
     category: Systems
     command: GetSystemInventory
-    baseuri: "{{ ru7_ipv6_address }}"
+    baseuri: "[{{ ru7_ipv6_address }}]"
     username: "{{ redfish_user }}"
     password: "{{ redfish_password }}"
     validate_certs: false

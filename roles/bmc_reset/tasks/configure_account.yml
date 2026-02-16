@@ -1,5 +1,5 @@
 
-- name: Get Redfish system info
+- name: Retrieve BMC info
   community.general.redfish_info:
     category: Systems
     command: GetSystemInventory
@@ -10,7 +10,7 @@
   delegate_to: mgen
   register: rf_info
     
-- name: Extract system identifiers
+- name: Retrieve system identifiers
   ansible.builtin.set_fact:
     system_mtm: >-
       {{
@@ -30,7 +30,7 @@
         )[0:4] | upper
       }}
       
-- name: Normalize system entries
+- name: Store system info
   ansible.builtin.set_fact:
     systems: >-
       {{
@@ -44,7 +44,7 @@
     - rf_info.redfish_facts is defined
     - rf_info.redfish_facts.system is defined
 
-- name: Extract SerialNumber
+- name: Retrieve SerialNumber
   ansible.builtin.set_fact:
     system_serial: "{{ systems | map(attribute='SerialNumber') | first | default('UNKNOWN') }}"
     
@@ -58,11 +58,11 @@
     is_m6_7d73: "{{ system_mtm.startswith('7D73') }}"
     is_sn550: "{{ system_mtm.startswith('7X16') }}"
 
-- name: Set M6 configuration flag
+- name: Set M6 configuration details
   set_fact:
     is_m6_server: "{{ is_m6_7x02 or is_m6_7d2x or is_m6_7d2v or is_m6_7d76 or is_m6_7d9r or is_m6_7d73 }}"
 
-- name: Get current account service configuration using Redfish module
+- name: Retrieve existing account service configuration 
   community.general.redfish_info:
     category: Accounts
     command: ListUsers
@@ -74,15 +74,10 @@
   delegate_to: mgen
   ignore_errors: yes
 
-- name: Display current account information
-  debug:
-    msg: "Current account service queried successfully"
-  when: current_accounts is succeeded
-
 # M6 Server Configuration (7X02, 7D2X, 7D2V, 7D76, 7D9R, 7D73)
 # accseccfg -am local -lp 0 -pe 0 -pew 0 -pc on -pl 10 -ci 0 -lf 0 -chgnew off -rc 0
 
-- name: Configure M6 account security via direct API (fallback)
+- name: Configure M6 account security
   uri:
     url: "https://[{{ ru7_ipv6_address }}]/redfish/v1/AccountService"
     method: PATCH
@@ -114,7 +109,7 @@
 
 # SN550 Configuration (7X16)
 # accseccfg -lp 0 -pe 0 -pew 0 -pc off -pl 8 -ci 0 -lf 0 -chgdft off -chgnew off -rc 0
-- name: Configure account security for SN550 using Redfish command
+- name: Configure account security for SN550 configuration
   community.general.redfish_command:
     category: Accounts
     command: UpdateAccountServiceProperties
@@ -129,7 +124,7 @@
   when: is_sn550 | bool
   ignore_errors: yes
 
-- name: Configure SN550 account security via direct API (fallback)
+- name: Configure SN550 account security
   uri:
     url: "https://[{{ ru7_ipv6_address }}]/redfish/v1/AccountService"
     method: PATCH
@@ -194,13 +189,10 @@
   register: ports_config
   delegate_to: mgen
 
-- name: Display port configuration status
-  debug:
-    msg: "Network services configured - SSH: Enabled, HTTPS: Enabled, HTTP: Disabled, SNMP: Enabled"  
 
 # Enable IPMI over LAN on IMM using Ansible Redfish module
 
-- name: Get current network protocol configuration
+- name: Retrieve current network protocol configuration
   community.general.redfish_info:
     category: Manager
     command: GetManagerInventory
@@ -211,7 +203,7 @@
   register: current_protocols
   delegate_to: mgen
 
-- name: Extract current IPMI status
+- name: Retrieve existing IPMI status
   set_fact:
     current_ipmi_enabled: "{{ current_protocols.redfish_facts.manager.entries[0].NetworkProtocol.IPMI.ProtocolEnabled | default(false) }}"
     current_ipmi_port: "{{ current_protocols.redfish_facts.manager.entries[0].NetworkProtocol.IPMI.Port | default(623) }}"
@@ -219,13 +211,6 @@
 - name: Check if IPMI needs to be enabled
   set_fact:
     ipmi_needs_update: "{{ not current_ipmi_enabled or current_ipmi_port != 623 }}"
-
-- name: Display current IPMI status
-  debug:
-    msg: 
-      - "IPMI over LAN current status: {{ 'Enabled' if current_ipmi_enabled else 'Disabled' }}"
-      - "IPMI Port: {{ current_ipmi_port }}"
-      - "Update needed: {{ ipmi_needs_update }}"
 
 - name: Enable IPMI over LAN
   ansible.builtin.uri:
@@ -254,12 +239,7 @@
     msg: "IPMI over LAN already enabled on port 623 - no change needed"
   when: not (ipmi_needs_update | bool)
 
-- name: Display IPMI configuration status
-  debug:
-    msg: "IPMI over LAN enabled on port 623"
-  when: ipmi_config is changed
-
-- name: Get current BIOS settings
+- name: Retrieve existing BIOS settings
   uri:
     url: "https://[{{ ru7_ipv6_address }}]/redfish/v1/Systems/1/Bios"
     method: GET
@@ -273,17 +253,13 @@
   delegate_to: mgen
 
 
-# Configure Operating mode to Maximum Performance on IMM using SSH CLI
+# Configure Operating mode to Maximum Performance on BMC using SSH CLI
 
-- name: Set operating mode variable
+- name: Retrieve existing operating mode
   set_fact:
     operating_mode: "{{ imm_operating_mode | default('Maximum Performance') }}"
 
-- name: Display operating mode to be configured
-  debug:
-    msg: "Configuring operating mode to: {{ operating_mode }}"
-
-- name: Set operating mode to Maximum Performance via ASU command
+- name: Configure operating mode
   ansible.builtin.raw: 'asu set OperatingModes.ChooseOperatingMode "{{ operating_mode }}"'
   register: operating_mode_result
   delegate_to: "{{ ansible_host }}"
@@ -314,7 +290,7 @@
     has_performance_settings: "{{ applicable_settings | length > 0 }}"
 
 # Apply BIOS settings via Redfish PATCH to pending configuration
-- name: Apply performance BIOS settings via Redfish
+- name: Apply performance BIOS settings
   ansible.builtin.uri:
     url: "https://[{{ ru7_ipv6_address }}]/redfish/v1/Systems/1/Bios/Settings"
     method: PATCH
@@ -333,7 +309,7 @@
   failed_when: false
 
 # Fallback: Try direct BIOS endpoint if Settings endpoint fails
-- name: Apply performance BIOS settings via Redfish (fallback)
+- name: Apply performance BIOS settings (fallback)
   ansible.builtin.uri:
     url: "https://[{{ ru7_ipv6_address }}]/redfish/v1/Systems/1/Bios"
     method: PATCH
@@ -399,14 +375,7 @@
     - "'Mellanox ConnectX-6' in item.Name"
     - "'Slot 3' in item.Name or 'slot-3' in item.Name"
 
-- name: Display Mellanox adapter status
-  debug:
-    msg: "Mellanox ConnectX-6 adapter found in Slot 3. Ethernet-only: {{ mellanox_ethernet_only | default(false) }}"
-  when: 
-    - configure_mellanox | default(false)
-    - mellanox_adapter_found | default(false)
-
-- name: Configure Mellanox adapter to Ethernet mode
+- name: Configure Mellanox adapter
   uri:
     url: "https://[{{ ru7_ipv6_address }}]/redfish/v1/Systems/1/NetworkInterfaces/Slot3"
     method: PATCH

@@ -4,7 +4,7 @@
   community.general.redfish_command:
     category: Accounts
     command: AddUser
-    baseuri: "{{ bmc_ip }}"
+    baseuri: "[{{ ru7_ipv6_address }}]"
     username: "{{ redfish_user }}"
     password: "{{ redfish_password }}"
     validate_certs: false
@@ -24,7 +24,7 @@
   community.general.redfish_command:
     category: Accounts
     command: EnableUser
-    baseuri: "{{ bmc_ip }}"
+    baseuri: "[{{ ru7_ipv6_address }}]"
     username: "{{ redfish_user }}"
     password: "{{ redfish_password }}"
     validate_certs: false

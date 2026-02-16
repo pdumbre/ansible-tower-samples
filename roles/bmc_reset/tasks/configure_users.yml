@@ -1,0 +1,114 @@
+# User management 
+
+- name: Get current BMC users via Redfish
+  community.general.redfish_info:
+    category: Accounts
+    command: ListUsers
+    baseuri: "{{ bmc_ip }}"
+    username: "{{ redfish_user}}"
+    password: "{{ redfish_password }}"
+  register: current_users
+  failed_when: false
+
+- name: Build structured BMC user list
+  set_fact:
+    bmc_user_list: "{{ bmc_user_list | default([]) + [ {
+        'UserName': item.UserName,
+        'RoleId': item.RoleId,
+        'Enabled': item.Enabled
+      } ] }}"
+  loop: "{{ current_users.redfish_facts.user.entries | default([]) }}"
+
+- name: Store BMC users as workflow artifact
+  set_stats:
+    data:
+      bmc_user_list: "{{ bmc_user_list }}"
+  
+- name: Debug current users
+  ansible.builtin.debug:
+    var: bmc_user_list
+
+- name: Create BMC user
+  community.general.redfish_command:
+    category: Accounts
+    command: AddUser
+    baseuri: "{{ bmc_ip }}"
+    username: "{{ redfish_user }}"
+    password: "{{ redfish_password }}"
+    validate_certs: false
+    account_username: "ansibleuser"
+    account_password: "StrongPass123!"
+    account_roleid: "Administrator"
+  register: create_user_result
+
+- name: Debug current users
+  ansible.builtin.debug:
+    var: create_user_result
+
+- name: Get current BMC users via Redfish
+  community.general.redfish_info:
+    category: Accounts
+    command: ListUsers
+    baseuri: "{{ bmc_ip }}"
+    username: "{{ redfish_user}}"
+    password: "{{ redfish_password }}"
+  register: current_users
+  failed_when: false
+
+
+- name: Build structured BMC user list
+  set_fact:
+    bmc_user_list: "{{ bmc_user_list | default([]) + [ {
+        'UserName': item.UserName,
+        'RoleId': item.RoleId,
+        'Enabled': item.Enabled
+      } ] }}"
+  loop: "{{ current_users.redfish_facts.user.entries | default([]) }}"
+
+- name: Store BMC users as workflow artifact
+  set_stats:
+    data:
+      bmc_user_list: "{{ bmc_user_list }}"
+
+- name: List existing BMC users
+  community.general.redfish_info:
+    category: Accounts
+    command: ListUsers
+    baseuri: "{{ bmc_ip }}"
+    username: "{{ redfish_user }}"
+    password: "{{ redfish_password }}"
+    validate_certs: false
+  register: existing_users
+
+- name: Ensure BMC users from inventory exist
+  community.general.redfish_command:
+    category: Accounts
+    command: AddUser
+    baseuri: "{{ bmc_ip }}"
+    username: "{{ redfish_user }}"
+    password: "{{ redfish_password }}"
+    validate_certs: false
+    account_username: "{{ item.username }}"
+    account_password: "{{ item.password }}"
+    account_roleid: "{{ item.roleid }}"
+  loop: "{{ bmc_users }}"
+  loop_control:
+    label: "{{ item.username }}"
+  when: >
+    existing_users.redfish_facts.user.entries
+    | selectattr('UserName', 'equalto', item.username)
+    | list
+    | length == 0
+
+- name: Enable users (if BMC creates them disabled)
+  community.general.redfish_command:
+    category: Accounts
+    command: EnableUser
+    baseuri: "{{ bmc_ip }}"
+    username: "{{ redfish_user }}"
+    password: "{{ redfish_password }}"
+    validate_certs: false
+    account_username: "{{ item.username }}"
+  loop: "{{ bmc_users }}"
+  loop_control:
+    label: "{{ item.username }}"

@@ -1,10 +1,10 @@
 
-- name: Retrieve link local address(lla) interface 
+- name: Retrieve link-local address interface 
   ansible.builtin.raw: ip -6 neigh show | grep -i {{ bmc_lla_ip }} | awk '{print $3}' | head -n1
   delegate_to: mgen
   register: bmc_lla_interface_result
 
-- name: Configure lla interface
+- name: Configure link-local address interface
   set_fact:
     bmc_lla_interface: "{{ bmc_lla_interface_result.stdout | trim }}"
     bmc_lla_ipv6: "{{ bmc_lla_ip }}"

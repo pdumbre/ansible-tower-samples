@@ -1,6 +1,6 @@
 
 - name: BMC Setup
-  hosts: all
+  hosts: bmc_servers
   gather_facts: false
     
   roles:

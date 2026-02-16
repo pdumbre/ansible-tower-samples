@@ -1,5 +1,15 @@
 # User management 
 
+- name: List existing BMC users
+  community.general.redfish_info:
+    category: Accounts
+    command: ListUsers
+    baseuri: "{{ bmc_ip }}"
+    username: "{{ redfish_user }}"
+    password: "{{ redfish_password }}"
+    validate_certs: false
+  register: existing_users
+
 - name: Ensure BMC users from inventory exist
   community.general.redfish_command:
     category: Accounts

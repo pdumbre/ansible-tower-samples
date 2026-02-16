@@ -1,1 +1,111 @@
+- name: Get Redfish system info
+  community.general.redfish_info:
+    category: Systems
+    command: GetSystemInventory
+    baseuri: "{{ ru7_ipv6_address }}"
+    username: "{{ redfish_user }}"
+    password: "{{ redfish_password }}"
+    validate_certs: false
+  register: rf_info
+    
+- name: Extract system identifiers
+  ansible.builtin.set_fact:
+    system_mtm: >-
+      {{
+        (
+          rf_info.redfish_facts.system.entries
+          | json_query('[].SKU')
+          | select('defined')
+          | list
+          | first
+          | default(
+              rf_info.redfish_facts.system.entries
+              | json_query('[].SubModel')
+              | select('defined')
+              | list
+              | first
+            )
+        )[0:4] | upper
+      }}
+      
+- name: Normalize system entries
+  ansible.builtin.set_fact:
+    systems: >-
+      {{
+        rf_info.redfish_facts.system.entries
+        | default([])
+        | map('last')
+        | list
+      }}
+  when:
+    - rf_info is defined
+    - rf_info.redfish_facts is defined
+    - rf_info.redfish_facts.system is defined
 
+- name: Extract SerialNumber
+  ansible.builtin.set_fact:
+    system_serial: "{{ systems | map(attribute='SerialNumber') | first | default('UNKNOWN') }}"
+    
+- name: Determine if system is M6 compatible
+  set_fact:
+    is_m6_7x02: "{{ system_mtm.startswith('7X02') }}"
+    is_m6_7d2x: "{{ system_mtm.startswith('7D2X') }}"
+    is_m6_7d2v: "{{ system_mtm.startswith('7D2V') }}"
+    is_m6_7d76: "{{ system_mtm.startswith('7D76') }}"
+    is_m6_7d9r: "{{ system_mtm.startswith('7D9R') }}"
+    is_m6_7d73: "{{ system_mtm.startswith('7D73') }}"
+    is_sn550: "{{ system_mtm.startswith('7X16') }}"
+
+- name: Set M6 configuration flag
+  set_fact:
+    is_m6_server: "{{ is_m6_7x02 or is_m6_7d2x or is_m6_7d2v or is_m6_7d76 or is_m6_7d9r or is_m6_7d73 }}"
+
+- name: Get current account service configuration using Redfish module
+  community.general.redfish_info:
+    category: Accounts
+    command: ListUsers
+    baseuri: "{{ ru7_ipv6_address }}"
+    username: "{{ redfish_user }}"
+    password: "{{ redfish_password }}"
+    timeout: 30
+  register: current_accounts
+  delegate_to: localhost
+  ignore_errors: yes
+
+- name: Display current account information
+  debug:
+    msg: "Current account service queried successfully"
+  when: current_accounts is succeeded
+
+# M6 Server Configuration (7X02, 7D2X, 7D2V, 7D76, 7D9R, 7D73)
+# accseccfg -am local -lp 0 -pe 0 -pew 0 -pc on -pl 10 -ci 0 -lf 0 -chgnew off -rc 0
+
+- name: Configure M6 account security via direct API (fallback)
+  uri:
+    url: "https://{{ ru7_ipv6_address }}/redfish/v1/AccountService"
+    method: PATCH
+    user: "{{ redfish_user }}"
+    password: "{{ redfish_password }}"
+    validate_certs: no
+    force_basic_auth: yes
+    body_format: json
+    body:
+      MinPasswordLength: 10
+      Oem:
+        Lenovo:
+          PasswordChangeOnFirstAccess: false
+          PasswordReuseCount: 0
+          PasswordComplexityCheck: true
+    status_code: [200, 202, 204]
+  register: m6_account_config_api
+  delegate_to: localhost
+  when:
+    - is_m6_server | bool
+  changed_when: m6_account_config_api.status in [200, 202, 204]
+
+- name: M6 account security configured
+  debug:
+    msg: "Account security configured for M6 server {{ system_mtm }}"
+  when:
+    - is_m6_server | bool
+    - (m6_account_config_api is changed)

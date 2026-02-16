@@ -461,8 +461,9 @@
   register: power_policy_result
   delegate_to: mgen
     
+- name: Debug power patch
   debug:
-    msg: "Power policy: {{ power_policy_result }}"
+    msg: "Power patch: {{ power_policy_result }}"
 
 - name: Configure PowerRestore Policy
   delegate_to: mgen

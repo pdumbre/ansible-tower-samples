@@ -1,4 +1,14 @@
 
+- name: Get hostname from local interface
+  ansible.builtin.raw: hostname
+  delegate_to: localhost
+  register: host_result
+
+- name: Debug host name
+  debug:
+    msg: "{{ host_result }}"
+
+    
 - name: Get LLA from local interface
   ansible.builtin.raw: ip -6 neigh show | grep -i {{ bmc_lla_ip }} | awk '{print $3}' | head -n1
   delegate_to: localhost

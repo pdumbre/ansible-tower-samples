@@ -446,33 +446,15 @@
   debug:
     msg: "Mellanox adapter configuration not required for this system model"
 
-- name: Set power restore policy (Lenovo XCC)
-  uri:
-    url: "https://[{{ ru7_ipv6_address }}]/redfish/v1/Managers/1"
-    method: PATCH
-    user: "{{ redfish_user }}"
-    password: "{{ redfish_password }}"
-    validate_certs: no
-    body_format: json
-    body:
-      Oem:
-        Lenovo:
-          PowerRestorePolicy: "{{ powerrp | default('Restore') }}"
-    status_code: [200, 202, 204]
-  delegate_to: mgen
-  
-- name: Debug power patch
-  debug:
-    msg: "Power patch: {{ power_policy_result }}"
 
-- name: Configure PowerRestore Policy
+- name: Execute SSH command on all BMCs from baremetal
   delegate_to: mgen
-  ansible.builtin.shell: >
-    sshpass -p '{{ hostvars[inventory_hostname].new_redfish_password }}' \
-    ssh -o StrictHostKeyChecking=no \
-    '{{ hostvars[inventory_hostname].ru7_user }}@{{ hostvars[inventory_hostname].ru7_ipv6_address }}' \
-    "power -rp {{ powerrp }}"
-    
+  command: >
+    sshpass -p '{{ hostvars[inventory_hostname].new_redfish_password }}'
+    ssh -o StrictHostKeyChecking=no
+    {{ hostvars[inventory_hostname].ru7_user }}@{{ hostvars[inventory_hostname].bmc_lla_ipv6 }}%{{ hostvars[inventory_hostname].bmc_lla_interface }}
+    "failover shared && usbeth -en enabled && power -rp {{ powerrp }}"
+
 # Enable USB Ethernet for inband operations on IMM
 # Equivalent to: imm.command("usbeth -en enabled")
 - name: Execute SSH command on all BMCs from baremetal

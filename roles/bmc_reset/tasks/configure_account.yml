@@ -258,23 +258,9 @@
     msg: "IPMI over LAN enabled on port 623"
   when: ipmi_config is changed
 
-# Enable USB Ethernet for inband operations on IMM
-# Equivalent to: imm.command("usbeth -en enabled")
-
-- name: Enable USB Ethernet using Lenovo CLI (authoritative)
-  ansible.builtin.raw: |
-    usbeth -en enabled
-  vars:
-    ansible_connection: ssh
-    ansible_user: "{{ redfish_user }}"
-    ansible_password: "{{ redfish_password }}"
-  register: usb_eth_result
-  changed_when: "'Success' in usb_eth_result.stdout or usb_eth_result.rc == 0"
-  failed_when: usb_eth_result.rc != 0
-
 - name: Get current BIOS settings
   uri:
-    url: "https://{{ bmc_ip }}/redfish/v1/Systems/1/Bios"
+    url: "https://[{{ ru7_ipv6_address }}]/redfish/v1/Systems/1/Bios"
     method: GET
     user: "{{ redfish_user }}"
     password: "{{ redfish_password }}"
@@ -283,7 +269,7 @@
     return_content: yes
     status_code: [200]
   register: current_bios
-  delegate_to: localhost
+  delegate_to: mgen
 
 
 # Configure Operating mode to Maximum Performance on IMM using SSH CLI
@@ -329,7 +315,7 @@
 # Apply BIOS settings via Redfish PATCH to pending configuration
 - name: Apply performance BIOS settings via Redfish
   ansible.builtin.uri:
-    url: "https://{{ bmc_ip }}/redfish/v1/Systems/1/Bios/Settings"
+    url: "https://[{{ ru7_ipv6_address }}]/redfish/v1/Systems/1/Bios/Settings"
     method: PATCH
     user: "{{ redfish_user }}"
     password: "{{ redfish_password }}"
@@ -348,7 +334,7 @@
 # Fallback: Try direct BIOS endpoint if Settings endpoint fails
 - name: Apply performance BIOS settings via Redfish (fallback)
   ansible.builtin.uri:
-    url: "https://{{ bmc_ip }}/redfish/v1/Systems/1/Bios"
+    url: "https://[{{ ru7_ipv6_address }}]/redfish/v1/Systems/1/Bios"
     method: PATCH
     user: "{{ redfish_user }}"
     password: "{{ redfish_password }}"
@@ -388,7 +374,7 @@
 
 - name: Get adapter list from system
   uri:
-    url: "https://{{ bmc_ip }}/redfish/v1/Systems/1/NetworkInterfaces"
+    url: "https://[{{ ru7_ipv6_address }}]/redfish/v1/Systems/1/NetworkInterfaces"
     method: GET
     user: "{{ redfish_user }}"
     password: "{{ redfish_password }}"
@@ -421,7 +407,7 @@
 
 - name: Configure Mellanox adapter to Ethernet mode
   uri:
-    url: "https://{{ bmc_ip }}/redfish/v1/Systems/1/NetworkInterfaces/Slot3"
+    url: "https://[{{ ru7_ipv6_address }}]/redfish/v1/Systems/1/NetworkInterfaces/Slot3"
     method: PATCH
     user: "{{ redfish_user }}"
     password: "{{ redfish_password }}"
@@ -540,3 +526,16 @@
       - "Verification: Power restore policy is now set to '{{ verified_policy | default(desired_policy) }}'"
   when: policy_needs_update | bool
 
+# Enable USB Ethernet for inband operations on IMM
+# Equivalent to: imm.command("usbeth -en enabled")
+
+- name: Enable USB Ethernet using Lenovo CLI (authoritative)
+  ansible.builtin.raw: |
+    usbeth -en enabled
+  vars:
+    ansible_connection: ssh
+    ansible_user: "{{ redfish_user }}"
+    ansible_password: "{{ redfish_password }}"
+  register: usb_eth_result
+  changed_when: "'Success' in usb_eth_result.stdout or usb_eth_result.rc == 0"
+  failed_when: usb_eth_result.rc != 0

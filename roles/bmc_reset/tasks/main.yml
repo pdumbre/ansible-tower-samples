@@ -2,4 +2,4 @@
 # Lenovo BMC Reset Configuration Role - Main Tasks
 
 - name: Include Manufacturer Specific Tasks
-  include_tasks: configure_network.yml
+  include_tasks: configure_account.yml

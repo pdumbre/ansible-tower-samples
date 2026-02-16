@@ -1,3 +1,11 @@
+
+- name: Execute SSH command on all BMCs from baremetal
+  delegate_to: mgen
+  command: >
+    sshpass -p '{{ hostvars[inventory_hostname].new_redfish_password }}'
+    ssh '{{ hostvars[inventory_hostname].ru7_user }}@{{ hostvars[inventory_hostname].ru7_ipv6_address }}' \
+    "usbeth -en enabled && power -rp {{ powerrp }}"
+
 - name: Get Redfish system info
   community.general.redfish_info:
     category: Systems
@@ -446,21 +454,4 @@
   debug:
     msg: "Mellanox adapter configuration not required for this system model"
 
-
-- name: Execute SSH command on all BMCs from baremetal
-  delegate_to: mgen
-  command: >
-    sshpass -p '{{ hostvars[inventory_hostname].new_redfish_password }}'
-    ssh '{{ hostvars[inventory_hostname].ru7_user }}@{{ hostvars[inventory_hostname].ru7_ipv6_address }}' \
-    "failover shared && usbeth -en enabled && power -rp {{ powerrp }}"
-
-# Enable USB Ethernet for inband operations on IMM
-# Equivalent to: imm.command("usbeth -en enabled")
-- name: Execute SSH command on all BMCs from baremetal
-  delegate_to: mgen
-  ansible.builtin.shell: >
-    sshpass -p '{{ hostvars[inventory_hostname].new_redfish_password }}' \
-    ssh -o StrictHostKeyChecking=no \
-    '{{ hostvars[inventory_hostname].ru7_user }}@{{ hostvars[inventory_hostname].ru7_ipv6_address }}' \
-    "usbeth -en enabled"
 

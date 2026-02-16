@@ -115,7 +115,7 @@
     sshpass -p '{{ hostvars[inventory_hostname].new_redfish_password }}'
     ssh -o StrictHostKeyChecking=no
     {{ hostvars[inventory_hostname].ru7_user }}@{{ hostvars[inventory_hostname].bmc_lla_ipv6 }}%{{ hostvars[inventory_hostname].bmc_lla_interface }}
-    "ifconfig {{ bmc_network.bmc_network_interface }} -ipv6static enabled -failover shared && usbeth -en enabled && power -rp {{ powerrp }}"
+    "ifconfig {{ bmc_network.bmc_network_interface }} -ipv6static enabled -failover shared; usbeth -en enabled; power -rp {{ powerrp }}"
 
 - name: Patch current network interface configuration using curl
   shell: >

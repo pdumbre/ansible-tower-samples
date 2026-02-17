@@ -70,7 +70,7 @@
     body_format: json
     body:
       DHCPv6: 
-        OperatingMode: "{{ "Enabled" if bmc_network.dhcp6_enabled else "Disabled" }}"
+        OperatingMode: "{{ bmc_network.dhcp6_enabled }}"
       DHCPv4:
         Enabled: "{{ bmc_network.dhcp6_enabled | bool }}"
       IPv6StaticAddresses:

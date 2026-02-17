@@ -27,6 +27,10 @@
   debug:
     msg:
       - "BMC reboot completed successfully."
+
+- name: Debug url
+  debug:
+    msg: "https://[{{ bmc_lla_ip }}%{{ bmc_lla_interface }}]/redfish/v1/AccountService/Accounts/1"
       
 - name: Generate complex password
   set_fact:

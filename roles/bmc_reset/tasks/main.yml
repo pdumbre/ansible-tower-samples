@@ -2,7 +2,7 @@
 # Lenovo BMC Reset Configuration Role - Main Tasks
 
 - name: Include bmc reset tasks
-  include_tasks: temp.yml
+  include_tasks: reset_bmc.yml
 
 - name: Include network tasks
   include_tasks: configure_network.yml

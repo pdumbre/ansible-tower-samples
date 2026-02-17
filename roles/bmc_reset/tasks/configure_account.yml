@@ -7,7 +7,6 @@
     username: "{{ redfish_user }}"
     password: "{{ new_redfish_password }}"
     validate_certs: false
-  delegate_to: mgen
   register: rf_info
     
 - name: Retrieve system identifiers
@@ -71,7 +70,6 @@
     password: "{{ new_redfish_password }}"
     timeout: 30
   register: current_accounts
-  delegate_to: mgen
 
 
 # M6 Server Configuration (7X02, 7D2X, 7D2V, 7D76, 7D9R, 7D73)

@@ -20,7 +20,6 @@
     status_code: [200]
   register: pre_reset_bmc_info
   delegate_to: mgen
-  ignore_errors: yes
 
 - name: Display current BMC information
   debug:
@@ -46,7 +45,6 @@
   register: factory_reset_result
   delegate_to: mgen
   when: not ansible_check_mode
-  ignore_errors: yes
 
 - name: Check if reset was accepted
   debug:
@@ -99,6 +97,7 @@
   debug:
     msg:
       - "BMC reboot completed successfully."
+      
 - name: Verify BMC is accessible with default credentials
   debug:
     msg:
@@ -112,28 +111,6 @@
       - "BMC Status: {{ bmc_available.json.Status.State | default('Unknown') }}"
       - "========================================="
       - "IMPORTANT: Reconfigure the BMC before use"
-      - "========================================="
-  when:
-    - not ansible_check_mode
-    - bmc_available is succeeded
-
-- name: Display next steps
-  debug:
-    msg:
-      - "========================================="
-      - "Next Steps After Factory Reset"
-      - "========================================="
-      - "1. Update inventory with default credentials:"
-      - "   ansible_user: USERID"
-      - "   ansible_password: PASSW0RD"
-      - ""
-      - "2. Run BMC configuration playbook:"
-      - "   ansible-playbook configure_bmc.yml --limit {{ inventory_hostname }}"
-      - ""
-      - "3. Configure network settings"
-      - "4. Create/update user accounts"
-      - "5. Apply BIOS and performance settings"
-      - "6. Configure power policies"
       - "========================================="
   when:
     - not ansible_check_mode

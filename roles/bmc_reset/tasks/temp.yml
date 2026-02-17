@@ -56,6 +56,6 @@
     validate_certs: no
     body_format: json
     body:
-      Password: "{{ new_redfish_password }}"
+      Password: "{{ updated_redfish_password }}"
     status_code: 200
   delegate_to: mgen

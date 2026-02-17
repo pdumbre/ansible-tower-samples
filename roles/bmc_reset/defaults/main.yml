@@ -34,6 +34,9 @@ ports:
 # Power Restore Policy
 powerrp: "restore"      # Options: restore, off, on
 
-# IMM Connection Settings
+# BMC Connection Settings
 bmc_username: "USERID"
 bmc_password: "PASSW0RD"
+
+# BMC Operating Mode
+bmc_operating_mode: "Maximum Performance"

@@ -90,6 +90,6 @@
     - bmc_network.name_server_sync_enabled is defined
 
 - name: Wait for network configuration to be effective
-      pause:
-        seconds: 30
+  pause:
+    seconds: 30
 

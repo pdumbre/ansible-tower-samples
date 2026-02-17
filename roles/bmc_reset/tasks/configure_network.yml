@@ -52,59 +52,14 @@
     current_ipv6_addresses: "{{ network_interface_detail.json.IPv6Addresses | default([]) }}"
     current_ipv6_addr: "{{ network_interface_detail.json.IPv6Addresses[0].Address | default('') }}"
     current_dhcp: "{{ network_interface_detail.json.DHCPv4.DHCPEnabled | default(false) }}"
-
-- name: Display next steps
-  debug:
-    msg:
-      - "{{ current_mac }}"
-      - "{{ current_ipv6_addresses }}"
-      - "{{ current_ipv6_addr }}"
-      - "{{ current_dhcp }}"
-      - "{{ ipv6_address }}"
     
 - name: Check if IPv6 address needs update
   set_fact:
     ipv6_needs_update: "{{ ipv6_address is defined and current_ipv6_addr != ipv6_address }}"
 
-- name: Display ipv6
-  debug:
-    msg:
-      - "{{ ipv6_needs_update }}"
-    
-- name: Configure Network Settings
-  shell: >
-    curl -k -u {{ redfish_user }}:{{ new_redfish_password }}
-    -H "Content-Type: application/json"
-    -X PATCH
-    "https://[{{ bmc_lla_ip }}%25{{ bmc_lla_interface }}]/{{ nic_url }}"
-    --data-raw '{
-      "DHCPv6": {
-        "OperatingMode": "{{ "Enabled" if bmc_network.dhcp6_enabled else "Disabled" }}"
-      },
-      "IPv6StaticAddresses": [
-        {
-          "Address": "{{ ipv6_address }}",
-          "PrefixLength": {{ bmc_network.ipv6_prefix | int }}
-        }
-      ],
-      "StatelessAddressAutoConfig": {
-        "IPv6AutoConfigEnabled": {{ bmc_network.stateless_autoconfig_enabled | lower }}
-      }
-    }'
-  delegate_to: mgen
-  register: network_config_result
-  when:
-    - ipv6_address is defined
-    - ipv6_needs_update | bool
-  changed_when: false
-
-- name: Wait for network configuration to apply
-  pause:
-    seconds: 30
-
 - name: Configure BMC Failover and DNS Sync properties
   uri:
-    url: "https://[{{ ipv6_address }}]{{ network_interface_uri }}"
+    url: "https://[{{ bmc_lla_ip }}%{{ bmc_lla_interface }}]{{ network_interface_uri }}"
     method: PATCH
     user: "{{ redfish_user }}"
     password: "{{ new_redfish_password }}"

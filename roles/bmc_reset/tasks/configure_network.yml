@@ -84,7 +84,7 @@
             Enabled: "{{ bmc_network.stateless_autoconfig_enabled | bool }}
       Oem:
         Lenovo:
-          "NetworkSettingSync": "{{ bmc_network.name_server_sync_enabled }}"
+          NetworkSettingSync: "{{ bmc_network.name_server_sync_enabled }}"
     status_code: [200, 204]
   delegate_to: mgen  
   register: ipv6_oem_config

@@ -105,15 +105,11 @@
 
 - name: Generate BMC secret
   set_fact:
-    new_redfish_password: >-
+    updated_bmc_password: >-
       {{
         lookup('password', '/dev/null length=20 chars=ascii_letters,digits') +
         '!'
       }}
-      
-- name: Display Secret Details
-  debug:
-    msg: "Updated Password: {{ new_redfish_password }}"
     
 - name: Configure BMC Account
   uri:
@@ -125,6 +121,6 @@
     validate_certs: no
     body_format: json
     body:
-      Password: "{{ new_redfish_password }}"
+      Password: "{{ latest_redfish_password }}"
     status_code: 200
   delegate_to: mgen

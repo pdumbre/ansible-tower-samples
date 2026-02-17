@@ -81,7 +81,7 @@
         - Address: "{{ ipv4_address }}"
           SubnetMask: "{{ ipv4_netmask | default('255.255.0.0') }}"
       SLAAC:
-            Enabled: "{{ bmc_network.stateless_autoconfig_enabled | bool }}
+            Enabled: "{{ bmc_network.stateless_autoconfig_enabled | bool }}"
       Oem:
         Lenovo:
           NetworkSettingSync: "{{ bmc_network.name_server_sync_enabled | bool }}"

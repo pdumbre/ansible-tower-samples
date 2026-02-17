@@ -1,6 +1,7 @@
 
 - name: BMC Setup
   hosts: bmc_servers
+  delegate_to: mgen
   gather_facts: false
     
   roles:

@@ -9,27 +9,6 @@
     bmc_lla_interface: "{{ bmc_lla_interface_result.stdout | trim }}"
     bmc_lla_ipv6: "{{ bmc_lla_ip }}"
 
-- name: Perform reset
-  vars:
-    redfish_url: "https://[{{ bmc_lla_ip }}%{{ bmc_lla_interface }}]/redfish/v1/Managers/1/Actions/Manager.ResetToDefaults"
-  shell: curl -k -L -s {{ redfish_url }}
-  register: bmc_status
-  failed_when: false
-  delegate_to: mgen
-
-- name: Reset result
-  debug:
-    msg: "{{ bmc_status }}"
-  
-
-- name: Wait for BMC to begin reboot
-  pause:
-    seconds: 30
-
-- name: Display reboot status
-  debug:
-    msg: "BMC is rebooting... This may take 5-10 minutes"
-
 - name: Wait until BMC is available
   vars:
     redfish_url: "https://[{{ bmc_lla_ip }}%{{ bmc_lla_interface }}]/redfish/v1"
@@ -48,7 +27,24 @@
   debug:
     msg:
       - "BMC reboot completed successfully."
-
+      
+- name: Verify BMC is accessible with default credentials
+  debug:
+    msg:
+      - "========================================="
+      - "Factory Reset Complete"
+      - "========================================="
+      - "BMC is now accessible with default credentials:"
+      - "  Username: USERID"
+      - "  Password: PASSW0RD"
+      - "BMC Firmware: {{ bmc_available.json.FirmwareVersion | default('Unknown') }}"
+      - "BMC Status: {{ bmc_available.json.Status.State | default('Unknown') }}"
+      - "========================================="
+      - "IMPORTANT: Reconfigure the BMC before use"
+      - "========================================="
+  when:
+    - not ansible_check_mode
+    - bmc_available is succeeded
 
 - name: Generate complex password
   set_fact:
@@ -75,33 +71,6 @@
       Password: "{{ new_redfish_password }}"
     status_code: 200
 
-- name: Configure BMC Account
-  uri:
-    url: "https://[{{ bmc_lla_ip }}%{{ bmc_lla_interface }}]/redfish/v1/AccountService/Accounts/1"
-    method: PATCH
-    user: "USERID"
-    password: "PASSW0RD"
-    force_basic_auth: yes
-    validate_certs: no
-    body_format: json
-    body:
-      Password: "{{ new_redfish_password }}"
-    status_code: 200
-  delegate_to: mgen
-
-
-- name: Inform that BMC is available
-  debug:
-    msg:
-      - "BMC reboot completed successfully."
-    
-- name: Generate BMC secret
-  set_fact:
-    new_redfish_password: >-
-      {{
-        lookup('password', '/dev/null length=20 chars=ascii_letters,digits') +
-        '!'
-      }}
 - name: Configure BMC Account
   uri:
     url: "https://[{{ bmc_lla_ip }}%{{ bmc_lla_interface }}]/redfish/v1/AccountService/Accounts/1"

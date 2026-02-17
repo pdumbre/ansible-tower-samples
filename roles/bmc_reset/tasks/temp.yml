@@ -47,3 +47,4 @@
     body:
       Password: "{{ new_redfish_password }}"
     status_code: 200
+  delegate_to: mgen

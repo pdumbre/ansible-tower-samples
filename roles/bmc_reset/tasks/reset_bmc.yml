@@ -10,7 +10,7 @@
 
 - name: Get current BMC information before reset
   uri:
-    url: "https://[{{ ru7_ipv6_address }}]/redfish/v1/Managers/1"
+    url: "https://[{{ ipv6_address }}]/redfish/v1/Managers/1"
     method: GET
     user: "{{ redfish_user }}"
     password: "{{ redfish_password }}"
@@ -31,7 +31,7 @@
 
 - name: Perform factory reset using Redfish ResetToDefaults action
   uri:
-    url: "https://[{{ ru7_ipv6_address }}]/redfish/v1/Managers/1/Actions/Manager.ResetToDefaults"
+    url: "https://[{{ ipv6_address }}]/redfish/v1/Managers/1/Actions/Manager.ResetToDefaults"
     method: POST
     user: "{{ redfish_user }}"
     password: "{{ redfish_password }}"

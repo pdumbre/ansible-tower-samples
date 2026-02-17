@@ -4,12 +4,12 @@
 - name: Include bmc reset tasks
   include_tasks: temp.yml
 
-#- name: Include network tasks
- # include_tasks: configure_network.yml
+- name: Include network tasks
+  include_tasks: configure_network.yml
 
-#- name: Include account tasks
-#  include_tasks: configure_account.yml
+- name: Include account tasks
+  include_tasks: configure_account.yml
 
-#- name: Include user tasks
-#  include_tasks: configure_users.yml
+- name: Include user tasks
+  include_tasks: configure_users.yml
 

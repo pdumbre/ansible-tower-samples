@@ -36,14 +36,6 @@
   debug:
     msg: "Message: {{ bmc_status }}"
 
-- name: Wait for BMC HTTPS port to become available
-  wait_for:
-    host: "[{{ bmc_lla_ip }}%{{ bmc_lla_interface }}]"
-    port: 443
-    timeout: 600
-  delegate_to: mgen
-  no_log: true
-
 - name: Inform that BMC is available
   debug:
     msg:

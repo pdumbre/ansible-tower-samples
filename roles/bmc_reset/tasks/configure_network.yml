@@ -66,12 +66,10 @@
   set_fact:
     ipv6_needs_update: "{{ ipv6_address is defined and current_ipv6_addr != ipv6_address }}"
 
-- name: IPv6 already configured
+- name: Display ipv6
   debug:
-    msg: "IPv6 address already set to {{ ipv6_address }} - no change needed"
-  when:
-    - ipv6_address is defined
-    - not (ipv6_needs_update | bool)
+    msg:
+      - "{{ ipv6_needs_update }}"
     
 - name: Configure Network Settings
   shell: >

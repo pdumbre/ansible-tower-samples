@@ -4,7 +4,7 @@
   command: >
     sshpass -p '{{ hostvars[inventory_hostname].new_redfish_password }}'
     ssh -o StrictHostKeyChecking=no
-    {{ hostvars[inventory_hostname].ru7_user }}@{{ hostvars[inventory_hostname].bmc_lla_ipv6 }}%{{ hostvars[inventory_hostname].bmc_lla_interface }}
+    {{ hostvars[inventory_hostname].redfish_user }}@{{ hostvars[inventory_hostname].bmc_lla_ipv6 }}%{{ hostvars[inventory_hostname].bmc_lla_interface }}
     "ifconfig {{ bmc_network.bmc_network_interface }} -ipv6static enabled -failover shared; usbeth -en enabled; power -rp {{ powerrp }}"
 
 - name: Retrieve details of network configuration 
@@ -58,7 +58,7 @@
     
 - name: Configure Network Settings
   shell: >
-    curl -k -u {{ ru7_user }}:{{ new_redfish_password }}
+    curl -k -u {{ redfish_user }}:{{ new_redfish_password }}
     -H "Content-Type: application/json"
     -X PATCH
     "https://[{{ bmc_lla_ip }}%25{{ bmc_lla_interface }}]/{{ nic_url }}"
@@ -106,7 +106,7 @@
           SubnetMask: "{{ ipv6_netmask | default('255.255.0.0') }}"
           Gateway: "{{ bmc_network.ipv6_gateway }}"
       IPv4StaticAddresses:
-        - Address: "{{ ru7_address }}"
+        - Address: "{{ ipv4_address }}"
           SubnetMask: "{{ ipv4_netmask | default('255.255.0.0') }}"
       Oem:
         Lenovo:

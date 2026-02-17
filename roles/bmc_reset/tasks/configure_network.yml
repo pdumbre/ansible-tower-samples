@@ -24,14 +24,6 @@
   set_fact:
     network_interface_uri: "{{ current_network.json.Members[0]['@odata.id'] }}"
   when: current_network.json.Members | length > 0
-
-- name: Network interface url
-  debug:
-    msg: "network interface: {{ network_interface_uri }}"
-
-- name: url
-  debug:
-    msg: "https://[{{ bmc_lla_ip }}%{{ bmc_lla_interface }}]{{ network_interface_uri }}"
     
 - name: Retrieve network interface details
   uri:
@@ -57,7 +49,7 @@
   set_fact:
     ipv6_needs_update: "{{ ipv6_address is defined and current_ipv6_addr != ipv6_address }}"
 
-- name: Configure BMC Failover and DNS Sync properties
+- name: Configure Network Settings
   uri:
     url: "https://[{{ bmc_lla_ip }}%{{ bmc_lla_interface }}]{{ network_interface_uri }}"
     method: PATCH

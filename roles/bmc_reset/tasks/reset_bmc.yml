@@ -75,26 +75,6 @@
     - not ansible_check_mode
     - factory_reset_result is succeeded or alternative_reset_result is succeeded
 
-- name: Wait for BMC to become unreachable (rebooting)
-  uri:
-    url: "https://[{{ ru7_ipv6_address }}]/redfish/v1/Managers/1"
-    method: GET
-    user: "{{ redfish_user }}"
-    password: "{{ redfish_password }}"
-    validate_certs: no
-    force_basic_auth: yes
-    status_code: [200]
-    timeout: 10
-  register: bmc_reachable
-  delegate_to: localhost
-  until: bmc_reachable is failed
-  retries: 12
-  delay: 10
-  ignore_errors: yes
-  when:
-    - not ansible_check_mode
-    - factory_reset_result is succeeded
-
 - name: Display reboot status
   debug:
     msg: "BMC is rebooting... This may take 5-10 minutes"
@@ -103,6 +83,13 @@
     - bmc_reachable is failed
 
 - name: Wait for BMC to complete reboot and become available
+  wait_for:
+    host: "[{{ bmc_lla_ip }}%{{ bmc_lla_interface }}]"
+    port: 443
+    timeout: 600
+  delegate_to: mgen
+
+- name: Verify BMC is accessible with default credentials
   uri:
     url: "https://[{{ bmc_lla_ip }}%{{ bmc_lla_interface }}]/redfish/v1/Managers/1"
     method: GET
@@ -112,23 +99,13 @@
     force_basic_auth: yes
     return_content: yes
     status_code: [200]
-    timeout: 30
+    timeout: 300
   register: bmc_available
   delegate_to: localhost
   until: bmc_available is succeeded
-  retries: 60
-  delay: 10
   when:
     - not ansible_check_mode
     - factory_reset_result is succeeded
-
-- name: Wait for BMC to respond via LLA
-  ansible.builtin.wait_for:
-    host: "[{{ bmc_lla_ip }}%{{ bmc_lla_interface }}]"  # e.g., fe80::xxxx%eth0
-    port: 443
-    delay: 5
-    timeout: 300
-    state: started
 
 - name: Verify BMC is accessible with default credentials
   debug:

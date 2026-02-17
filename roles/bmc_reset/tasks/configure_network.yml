@@ -9,10 +9,10 @@
 
 - name: Retrieve details of network configuration 
   uri:
-    url: "{{ redfish_host }}/redfish/v1/Managers/1/EthernetInterfaces"
+    url: "https://[{{ ipv6_address }}]/redfish/v1/Managers/1/EthernetInterfaces"
     method: GET
     user: "{{ redfish_user }}"
-    password: "{{ redfish_password }}"
+    password: "{{ new_redfish_password }}"
     validate_certs: no
     force_basic_auth: yes
     return_content: yes
@@ -20,25 +20,43 @@
   register: current_network
   delegate_to: localhost
 
-- name: Retrieve network interface 
+- name: Retrieve network interface from discovery response
   set_fact:
     network_interface_uri: "{{ current_network.json.Members[0]['@odata.id'] }}"
   when: current_network.json.Members | length > 0
 
 - name: Retrieve network interface details
   uri:
-    url: "{{ redfish_host }}{{ network_interface_uri }}"
+    url: "https://[{{ ipv6_address }}]{{ network_interface_uri }}"
     method: GET
     user: "{{ redfish_user }}"
-    password: "{{ redfish_password }}"
+    password: "{{ new_redfish_password }}"
     force_basic_auth: yes
     validate_certs: no
     return_content: yes
   register: network_interface_detail
   delegate_to: localhost
   when: network_interface_uri is defined
-  
-- name: Configure BMC Network Settings
+
+- name: Retrieve existing network configuration
+  set_fact:
+    current_mac: "{{ network_interface_detail.json.MACAddress | default('Not available') }}"
+    current_ipv6_addresses: "{{ network_interface_detail.json.IPv6Addresses | default([]) }}"
+    current_ipv6_addr: "{{ network_interface_detail.json.IPv6Addresses[0].Address | default('') }}"
+    current_dhcp: "{{ network_interface_detail.json.DHCPv4.DHCPEnabled | default(false) }}"
+    
+- name: Check if IPv6 address needs update
+  set_fact:
+    ipv6_needs_update: "{{ ipv6_address is defined and current_ipv6_addr != ipv6_address }}"
+
+- name: IPv6 already configured
+  debug:
+    msg: "IPv6 address already set to {{ ipv6_address }} - no change needed"
+  when:
+    - ipv6_address is defined
+    - not (ipv6_needs_update | bool)
+    
+- name: Configure Network Settings
   shell: >
     curl -k -u {{ ru7_user }}:{{ new_redfish_password }}
     -H "Content-Type: application/json"
@@ -59,16 +77,19 @@
       }
     }'
   delegate_to: mgen
-  register: curl_nic_patch_result
+  register: network_config_result
+  when:
+    - ipv6_address is defined
+    - ipv6_needs_update | bool
   changed_when: false
 
 - name: Wait for network configuration to apply
   pause:
-    seconds: 10
+    seconds: 30
 
 - name: Configure BMC Failover and DNS Sync properties
   uri:
-    url: "https://[{{ ipv6_address }}]{{ nic_url }}"
+    url: "https://[{{ ipv6_address }}]{{ network_interface_uri }}"
     method: PATCH
     user: "{{ redfish_user }}"
     password: "{{ new_redfish_password }}"

@@ -123,6 +123,14 @@
     - not ansible_check_mode
     - factory_reset_result is succeeded
 
+- name: Wait for BMC to respond via LLA
+  ansible.builtin.wait_for:
+    host: "[{{ bmc_lla_ip }}%{{ bmc_lla_interface }}]"  # e.g., fe80::xxxx%eth0
+    port: 443
+    delay: 5
+    timeout: 300
+    state: started
+
 - name: Verify BMC is accessible with default credentials
   debug:
     msg:
@@ -163,13 +171,26 @@
     - not ansible_check_mode
     - bmc_available is succeeded
 
-- name: Wait for BMC to respond via LLA
-  ansible.builtin.wait_for:
-    host: "[{{ bmc_lla_ip }}%{{ bmc_lla_interface }}]"  # e.g., fe80::xxxx%eth0
-    port: 443
-    delay: 5
-    timeout: 300
-    state: started
+- name: Generate complex password
+  set_fact:
+    new_redfish_password: >-
+      {{
+        lookup('password', '/dev/null length=20 chars=ascii_letters,digits') +
+        '!'
+      }}
+
+- name: Change default BMC password
+  uri:
+    url: "https://[{{ bmc_lla_ip }}%{{ bmc_lla_interface }}]/redfish/v1/AccountService/Accounts/1"
+    method: PATCH
+    user: "USERID"
+    password: "PASSW0RD"
+    force_basic_auth: yes
+    validate_certs: no
+    body_format: json
+    body:
+      Password: "{{ new_redfish_password }}"
+    status_code: 200
 
 - name: Retrieve existing network configuration of BMC
   command: >

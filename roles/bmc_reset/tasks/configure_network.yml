@@ -45,7 +45,7 @@
     status_code: [200, 202, 204]
     timeout: 60
   register: factory_reset_result
-  delegate_to: localhost
+  delegate_to: mgen
   when: not ansible_check_mode
   ignore_errors: yes
 
@@ -78,10 +78,10 @@
 
 - name: Wait for BMC to become unreachable (rebooting)
   uri:
-    url: "https://{{ ansible_host }}/redfish/v1/Managers/1"
+    url: "https://[{{ ru7_ipv6_address }}]/redfish/v1/Managers/1"
     method: GET
-    user: "{{ ansible_user }}"
-    password: "{{ ansible_password }}"
+    user: "{{ redfish_user }}"
+    password: "{{ redfish_password }}"
     validate_certs: no
     force_basic_auth: yes
     status_code: [200]
@@ -94,7 +94,7 @@
   ignore_errors: yes
   when:
     - not ansible_check_mode
-    - factory_reset_result is succeeded or alternative_reset_result is succeeded
+    - factory_reset_result is succeeded
 
 - name: Display reboot status
   debug:
@@ -105,7 +105,7 @@
 
 - name: Wait for BMC to complete reboot and become available
   uri:
-    url: "https://{{ ansible_host }}/redfish/v1/Managers/1"
+    url: "https://[{{ bmc_lla_ip }}%{{ bmc_lla_interface }}]/redfish/v1/Managers/1"
     method: GET
     user: "USERID"  # Default username after factory reset
     password: "PASSW0RD"  # Default password after factory reset
@@ -121,8 +121,7 @@
   delay: 10
   when:
     - not ansible_check_mode
-    - imm_wait_for_reset | default(true) | bool
-    - factory_reset_result is succeeded or alternative_reset_result is succeeded
+    - factory_reset_result is succeeded
 
 - name: Verify BMC is accessible with default credentials
   debug:
@@ -138,30 +137,6 @@
       - "========================================="
       - "IMPORTANT: Reconfigure the BMC before use"
       - "========================================="
-  when:
-    - not ansible_check_mode
-    - bmc_available is succeeded
-
-- name: Update checkpoint after successful reset
-  set_fact:
-    factory_reset_checkpoint:
-      timestamp: "{{ ansible_date_time.iso8601 }}"
-      hostname: "{{ inventory_hostname }}"
-      ansible_host: "{{ ansible_host }}"
-      operation: "factory_reset"
-      status: "completed"
-      default_username: "USERID"
-      default_password: "PASSW0RD"
-      firmware_version: "{{ bmc_available.json.FirmwareVersion | default('Unknown') }}"
-  when:
-    - not ansible_check_mode
-    - bmc_available is succeeded
-
-- name: Save post-reset checkpoint
-  copy:
-    content: "{{ factory_reset_checkpoint | to_nice_json }}"
-    dest: "/tmp/imm_factory_reset_{{ inventory_hostname }}_{{ ansible_date_time.epoch }}_complete.json"
-  delegate_to: localhost
   when:
     - not ansible_check_mode
     - bmc_available is succeeded

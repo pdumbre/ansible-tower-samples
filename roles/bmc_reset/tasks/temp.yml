@@ -28,24 +28,6 @@
     msg:
       - "BMC reboot completed successfully."
       
-- name: Verify BMC is accessible with default credentials
-  debug:
-    msg:
-      - "========================================="
-      - "Factory Reset Complete"
-      - "========================================="
-      - "BMC is now accessible with default credentials:"
-      - "  Username: USERID"
-      - "  Password: PASSW0RD"
-      - "BMC Firmware: {{ bmc_available.json.FirmwareVersion | default('Unknown') }}"
-      - "BMC Status: {{ bmc_available.json.Status.State | default('Unknown') }}"
-      - "========================================="
-      - "IMPORTANT: Reconfigure the BMC before use"
-      - "========================================="
-  when:
-    - not ansible_check_mode
-    - bmc_available is succeeded
-
 - name: Generate complex password
   set_fact:
     new_redfish_password: >-

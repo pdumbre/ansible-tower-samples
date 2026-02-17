@@ -1,0 +1,85 @@
+- name: Wait for BMC to complete reboot and become available
+  wait_for:
+    host: "[{{ bmc_lla_ip }}%{{ bmc_lla_interface }}]"
+    port: 443
+    timeout: 600
+  delegate_to: mgen
+
+- name: Verify BMC is accessible with default credentials
+  uri:
+    url: "https://[{{ bmc_lla_ip }}%{{ bmc_lla_interface }}]/redfish/v1/Managers/1"
+    method: GET
+    user: "USERID"  # Default username after factory reset
+    password: "PASSW0RD"  # Default password after factory reset
+    validate_certs: no
+    force_basic_auth: yes
+    return_content: yes
+    status_code: [200]
+    timeout: 300
+  register: bmc_available
+  delegate_to: localhost
+  until: bmc_available is succeeded
+  when:
+    - not ansible_check_mode
+    - factory_reset_result is succeeded
+
+- name: Verify BMC is accessible with default credentials
+  debug:
+    msg:
+      - "========================================="
+      - "Factory Reset Complete"
+      - "========================================="
+      - "BMC is now accessible with default credentials:"
+      - "  Username: USERID"
+      - "  Password: PASSW0RD"
+      - "BMC Firmware: {{ bmc_available.json.FirmwareVersion | default('Unknown') }}"
+      - "BMC Status: {{ bmc_available.json.Status.State | default('Unknown') }}"
+      - "========================================="
+      - "IMPORTANT: Reconfigure the BMC before use"
+      - "========================================="
+  when:
+    - not ansible_check_mode
+    - bmc_available is succeeded
+
+- name: Display next steps
+  debug:
+    msg:
+      - "========================================="
+      - "Next Steps After Factory Reset"
+      - "========================================="
+      - "1. Update inventory with default credentials:"
+      - "   ansible_user: USERID"
+      - "   ansible_password: PASSW0RD"
+      - ""
+      - "2. Run BMC configuration playbook:"
+      - "   ansible-playbook configure_bmc.yml --limit {{ inventory_hostname }}"
+      - ""
+      - "3. Configure network settings"
+      - "4. Create/update user accounts"
+      - "5. Apply BIOS and performance settings"
+      - "6. Configure power policies"
+      - "========================================="
+  when:
+    - not ansible_check_mode
+    - bmc_available is succeeded
+
+- name: Generate complex password
+  set_fact:
+    new_redfish_password: >-
+      {{
+        lookup('password', '/dev/null length=20 chars=ascii_letters,digits') +
+        '!'
+      }}
+
+- name: Change default BMC password
+  uri:
+    url: "https://[{{ bmc_lla_ip }}%{{ bmc_lla_interface }}]/redfish/v1/AccountService/Accounts/1"
+    method: PATCH
+    user: "USERID"
+    password: "PASSW0RD"
+    force_basic_auth: yes
+    validate_certs: no
+    body_format: json
+    body:
+      Password: "{{ new_redfish_password }}"
+    status_code: 200

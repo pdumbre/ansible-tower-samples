@@ -7,7 +7,7 @@
     username: "{{ redfish_user }}"
     password: "{{ new_redfish_password }}"
     validate_certs: false
-    delegate_to: mgen
+  delegate_to: mgen
   register: rf_info
     
 - name: Retrieve system identifiers
@@ -70,7 +70,7 @@
     username: "{{ redfish_user }}"
     password: "{{ new_redfish_password }}"
     timeout: 30
-    delegate_to: mgen
+  delegate_to: mgen
   register: current_accounts
 
 

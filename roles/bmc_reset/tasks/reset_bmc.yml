@@ -63,7 +63,6 @@
     msg:
       - "Factory reset failed or not supported"
       - "Error: {{ factory_reset_result.msg | default('Unknown error') }}"
-      - "Attempting alternative reset method..."
   when:
     - not ansible_check_mode
     - factory_reset_result is failed
@@ -73,7 +72,7 @@
     seconds: 30
   when:
     - not ansible_check_mode
-    - factory_reset_result is succeeded or alternative_reset_result is succeeded
+    - factory_reset_result is succeeded
 
 - name: Display reboot status
   debug:

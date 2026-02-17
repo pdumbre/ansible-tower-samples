@@ -77,7 +77,7 @@
     msg: "BMC is rebooting... This may take 5-10 minutes"
   when:
     - not ansible_check_mode
-    - bmc_reachable is failed
+    - factory_reset_result is succeeded
 
 - name: Wait until BMC is available
   vars:

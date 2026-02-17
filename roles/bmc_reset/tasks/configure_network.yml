@@ -56,11 +56,11 @@
 - name: Display next steps
   debug:
     msg:
-      - {{ current_mac }}
-      - {{ current_ipv6_addresses }}
-      - {{ current_ipv6_addr }}
-      - {{ current_dhcp }}
-      - {{ ipv6_address }}
+      - "{{ current_mac }}"
+      - "{{ current_ipv6_addresses }}"
+      - "{{ current_ipv6_addr }}"
+      - "{{ current_dhcp }}"
+      - "{{ ipv6_address }}"
     
 - name: Check if IPv6 address needs update
   set_fact:

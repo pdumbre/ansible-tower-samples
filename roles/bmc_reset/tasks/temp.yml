@@ -8,10 +8,6 @@
     bmc_lla_interface: "{{ bmc_lla_interface_result.stdout | trim }}"
     bmc_lla_ipv6: "{{ bmc_lla_ip }}"
 
-- name: Display redfish url
-  debug:
-    msg: "https://[{{ bmc_lla_ip }}%{{ bmc_lla_interface }}]/redfish/v1"
-    
 - name: Wait until BMC is reachable over LLA
   vars:
     redfish_url: "https://[{{ bmc_lla_ip }}%{{ bmc_lla_interface }}]/redfish/v1"
@@ -23,33 +19,12 @@
   delay: 2
   delegate_to: mgen
 
-- name: Display result
-  debug:
-    msg: "status: {{ bmc_status }}"
-
-- name: Display next steps
+- name: Inform that BMC is available
   debug:
     msg:
-      - "========================================="
-      - "Next Steps After Factory Reset"
-      - "========================================="
-      - "1. Update inventory with default credentials:"
-      - "   ansible_user: USERID"
-      - "   ansible_password: PASSW0RD"
-      - ""
-      - "2. Run BMC configuration playbook:"
-      - "   ansible-playbook configure_bmc.yml --limit {{ inventory_hostname }}"
-      - ""
-      - "3. Configure network settings"
-      - "4. Create/update user accounts"
-      - "5. Apply BIOS and performance settings"
-      - "6. Configure power policies"
-      - "========================================="
-  when:
-    - not ansible_check_mode
-    - bmc_available is succeeded
-
-- name: Generate complex password
+      - "BMC reboot completed successfully."
+    
+- name: Generate BMC secret
   set_fact:
     new_redfish_password: >-
       {{
@@ -57,7 +32,7 @@
         '!'
       }}
 
-- name: Change default BMC password
+- name: Configure BMC Account
   uri:
     url: "https://[{{ bmc_lla_ip }}%{{ bmc_lla_interface }}]/redfish/v1/AccountService/Accounts/1"
     method: PATCH

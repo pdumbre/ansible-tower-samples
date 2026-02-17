@@ -1,13 +1,5 @@
 
-- name: Retrieve existing network configuration of BMC
-  command: >
-    curl -k -u {{ ru7_user }}:{{ new_redfish_password }} --fail
-    https://[{{ bmc_lla_ip }}%{{ bmc_lla_interface }}]/{{nic_url}}
-  delegate_to: mgen
-  register: curl_nic_result
-  changed_when: false
-
-- name: Enable ipv6 static mode and power policy after successful BMC reset
+- name: Configure BMC power policies and network parameters
   delegate_to: mgen
   command: >
     sshpass -p '{{ hostvars[inventory_hostname].new_redfish_password }}'
@@ -15,7 +7,7 @@
     {{ hostvars[inventory_hostname].ru7_user }}@{{ hostvars[inventory_hostname].bmc_lla_ipv6 }}%{{ hostvars[inventory_hostname].bmc_lla_interface }}
     "ifconfig {{ bmc_network.bmc_network_interface }} -ipv6static enabled -failover shared; usbeth -en enabled; power -rp {{ powerrp }}"
 
-- name: Configure ipv6 address and StatelessAddressAutoConfig setting
+- name: Configure BMC Network Settings
   shell: >
     curl -k -u {{ ru7_user }}:{{ new_redfish_password }}
     -H "Content-Type: application/json"
@@ -39,11 +31,11 @@
   register: curl_nic_patch_result
   changed_when: false
 
-- name: Wait for configuration to apply
+- name: Wait for network configuration to apply
   pause:
     seconds: 10
 
-- name: Configure Lenovo Failover and DNS Sync
+- name: Configure BMC Failover and DNS Sync properties
   uri:
     url: "{{ ru7_host }}{{ nic_url }}"
     method: PATCH

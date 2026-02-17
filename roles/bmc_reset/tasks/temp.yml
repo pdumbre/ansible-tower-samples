@@ -8,14 +8,7 @@
     bmc_lla_interface: "{{ bmc_lla_interface_result.stdout | trim }}"
     bmc_lla_ipv6: "{{ bmc_lla_ip }}"
 
-- name: Wait for BMC to complete reboot and become available
-  wait_for:
-    host: "[{{ bmc_lla_ip }}%{{ bmc_lla_interface }}]"
-    port: 443
-    timeout: 600
-  delegate_to: mgen
-
-- name: Verify BMC is accessible with default credentials
+- name: Wait for BMC to be accessible with default credentials
   uri:
     url: "https://[{{ bmc_lla_ip }}%{{ bmc_lla_interface }}]/redfish/v1/Managers/1"
     method: GET
@@ -25,10 +18,13 @@
     force_basic_auth: yes
     return_content: yes
     status_code: [200]
-    timeout: 300
+  retries: 40
+  delay: 15
   register: bmc_available
-  delegate_to: localhost
-  until: bmc_available is succeeded
+  delegate_to: mgen
+  failed_when: false
+  changed_when: false
+  until: bmc_available.status == 200
   when:
     - not ansible_check_mode
     - factory_reset_result is succeeded

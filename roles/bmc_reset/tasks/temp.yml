@@ -15,13 +15,13 @@
   shell: curl -k -L -s {{ redfish_url }}
   register: bmc_status
   failed_when: false
-  retries: 30
-  delay: 10
-  until:
-    - bmc_status.rc == 0
-    - bmc_status.stdout is search('RedfishVersion')
   delegate_to: mgen
-    
+
+- name: Reset result
+  debug:
+    msg: "{{ bmc_status }}"
+  
+
 - name: Wait for BMC to begin reboot
   pause:
     seconds: 30

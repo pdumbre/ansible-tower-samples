@@ -114,6 +114,8 @@
       Content-Type: "application/json"
     body_format: json
     body:
+      DHCPv6: 
+        OperatingMode: "{{ "Enabled" if bmc_network.dhcp6_enabled else "Disabled" }}"
       DHCPv4:
         Enabled: "{{ bmc_network.dhcp6_enabled | bool }}"
       IPv6StaticAddresses:
@@ -123,6 +125,7 @@
       IPv4StaticAddresses:
         - Address: "{{ ipv4_address }}"
           SubnetMask: "{{ ipv4_netmask | default('255.255.0.0') }}"
+      StatelessAddressAutoConfig: {{ bmc_network.stateless_autoconfig_enabled | lower }}
       Oem:
         Lenovo:
           "NetworkSettingSync": "{{ bmc_network.name_server_sync_enabled }}"
@@ -130,4 +133,6 @@
   delegate_to: mgen  
   register: ipv6_oem_config
   when:
+    - ipv6_address is defined
+    - ipv6_needs_update | bool
     - bmc_network.name_server_sync_enabled is defined

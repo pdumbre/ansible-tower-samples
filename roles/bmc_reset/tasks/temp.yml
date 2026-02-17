@@ -13,7 +13,6 @@
   set_fact:
     bmc_lla_interface: "{{ detected_iface.stdout_lines[0] | trim }}"
 
-    
 - name: Wait until BMC is available
   vars:
     redfish_url: "https://[{{ bmc_lla_ip }}%{{ bmc_lla_interface }}]/redfish/v1"
@@ -32,26 +31,28 @@
   debug:
     msg:
       - "BMC reboot completed successfully."
-      
-- name: Generate Secret
+
+- name: Wait for SSH service
+  wait_for:
+    host: "[{{ bmc_lla_ip }}%{{ bmc_lla_interface }}]"
+    port: 22
+    timeout: 600
+  delegate_to: mgen
+
+- name: Generate BMC secret
   set_fact:
-    updated_redfish_password: >-
+    updated_bmc_password: >-
       {{
         lookup('password', '/dev/null length=20 chars=ascii_letters,digits') +
         '!'
       }}
-      
-- name: Display Password
-  debug:
-    msg: "{{ updated_redfish_password }}"
-    
-
-- name: Configure BMC default user account
+  
+- name: Configure BMC Account
   uri:
     url: "https://[{{ bmc_lla_ip }}%{{ bmc_lla_interface }}]/redfish/v1/AccountService/Accounts/1"
     method: PATCH
-    user: "{{ redfish_user }}"
-    password: "{{ new_redfish_password }}"
+    user: "{{ bmc_username }}"
+    password: "{{ bmc_password }}"
     force_basic_auth: yes
     validate_certs: no
     body_format: json

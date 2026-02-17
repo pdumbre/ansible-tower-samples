@@ -1,20 +1,23 @@
 
 - name: Discover interface for BMC link local address
-  ansible.builtin.raw: ip -6 neigh show | grep -i {{ bmc_lla_ip }} | awk '{print $3}' | head -n1
+  shell: |
+    for iface in $(ls /sys/class/net); do
+      ping -6 -c1 -I $iface {{ bmc_lla_ip }} >/dev/null 2>&1 && echo $iface
+    done
+  register: detected_iface
   delegate_to: mgen
-  register: bmc_lla_interface_result
+  failed_when: detected_iface.stdout_lines|length == 0
+  changed_when: false
+
+- name: Set BMC link local address interface
+  set_fact:
+    bmc_lla_interface: "{{ detected_iface.stdout_lines[0] | trim }}"
 
 - name: interface output
   debug:
-    msg: "Message: {{ bmc_lla_interface_result.stdout }}"
+    msg: "Message: {{ bmc_lla_interface }}"
 
     
-- name: Configure link-local address interface
-  set_fact:
-    bmc_lla_interface: "{{ bmc_lla_interface_result.stdout | trim }}"
-    bmc_lla_ipv6: "{{ bmc_lla_ip }}"
-
-
 - name: Wait until BMC is available
   vars:
     redfish_url: "https://[{{ bmc_lla_ip }}%{{ bmc_lla_interface }}]/redfish/v1"

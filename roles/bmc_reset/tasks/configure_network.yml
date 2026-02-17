@@ -1,11 +1,15 @@
 
-- name: Configure BMC power policies and network parameters
+- name: Configure power policies and network parameters
   delegate_to: mgen
-  command: >
+  shell: >
     sshpass -p '{{ hostvars[inventory_hostname].new_redfish_password }}'
     ssh -o StrictHostKeyChecking=no
     {{ hostvars[inventory_hostname].redfish_user }}@{{ hostvars[inventory_hostname].bmc_lla_ip }}%{{ hostvars[inventory_hostname].bmc_lla_interface }}
-    "ifconfig {{ bmc_network.bmc_network_interface }} -ipv6static enabled -failover shared; usbeth -en enabled; power -rp {{ powerrp }}"
+    "ifconfig {{ bmc_network.bmc_network_interface }} -ipv6static enabled -failover shared && 
+     usbeth -en enabled && 
+     power -rp {{ powerrp }}"
+  register: ssh_result
+  failed_when: ssh_result.rc != 0
 
 - name: Retrieve details of network configuration 
   uri:

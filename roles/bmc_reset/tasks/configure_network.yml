@@ -19,7 +19,7 @@
       },
       "IPv6StaticAddresses": [
         {
-          "Address": "{{ ru7_ipv6_address }}",
+          "Address": "{{ ipv6_address }}",
           "PrefixLength": {{ bmc_network.ipv6_prefix | int }}
         }
       ],
@@ -37,10 +37,10 @@
 
 - name: Configure BMC Failover and DNS Sync properties
   uri:
-    url: "{{ ru7_host }}{{ nic_url }}"
+    url: "https://[{{ ipv6_address }}]{{ nic_url }}"
     method: PATCH
     user: "{{ redfish_user }}"
-    password: "{{ redfish_password }}"
+    password: "{{ new_redfish_password }}"
     validate_certs: no
     force_basic_auth: yes
     headers:
@@ -50,7 +50,7 @@
       DHCPv4:
         Enabled: "{{ bmc_network.dhcp6_enabled | bool }}"
       IPv6StaticAddresses:
-        - Address: "{{ ru7_ipv6_address }}"
+        - Address: "{{ ipv6_address }}"
           SubnetMask: "{{ ipv6_netmask | default('255.255.0.0') }}"
           Gateway: "{{ bmc_network.ipv6_gateway }}"
       IPv4StaticAddresses:

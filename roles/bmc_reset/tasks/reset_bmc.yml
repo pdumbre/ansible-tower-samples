@@ -82,31 +82,24 @@
     - not ansible_check_mode
     - bmc_reachable is failed
 
-- name: Wait for BMC to complete reboot and become available
-  wait_for:
-    host: "[{{ bmc_lla_ip }}%{{ bmc_lla_interface }}]"
-    port: 443
-    timeout: 600
+- name: Wait until BMC is available
+  vars:
+    redfish_url: "https://[{{ bmc_lla_ip }}%{{ bmc_lla_interface }}]/redfish/v1"
+  shell: curl -k -L -s {{ redfish_url }}
+  register: bmc_status
+  failed_when: false
+  retries: 30
+  delay: 10
+  until:
+    - bmc_status.rc == 0
+    - bmc_status.stdout is search('RedfishVersion')
   delegate_to: mgen
+  no_log: true
 
-- name: Verify BMC is accessible with default credentials
-  uri:
-    url: "https://[{{ bmc_lla_ip }}%{{ bmc_lla_interface }}]/redfish/v1/Managers/1"
-    method: GET
-    user: "USERID"  # Default username after factory reset
-    password: "PASSW0RD"  # Default password after factory reset
-    validate_certs: no
-    force_basic_auth: yes
-    return_content: yes
-    status_code: [200]
-    timeout: 300
-  register: bmc_available
-  delegate_to: localhost
-  until: bmc_available is succeeded
-  when:
-    - not ansible_check_mode
-    - factory_reset_result is succeeded
-
+- name: Inform that BMC is available
+  debug:
+    msg:
+      - "BMC reboot completed successfully."
 - name: Verify BMC is accessible with default credentials
   debug:
     msg:

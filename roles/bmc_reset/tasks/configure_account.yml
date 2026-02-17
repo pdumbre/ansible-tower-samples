@@ -5,7 +5,7 @@
     command: GetSystemInventory
     baseuri: "[{{ ipv6_address }}]"
     username: "{{ redfish_user }}"
-    password: "{{ redfish_password }}"
+    password: "{{ new_redfish_password }}"
     validate_certs: false
   delegate_to: mgen
   register: rf_info
@@ -68,7 +68,7 @@
     command: ListUsers
     baseuri: "[{{ ipv6_address }}]"
     username: "{{ redfish_user }}"
-    password: "{{ redfish_password }}"
+    password: "{{ new_redfish_password }}"
     timeout: 30
   register: current_accounts
   delegate_to: mgen
@@ -82,7 +82,7 @@
     url: "https://[{{ ipv6_address }}]/redfish/v1/AccountService"
     method: PATCH
     user: "{{ redfish_user }}"
-    password: "{{ redfish_password }}"
+    password: "{{ new_redfish_password }}"
     validate_certs: no
     force_basic_auth: yes
     body_format: json
@@ -115,7 +115,7 @@
     command: UpdateAccountServiceProperties
     baseuri: "[{{ ipv6_address }}]"
     username: "{{ redfish_user }}"
-    password: "{{ redfish_password }}"
+    password: "{{ new_redfish_password }}"
     timeout: 30
     account_properties:
       MinPasswordLength: 8        # -pl 8: password length
@@ -129,7 +129,7 @@
     url: "https://[{{ ipv6_address }}]/redfish/v1/AccountService"
     method: PATCH
     user: "{{ redfish_user }}"
-    password: "{{ redfish_password }}"
+    password: "{{ new_redfish_password }}"
     validate_certs: no
     force_basic_auth: yes
     body_format: json
@@ -168,7 +168,7 @@
     url: "https://[{{ ipv6_address }}]/redfish/v1/Managers/1/NetworkProtocol"
     method: PATCH
     user: "{{ redfish_user }}"
-    password: "{{ redfish_password }}"
+    password: "{{ new_redfish_password }}"
     validate_certs: no
     force_basic_auth: yes
     body_format: json
@@ -198,7 +198,7 @@
     command: GetManagerInventory
     baseuri: "[{{ ipv6_address }}]"
     username: "{{ redfish_user }}"
-    password: "{{ redfish_password }}"
+    password: "{{ new_redfish_password }}"
     timeout: 30
   register: current_protocols
   delegate_to: mgen
@@ -217,7 +217,7 @@
     url: "https://[{{ ipv6_address }}]/redfish/v1/Managers/1/NetworkProtocol"
     method: PATCH
     user: "{{ redfish_user }}"
-    password: "{{ redfish_password }}"
+    password: "{{ new_redfish_password }}"
     force_basic_auth: yes
     validate_certs: false
     headers:
@@ -244,7 +244,7 @@
     url: "https://[{{ ipv6_address }}]/redfish/v1/Systems/1/Bios"
     method: GET
     user: "{{ redfish_user }}"
-    password: "{{ redfish_password }}"
+    password: "{{ new_redfish_password }}"
     validate_certs: no
     force_basic_auth: yes
     return_content: yes
@@ -262,11 +262,11 @@
 - name: Configure operating mode
   ansible.builtin.raw: 'asu set OperatingModes.ChooseOperatingMode "{{ operating_mode }}"'
   register: operating_mode_result
-  delegate_to: "{{ ansible_host }}"
+  delegate_to: mgen
   vars:
     ansible_connection: ssh
     ansible_user: "{{ redfish_user }}"
-    ansible_password: "{{ redfish_password }}"
+    ansible_password: "{{ new_redfish_password }}"
   changed_when: "'successfully' in operating_mode_result.stdout | lower or operating_mode_result.rc == 0"
   failed_when:
     - operating_mode_result.rc != 0
@@ -336,7 +336,7 @@
     return_content: yes
     status_code: [200]
   register: network_interfaces
-  delegate_to: localhost
+  delegate_to: mgen
   when: configure_mellanox | default(false)
 
 - name: Check for Mellanox ConnectX-6 adapter in Slot 3
@@ -366,7 +366,7 @@
           PortMode: "Ethernet"
     status_code: [200, 202, 204]
   register: mellanox_config
-  delegate_to: localhost
+  delegate_to: mgen
   when:
     - configure_mellanox | default(false)
     - mellanox_adapter_found | default(false)

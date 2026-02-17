@@ -8,25 +8,16 @@
     bmc_lla_interface: "{{ bmc_lla_interface_result.stdout | trim }}"
     bmc_lla_ipv6: "{{ bmc_lla_ip }}"
 
-- name: Wait for BMC to be accessible with default credentials
-  uri:
-    url: "https://[{{ bmc_lla_ip }}%{{ bmc_lla_interface }}]/redfish/v1/Managers/1"
-    method: GET
-    user: "USERID"  # Default username after factory reset
-    password: "PASSW0RD"  # Default password after factory reset
-    validate_certs: no
-    force_basic_auth: yes
-    return_content: yes
-    status_code: [200]
-  retries: 40
-  delay: 15
-  register: bmc_available
-  delegate_to: mgen
+- name: Wait until BMC is reachable over LLA
+  vars:
+    redfish_url: "https://[{{ bmc_lla_ip }}%{{ bmc_lla_interface }}]/redfish/v1"
+  shell: curl -k --connect-timeout 5 {{ redfish_url }}
+  register: redfish_status
+  until: redfish_status.stdout == "200"
   failed_when: false
-  changed_when: false
-  until: bmc_available.status == 200
-  when:
-    - not ansible_check_mode
+  retries: 30
+  delay: 20
+  delegate_to: mgen
 
 - name: Verify BMC is accessible with default credentials
   debug:

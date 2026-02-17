@@ -27,7 +27,6 @@
   until: bmc_available.status == 200
   when:
     - not ansible_check_mode
-    - factory_reset_result is succeeded
 
 - name: Verify BMC is accessible with default credentials
   debug:

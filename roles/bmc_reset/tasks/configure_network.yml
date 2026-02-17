@@ -7,6 +7,37 @@
     {{ hostvars[inventory_hostname].ru7_user }}@{{ hostvars[inventory_hostname].bmc_lla_ipv6 }}%{{ hostvars[inventory_hostname].bmc_lla_interface }}
     "ifconfig {{ bmc_network.bmc_network_interface }} -ipv6static enabled -failover shared; usbeth -en enabled; power -rp {{ powerrp }}"
 
+- name: Retrieve details of network configuration 
+  uri:
+    url: "{{ redfish_host }}/redfish/v1/Managers/1/EthernetInterfaces"
+    method: GET
+    user: "{{ redfish_user }}"
+    password: "{{ redfish_password }}"
+    validate_certs: no
+    force_basic_auth: yes
+    return_content: yes
+    status_code: [200]
+  register: current_network
+  delegate_to: localhost
+
+- name: Retrieve network interface 
+  set_fact:
+    network_interface_uri: "{{ current_network.json.Members[0]['@odata.id'] }}"
+  when: current_network.json.Members | length > 0
+
+- name: Retrieve network interface details
+  uri:
+    url: "{{ redfish_host }}{{ network_interface_uri }}"
+    method: GET
+    user: "{{ redfish_user }}"
+    password: "{{ redfish_password }}"
+    force_basic_auth: yes
+    validate_certs: no
+    return_content: yes
+  register: network_interface_detail
+  delegate_to: localhost
+  when: network_interface_uri is defined
+  
 - name: Configure BMC Network Settings
   shell: >
     curl -k -u {{ ru7_user }}:{{ new_redfish_password }}

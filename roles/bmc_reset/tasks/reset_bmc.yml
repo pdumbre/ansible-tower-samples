@@ -1,12 +1,17 @@
-- name: Discover interface for BMC link local address
-  ansible.builtin.raw: ip -6 neigh show | grep -i {{ bmc_lla_ip }} | awk '{print $3}' | head -n1
-  delegate_to: mgen
-  register: bmc_lla_interface_result
 
-- name: Configure link-local address interface
+- name: Discover interface for BMC link local address
+  shell: |
+    for iface in $(ls /sys/class/net); do
+      ping -6 -c1 -I $iface {{ bmc_lla_ip }} >/dev/null 2>&1 && echo $iface
+    done
+  register: detected_iface
+  delegate_to: mgen
+  failed_when: detected_iface.stdout_lines|length == 0
+  changed_when: false
+
+- name: Set BMC link local address interface
   set_fact:
-    bmc_lla_interface: "{{ bmc_lla_interface_result.stdout | trim }}"
-    bmc_lla_ipv6: "{{ bmc_lla_ip }}"
+    bmc_lla_interface: "{{ detected_iface.stdout_lines[0] | trim }}"
 
 - name: Get current BMC information before reset
   uri:
@@ -97,26 +102,8 @@
   debug:
     msg:
       - "BMC reboot completed successfully."
-      
-- name: Verify BMC is accessible with default credentials
-  debug:
-    msg:
-      - "========================================="
-      - "Factory Reset Complete"
-      - "========================================="
-      - "BMC is now accessible with default credentials:"
-      - "  Username: USERID"
-      - "  Password: PASSW0RD"
-      - "BMC Firmware: {{ bmc_available.json.FirmwareVersion | default('Unknown') }}"
-      - "BMC Status: {{ bmc_available.json.Status.State | default('Unknown') }}"
-      - "========================================="
-      - "IMPORTANT: Reconfigure the BMC before use"
-      - "========================================="
-  when:
-    - not ansible_check_mode
-    - bmc_available is succeeded
 
-- name: Generate complex password
+- name: Generate BMC secret
   set_fact:
     new_redfish_password: >-
       {{
@@ -124,9 +111,9 @@
         '!'
       }}
       
-- name: Display Password
+- name: Display Secret Details
   debug:
-    msg: "{{ new_redfish_password }}"
+    msg: "Updated Password: {{ new_redfish_password }}"
     
 - name: Configure BMC Account
   uri:

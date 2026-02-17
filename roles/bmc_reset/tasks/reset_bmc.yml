@@ -13,7 +13,7 @@
     url: "https://[{{ ru7_ipv6_address }}]/redfish/v1/Managers/1"
     method: GET
     user: "{{ redfish_user }}"
-    password: "{{ redfish_password }}"
+    password: "PASSW0RD"
     validate_certs: no
     force_basic_auth: yes
     return_content: yes
@@ -40,7 +40,7 @@
     force_basic_auth: yes
     body_format: json
     body:
-      ResetType: "{{ imm_reset_type | default('ResetAll') }}"
+      ResetType: "{{ bmc_reset_type | default('ResetAll') }}"
     status_code: [200, 202, 204]
     timeout: 60
   register: factory_reset_result

@@ -1,9 +1,9 @@
 
-- name: Retrieve BMC info
+- name: Retrieve System details
   community.general.redfish_info:
     category: Systems
     command: GetSystemInventory
-    baseuri: "[{{ ru7_ipv6_address }}]"
+    baseuri: "[{{ ipv6_address }}]"
     username: "{{ redfish_user }}"
     password: "{{ redfish_password }}"
     validate_certs: false
@@ -30,7 +30,7 @@
         )[0:4] | upper
       }}
       
-- name: Store system info
+- name: Configure system details
   ansible.builtin.set_fact:
     systems: >-
       {{
@@ -66,20 +66,20 @@
   community.general.redfish_info:
     category: Accounts
     command: ListUsers
-    baseuri: "[{{ ru7_ipv6_address }}]"
+    baseuri: "[{{ ipv6_address }}]"
     username: "{{ redfish_user }}"
     password: "{{ redfish_password }}"
     timeout: 30
   register: current_accounts
   delegate_to: mgen
-  ignore_errors: yes
+
 
 # M6 Server Configuration (7X02, 7D2X, 7D2V, 7D76, 7D9R, 7D73)
 # accseccfg -am local -lp 0 -pe 0 -pew 0 -pc on -pl 10 -ci 0 -lf 0 -chgnew off -rc 0
 
 - name: Configure M6 account security
   uri:
-    url: "https://[{{ ru7_ipv6_address }}]/redfish/v1/AccountService"
+    url: "https://[{{ ipv6_address }}]/redfish/v1/AccountService"
     method: PATCH
     user: "{{ redfish_user }}"
     password: "{{ redfish_password }}"
@@ -113,7 +113,7 @@
   community.general.redfish_command:
     category: Accounts
     command: UpdateAccountServiceProperties
-    baseuri: "[{{ ru7_ipv6_address }}]"
+    baseuri: "[{{ ipv6_address }}]"
     username: "{{ redfish_user }}"
     password: "{{ redfish_password }}"
     timeout: 30
@@ -126,7 +126,7 @@
 
 - name: Configure SN550 account security
   uri:
-    url: "https://[{{ ru7_ipv6_address }}]/redfish/v1/AccountService"
+    url: "https://[{{ ipv6_address }}]/redfish/v1/AccountService"
     method: PATCH
     user: "{{ redfish_user }}"
     password: "{{ redfish_password }}"
@@ -165,7 +165,7 @@
 
 - name: Configure Ports
   uri:
-    url: "https://[{{ ru7_ipv6_address }}]/redfish/v1/Managers/1/NetworkProtocol"
+    url: "https://[{{ ipv6_address }}]/redfish/v1/Managers/1/NetworkProtocol"
     method: PATCH
     user: "{{ redfish_user }}"
     password: "{{ redfish_password }}"
@@ -192,11 +192,11 @@
 
 # Enable IPMI over LAN on IMM using Ansible Redfish module
 
-- name: Retrieve current network protocol configuration
+- name: Retrieve network protocol configuration
   community.general.redfish_info:
     category: Manager
     command: GetManagerInventory
-    baseuri: "[{{ ru7_ipv6_address }}]"
+    baseuri: "[{{ ipv6_address }}]"
     username: "{{ redfish_user }}"
     password: "{{ redfish_password }}"
     timeout: 30
@@ -214,7 +214,7 @@
 
 - name: Enable IPMI over LAN
   ansible.builtin.uri:
-    url: "https://[{{ ru7_ipv6_address }}]/redfish/v1/Managers/1/NetworkProtocol"
+    url: "https://[{{ ipv6_address }}]/redfish/v1/Managers/1/NetworkProtocol"
     method: PATCH
     user: "{{ redfish_user }}"
     password: "{{ redfish_password }}"
@@ -241,7 +241,7 @@
 
 - name: Retrieve existing BIOS settings
   uri:
-    url: "https://[{{ ru7_ipv6_address }}]/redfish/v1/Systems/1/Bios"
+    url: "https://[{{ ipv6_address }}]/redfish/v1/Systems/1/Bios"
     method: GET
     user: "{{ redfish_user }}"
     password: "{{ redfish_password }}"
@@ -280,11 +280,6 @@
   ansible.builtin.set_fact:
     applicable_settings: "{{ perf_config | select_applicable_settings(selection_properties) }}"
 
-- name: Debug applicable performance settings
-  ansible.builtin.debug:
-    msg: "Configuring Performance Settings: {{ applicable_settings }}"
-  when: applicable_settings | length > 0
-
 - name: Check if performance settings need to be applied
   ansible.builtin.set_fact:
     has_performance_settings: "{{ applicable_settings | length > 0 }}"
@@ -292,7 +287,7 @@
 # Apply BIOS settings via Redfish PATCH to pending configuration
 - name: Apply performance BIOS settings
   ansible.builtin.uri:
-    url: "https://[{{ ru7_ipv6_address }}]/redfish/v1/Systems/1/Bios/Settings"
+    url: "https://[{{ ipv6_address }}]/redfish/v1/Systems/1/Bios/Settings"
     method: PATCH
     user: "{{ redfish_user }}"
     password: "{{ redfish_password }}"
@@ -307,25 +302,6 @@
     - has_performance_settings | bool
     - (settings_to_apply | default(applicable_settings) | length > 0)
   failed_when: false
-
-# Fallback: Try direct BIOS endpoint if Settings endpoint fails
-- name: Apply performance BIOS settings (fallback)
-  ansible.builtin.uri:
-    url: "https://[{{ ru7_ipv6_address }}]/redfish/v1/Systems/1/Bios"
-    method: PATCH
-    user: "{{ redfish_user }}"
-    password: "{{ redfish_password }}"
-    body_format: json
-    body:
-      Attributes: "{{ settings_to_apply | default(applicable_settings) }}"
-    validate_certs: false
-    force_basic_auth: true
-    status_code: [200, 204]
-  register: bios_patch_fallback_result
-  when:
-    - has_performance_settings | bool
-    - bios_patch_result is failed
-    - (settings_to_apply | default(applicable_settings) | length > 0)
 
 - name: Log performance settings applied
   ansible.builtin.debug:
@@ -349,9 +325,9 @@
   set_fact:
     configure_mellanox: "{{ vpd_mtm is defined and (vpd_mtm.startswith('7D2X') or vpd_mtm.startswith('7D2V') or vpd_mtm.startswith('7D73')) }}"
 
-- name: Get adapter list from system
+- name: Retrieve adapter list from system
   uri:
-    url: "https://[{{ ru7_ipv6_address }}]/redfish/v1/Systems/1/NetworkInterfaces"
+    url: "https://[{{ ipv6_address }}]/redfish/v1/Systems/1/NetworkInterfaces"
     method: GET
     user: "{{ redfish_user }}"
     password: "{{ redfish_password }}"
@@ -377,7 +353,7 @@
 
 - name: Configure Mellanox adapter
   uri:
-    url: "https://[{{ ru7_ipv6_address }}]/redfish/v1/Systems/1/NetworkInterfaces/Slot3"
+    url: "https://[{{ ipv6_address }}]/redfish/v1/Systems/1/NetworkInterfaces/Slot3"
     method: PATCH
     user: "{{ redfish_user }}"
     password: "{{ redfish_password }}"
@@ -396,7 +372,7 @@
     - mellanox_adapter_found | default(false)
     - not (mellanox_ethernet_only | default(false))
 
-- name: Mellanox adapter already in Ethernet mode
+- name: Check ethernet mode of Mellanox adapter
   debug:
     msg: "Mellanox adapter already supports Ethernet mode only"
   when:
@@ -404,7 +380,7 @@
     - mellanox_adapter_found | default(false)
     - mellanox_ethernet_only | default(false)
 
-- name: Fail if Mellanox adapter not found but required
+- name: Check the availability of Mellanox adapter
   fail:
     msg: "Mellanox ConnectX-6 100GbE adapter not found in Slot 3"
   when:

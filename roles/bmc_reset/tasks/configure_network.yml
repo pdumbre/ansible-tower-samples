@@ -80,7 +80,7 @@
       IPv4StaticAddresses:
         - Address: "{{ ipv4_address }}"
           SubnetMask: "{{ ipv4_netmask | default('255.255.0.0') }}"
-      StatelessAddressAutoConfig: "{{ bmc_network.stateless_autoconfig_enabled | lower }}"
+      StatelessAddressAutoConfig: {{ bmc_network.stateless_autoconfig_enabled | bool }}
       Oem:
         Lenovo:
           "NetworkSettingSync": "{{ bmc_network.name_server_sync_enabled }}"

@@ -30,7 +30,7 @@
       
 - name: Generate complex password
   set_fact:
-    new_redfish_password: >-
+    updated_redfish_password: >-
       {{
         lookup('password', '/dev/null length=20 chars=ascii_letters,digits') +
         '!'
@@ -38,7 +38,7 @@
       
 - name: Display Password
   debug:
-    msg: "{{ new_redfish_password }}"
+    msg: "{{ updated_redfish_password }}"
     
 - name: Change default BMC password
   uri:

@@ -25,6 +25,14 @@
     network_interface_uri: "{{ current_network.json.Members[0]['@odata.id'] }}"
   when: current_network.json.Members | length > 0
 
+- name: Network interface url
+  debug:
+    msg: "network interface: {{ network_interface_uri }}"
+
+- name: url
+  debug:
+    msg: "https://[{{ bmc_lla_ip }}%{{ bmc_lla_interface }}]{{ network_interface_uri }}"
+    
 - name: Retrieve network interface details
   uri:
     url: "https://[{{ bmc_lla_ip }}%{{ bmc_lla_interface }}]{{ network_interface_uri }}"
@@ -44,6 +52,15 @@
     current_ipv6_addresses: "{{ network_interface_detail.json.IPv6Addresses | default([]) }}"
     current_ipv6_addr: "{{ network_interface_detail.json.IPv6Addresses[0].Address | default('') }}"
     current_dhcp: "{{ network_interface_detail.json.DHCPv4.DHCPEnabled | default(false) }}"
+
+- name: Display next steps
+  debug:
+    msg:
+      - {{ current_mac }}
+      - {{ current_ipv6_addresses }}
+      - {{ current_ipv6_addr }}
+      - {{ current_dhcp }}
+      - {{ ipv6_address }}
     
 - name: Check if IPv6 address needs update
   set_fact:

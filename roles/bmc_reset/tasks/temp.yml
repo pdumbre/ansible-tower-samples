@@ -8,6 +8,10 @@
     bmc_lla_interface: "{{ bmc_lla_interface_result.stdout | trim }}"
     bmc_lla_ipv6: "{{ bmc_lla_ip }}"
 
+- name: Display redfish url
+  debug:
+    msg: "https://[{{ bmc_lla_ip }}%{{ bmc_lla_interface }}]/redfish/v1"
+    
 - name: Wait until BMC is reachable over LLA
   vars:
     redfish_url: "https://[{{ bmc_lla_ip }}%{{ bmc_lla_interface }}]/redfish/v1"
@@ -15,9 +19,13 @@
   register: bmc_status
   until: bmc_status.stdout == "200"
   failed_when: false
-  retries: 30
-  delay: 20
+  retries: 3
+  delay: 2
   delegate_to: mgen
+
+- name: Display result
+  debug:
+    msg: "status: {{ bmc_status }}
 
 - name: Display next steps
   debug:

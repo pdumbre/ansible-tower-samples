@@ -255,20 +255,17 @@
 
 - name: Retrieve existing operating mode
   set_fact:
-    operating_mode: "{{ imm_operating_mode | default('Maximum Performance') }}"
+    operating_mode: "{{ bmc_operating_mode | default('Maximum Performance') }}"
 
 - name: Configure operating mode
-  ansible.builtin.raw: 'asu set OperatingModes.ChooseOperatingMode "{{ operating_mode }}"'
-  register: operating_mode_result
   delegate_to: mgen
-  vars:
-    ansible_connection: ssh
-    ansible_user: "{{ redfish_user }}"
-    ansible_password: "{{ new_redfish_password }}"
-  changed_when: "'successfully' in operating_mode_result.stdout | lower or operating_mode_result.rc == 0"
-  failed_when:
-    - operating_mode_result.rc != 0
-    - "'successfully' not in operating_mode_result.stdout | lower"
+  shell: >
+    sshpass -p '{{ hostvars[inventory_hostname].new_redfish_password }}'
+    ssh -o StrictHostKeyChecking=no
+    {{ hostvars[inventory_hostname].redfish_user }}@{{ hostvars[inventory_hostname].bmc_lla_ip }}%{{ hostvars[inventory_hostname].bmc_lla_interface }}
+    "asu set OperatingModes.ChooseOperatingMode "{{ operating_mode }}"
+  register: operating_mode_result
+  failed_when: operating_mode_result.rc != 0
 
 - name: Load performance settings configuration
   ansible.builtin.set_fact:

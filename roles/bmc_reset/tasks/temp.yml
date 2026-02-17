@@ -4,6 +4,11 @@
   delegate_to: mgen
   register: bmc_lla_interface_result
 
+- name: interface output
+  debug:
+    msg: "Message: {{ bmc_lla_interface_result.stdout }}"
+
+    
 - name: Configure link-local address interface
   set_fact:
     bmc_lla_interface: "{{ bmc_lla_interface_result.stdout | trim }}"

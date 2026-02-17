@@ -88,3 +88,8 @@
     - ipv6_address is defined
     - ipv6_needs_update | bool
     - bmc_network.name_server_sync_enabled is defined
+
+- name: Wait for network configuration to be effective
+      pause:
+        seconds: 30
+

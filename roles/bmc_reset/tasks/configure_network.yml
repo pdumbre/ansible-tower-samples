@@ -3,7 +3,7 @@
   delegate_to: mgen
   shell: >
     sshpass -p '{{ hostvars[inventory_hostname].new_redfish_password }}'
-    ssh -o {{ bmc_ssh_options }}
+    ssh -o '{{ bmc_ssh_options }}'
     {{ hostvars[inventory_hostname].redfish_user }}@{{ hostvars[inventory_hostname].bmc_lla_ip }}%{{ hostvars[inventory_hostname].bmc_lla_interface }}
     "ifconfig {{ bmc_network.bmc_network_interface }} -ipv6static enabled -failover shared && 
      usbeth -en enabled && 

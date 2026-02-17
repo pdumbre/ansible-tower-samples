@@ -50,8 +50,8 @@
   uri:
     url: "https://[{{ bmc_lla_ip }}%{{ bmc_lla_interface }}]/redfish/v1/AccountService/Accounts/1"
     method: PATCH
-    user: "USERID"
-    password: "PASSW0RD"
+    user: {{ redfish_user }}
+    password: {{ new_redfish_password }}
     force_basic_auth: yes
     validate_certs: no
     body_format: json

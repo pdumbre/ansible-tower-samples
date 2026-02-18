@@ -1,1 +1,6 @@
-
+- name: BMC Setup
+  hosts: bmc_servers
+  gather_facts: false
+    
+  roles:
+    - role: bmc_reset

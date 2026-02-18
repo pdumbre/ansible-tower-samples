@@ -1,0 +1,1067 @@
+{
+   "rackInfo": {
+      "isfModel": "9155",
+      "rackGen": 2,
+      "storageType": "fdf",
+      "serial": "F24L026",
+      "ppaSerialNumber": null,
+      "ppaMachineType": null,
+      "ppaModel": null,
+      "ppaComponentID": null,
+      "ibmSerialNumber": "G2AUTO1",
+      "ibmMTM": "9155-R42",
+      "ipStack": "v4",
+      "vlanForBaremetalPrimaryInterface": true
+   },
+   "kvm": {
+      "ibmSerialNumber": "G2AUTO1-KVM",
+      "ibmMTM": "9155-TF5"
+   },
+   "switches": [
+      {
+         "serial": "M2NJ29K0004",
+         "ibmSerialNumber": "G2AUTO1-RU20",
+         "ibmMTM": "9155-S01",
+         "partNo": "SSG7A80803",
+         "model": "sn3700c",
+         "macAddr": "90:0A:84:AA:7D:00",
+         "reservedVLANs": "3725-3999",
+         "manufacturer": "Mellanox",
+         "vendor": "Mellanox",
+         "softver": "5.11.1",
+         "boot_version": "5.11.1",
+         "images": {
+            "active": "5.11.1",
+            "standby": "5.11.1"
+         },
+         "name": "hspeed1-f24l026",
+         "location": "RU20",
+         "switch_type": "tor_network_switch",
+         "ipv6": "fd8c:215d:178e:c0de:920a:84ff:feaa:7d00",
+         "license": "lenovo_cumuluslicense@nvidia.com|4HvhMCACDhRpTBpPQl4aOt/q1S7rAg4YfyPooKvnXLTl4C6arA",
+         "users": [
+            {
+               "user": "CEUSER",
+               "password": "MF9Rem9IVTMzU2s=",
+               "group": "netedit",
+               "uid": "2"
+            },
+            {
+               "user": "ISFUSER",
+               "password": "WmxiczN2Y0wyLVU=",
+               "group": "netedit",
+               "uid": "3"
+            },
+            {
+               "user": "cumulus",
+               "password": "QWJlbGw0Q2xvdWQh",
+               "group": "admin"
+            }
+         ]
+      },
+      {
+         "serial": "M2NJ29K000F",
+         "ibmSerialNumber": "G2AUTO1-RU21",
+         "ibmMTM": "9155-S01",
+         "partNo": "SSG7A80803",
+         "model": "sn3700c",
+         "macAddr": "90:0A:84:AA:88:00",
+         "reservedVLANs": "3725-3999",
+         "manufacturer": "Mellanox",
+         "vendor": "Mellanox",
+         "softver": "5.11.1",
+         "boot_version": "5.11.1",
+         "images": {
+            "active": "5.11.1",
+            "standby": "5.11.1"
+         },
+         "name": "hspeed2-f24l026",
+         "location": "RU21",
+         "switch_type": "tor_network_switch",
+         "ipv6": "fd8c:215d:178e:c0de:920a:84ff:feaa:8800",
+         "license": "lenovo_cumuluslicense@nvidia.com|4HvhMCACDhRpTBpPQl4aOt/q1S7rAg4YfyPooKvnXLTl4C6arA",
+         "users": [
+            {
+               "user": "CEUSER",
+               "password": "QTB1QlBteV81YjI=",
+               "group": "netedit",
+               "uid": "2"
+            },
+            {
+               "user": "ISFUSER",
+               "password": "SzVPWGJQYkhfeE0=",
+               "group": "netedit",
+               "uid": "3"
+            },
+            {
+               "user": "cumulus",
+               "password": "QWJlbGw0Q2xvdWQh",
+               "group": "admin"
+            }
+         ]
+      },
+      {
+         "serial": "8SSSG7A80795M1ET15T004Z",
+         "ibmSerialNumber": "G2AUTO1-RU18",
+         "ibmMTM": "9155-S02",
+         "partNo": "SSG7A81191",
+         "model": "as4610",
+         "macAddr": "F8:8E:A1:69:E3:40",
+         "reservedVLANs": "3800-3999",
+         "manufacturer": "Accton",
+         "vendor": "Edgecore",
+         "softver": "4.3.4",
+         "boot_version": "4.3.4",
+         "images": {
+            "active": "4.3.4",
+            "standby": "4.3.4"
+         },
+         "name": "mgmt1-f24l026",
+         "location": "RU18",
+         "switch_type": "internal_management_switch",
+         "ipv6": "fd8c:215d:178e:c0de:fa8e:a1ff:fe69:e340",
+         "license": "lenovo_cumuluslicense@nvidia.com|4HvhMCACDhRpTBpPQl4aOt/q1S7rAg4YfyPooKvnXLTl4C6arA",
+         "users": [
+            {
+               "user": "CEUSER",
+               "password": "aHE0dVZAdnVCMTI=",
+               "group": "netedit",
+               "uid": "2"
+            },
+            {
+               "user": "ISFUSER",
+               "password": "OTlVUXhIel85NU8=",
+               "group": "netedit",
+               "uid": "3"
+            },
+            {
+               "user": "cumulus",
+               "password": "QWJlbGw0Q2xvdWQh",
+               "group": "netedit"
+            }
+         ]
+      },
+      {
+         "serial": "8SSSG7A80795M1ET2AE003Z",
+         "ibmSerialNumber": "G2AUTO1-RU19",
+         "ibmMTM": "9155-S02",
+         "partNo": "SSG7A81191",
+         "model": "as4610",
+         "macAddr": "E4:9D:73:69:A3:80",
+         "reservedVLANs": "3800-3999",
+         "manufacturer": "Accton",
+         "vendor": "Edgecore",
+         "softver": "4.3.4",
+         "boot_version": "4.3.4",
+         "images": {
+            "active": "4.3.4",
+            "standby": "4.3.4"
+         },
+         "name": "mgmt2-f24l026",
+         "location": "RU19",
+         "switch_type": "internal_management_switch",
+         "ipv6": "fd8c:215d:178e:c0de:e69d:73ff:fe69:a380",
+         "license": "lenovo_cumuluslicense@nvidia.com|4HvhMCACDhRpTBpPQl4aOt/q1S7rAg4YfyPooKvnXLTl4C6arA",
+         "users": [
+            {
+               "user": "CEUSER",
+               "password": "ZDY0QzBfRENMY3A=",
+               "group": "netedit",
+               "uid": "2"
+            },
+            {
+               "user": "ISFUSER",
+               "password": "QzZEbFBXNEBXWkE=",
+               "group": "netedit",
+               "uid": "3"
+            },
+            {
+               "user": "cumulus",
+               "password": "QWJlbGw0Q2xvdWQh",
+               "group": "netedit"
+            }
+         ]
+      }
+   ],
+   "computeNodeIntegratedManagementModules": [
+      {
+         "ipv6ULA": "fd8c:215d:178e:c0de:765d:22ff:fee4:2441",
+         "ipv6LLA": "fe80::765d:22ff:fee4:2441",
+         "serialNum": "JZ004CR9",
+         "mtm": "7D73CTO1WW",
+         "manufacturer": "Lenovo",
+         "ibmSerialNumber": "G2AUTO1-RU2",
+         "ibmMTM": "9155-C10",
+         "uuid": "5A006E0C441A11EFB336765D22E42443",
+         "type": "storage",
+         "OCPRole": "control-1-ru2",
+         "location": "RU2",
+         "nodeIndex": "1",
+         "name": "IMM_RU2",
+         "bootDevice": "/dev/disk/by-path/pci-0000:03:00.0-nvme-1",
+         "users": [
+            {
+               "user": "CEUSER",
+               "password": "dl9GajRHRVlVRVE=",
+               "group": "Administrator",
+               "number": 2
+            },
+            {
+               "user": "ISFUSER",
+               "password": "YjBvbTR6X1VoV0s=",
+               "group": "Administrator",
+               "number": 3
+            },
+            {
+               "user": "USERID",
+               "password": "YWhLWEdUcG9jMw==",
+               "group": "Administrator",
+               "number": 1
+            }
+         ],
+         "pxeSlotLabel": "UEFI:   SLOT 1 (2A/0/0) PXE IPv4  Mellanox ConnectX-6 Lx 10/25GbE SFP28 2-port PCIe Ethernet Adapter - 58:A2:E1:54:84:CA",
+         "networkCards": [
+            {
+               "slot-1": [
+                  "58:a2:e1:54:84:ca",
+                  "58:a2:e1:54:84:cb"
+               ]
+            },
+            {
+               "slot-3": [
+                  "a0:88:c2:a1:a4:4e",
+                  "a0:88:c2:a1:a4:4f"
+               ]
+            },
+            {
+               "slot-6": [
+                  "6c:fe:54:92:1d:bc",
+                  "6c:fe:54:92:1d:bd",
+                  "6c:fe:54:92:1d:be",
+                  "6c:fe:54:92:1d:bf"
+               ]
+            }
+         ],
+         "networkInterfaces": [
+            {
+               "macAddress": "58:a2:e1:54:84:ca",
+               "secondaryMacAddress": "58:a2:e1:54:84:cb",
+               "interfaceName": "bond1",
+               "interfaceLeg1": "ens1f0np0",
+               "interfaceLeg2": "ens1f1np1",
+               "interfaceType": "provisioning"
+            },
+            {
+               "macAddress": "a0:88:c2:a1:a4:4e",
+               "secondaryMacAddress": "a0:88:c2:a1:a4:4f",
+               "interfaceName": "bond0",
+               "interfaceLeg1": "ens3f0np0",
+               "interfaceLeg2": "ens3f1np1",
+               "interfaceType": "baremetal"
+            }
+         ],
+         "unusedInterfaces": [
+            "ens6f0",
+            "ens6f1",
+            "ens6f2",
+            "ens6f3"
+         ],
+         "nvme": [
+            {
+               "productName": "SAMSUNG MZWLO3T8HCLS-00A07",
+               "location": "Bay 0",
+               "slotNumber": "0",
+               "osDriveNameByPath": "/dev/disk/by-path/pci-0000:c0:00.0-nvme-1",
+               "serialNumber": "S794NC0X512322",
+               "capacity": "3.84TB",
+               "manufacture": "SAMSUNG"
+            },
+            {
+               "productName": "SAMSUNG MZWLO3T8HCLS-00A07",
+               "location": "Bay 1",
+               "slotNumber": "1",
+               "osDriveNameByPath": "/dev/disk/by-path/pci-0000:bf:00.0-nvme-1",
+               "serialNumber": "S794NC0X512324",
+               "capacity": "3.84TB",
+               "manufacture": "SAMSUNG"
+            },
+            {
+               "productName": "SAMSUNG MZWLO3T8HCLS-00A07",
+               "location": "Bay 2",
+               "slotNumber": "2",
+               "osDriveNameByPath": "/dev/disk/by-path/pci-0000:be:00.0-nvme-1",
+               "serialNumber": "S794NC0X300603",
+               "capacity": "3.84TB",
+               "manufacture": "SAMSUNG"
+            },
+            {
+               "productName": "SAMSUNG MZWLO3T8HCLS-00A07",
+               "location": "Bay 3",
+               "slotNumber": "3",
+               "osDriveNameByPath": "/dev/disk/by-path/pci-0000:bd:00.0-nvme-1",
+               "serialNumber": "S794NC0X300534",
+               "capacity": "3.84TB",
+               "manufacture": "SAMSUNG"
+            },
+            {
+               "productName": "SAMSUNG MZWLO3T8HCLS-00A07",
+               "location": "Bay 4",
+               "slotNumber": "4",
+               "osDriveNameByPath": "/dev/disk/by-path/pci-0000:d2:00.0-nvme-1",
+               "serialNumber": "S794NG0W700640",
+               "capacity": "3.84TB",
+               "manufacture": "SAMSUNG"
+            }
+         ]
+      },
+      {
+         "ipv6ULA": "fd8c:215d:178e:c0de:765d:22ff:fee4:1802",
+         "ipv6LLA": "fe80::765d:22ff:fee4:1802",
+         "serialNum": "JZ004CR8",
+         "mtm": "7D73CTO1WW",
+         "manufacturer": "Lenovo",
+         "ibmSerialNumber": "G2AUTO1-RU3",
+         "ibmMTM": "9155-C10",
+         "uuid": "AE22AACA443A11EFAA82765D22E41804",
+         "type": "storage",
+         "OCPRole": "control-1-ru3",
+         "location": "RU3",
+         "nodeIndex": "2",
+         "name": "IMM_RU3",
+         "bootDevice": "/dev/disk/by-path/pci-0000:03:00.0-nvme-1",
+         "users": [
+            {
+               "user": "USERID",
+               "password": "YWhLWEdUcG9jMw==",
+               "group": "Administrator",
+               "number": 1
+            },
+            {
+               "user": "CEUSER",
+               "password": "dURmTmIzN0hackA=",
+               "group": "Administrator",
+               "number": 2
+            },
+            {
+               "user": "ISFUSER",
+               "password": "UUkyaTBAUElBTDA=",
+               "group": "Administrator",
+               "number": 3
+            }
+         ],
+         "pxeSlotLabel": "UEFI:   SLOT 1 (2A/0/0) PXE IPv4  Mellanox ConnectX-6 Lx 10/25GbE SFP28 2-port PCIe Ethernet Adapter - 58:A2:E1:54:88:E6",
+         "networkCards": [
+            {
+               "slot-1": [
+                  "58:a2:e1:54:88:e6",
+                  "58:a2:e1:54:88:e7"
+               ]
+            },
+            {
+               "slot-3": [
+                  "a0:88:c2:a1:a8:2a",
+                  "a0:88:c2:a1:a8:2b"
+               ]
+            },
+            {
+               "slot-6": [
+                  "6c:fe:54:99:f3:8a",
+                  "6c:fe:54:99:f3:8b",
+                  "6c:fe:54:99:f3:8c",
+                  "6c:fe:54:99:f3:8d"
+               ]
+            }
+         ],
+         "networkInterfaces": [
+            {
+               "macAddress": "58:a2:e1:54:88:e6",
+               "secondaryMacAddress": "58:a2:e1:54:88:e7",
+               "interfaceName": "bond1",
+               "interfaceLeg1": "ens1f0np0",
+               "interfaceLeg2": "ens1f1np1",
+               "interfaceType": "provisioning"
+            },
+            {
+               "macAddress": "a0:88:c2:a1:a8:2a",
+               "secondaryMacAddress": "a0:88:c2:a1:a8:2b",
+               "interfaceName": "bond0",
+               "interfaceLeg1": "ens3f0np0",
+               "interfaceLeg2": "ens3f1np1",
+               "interfaceType": "baremetal"
+            }
+         ],
+         "unusedInterfaces": [
+            "ens6f0",
+            "ens6f1",
+            "ens6f2",
+            "ens6f3"
+         ],
+         "nvme": [
+            {
+               "productName": "SAMSUNG MZWLO3T8HCLS-00A07",
+               "location": "Bay 0",
+               "slotNumber": "0",
+               "osDriveNameByPath": "/dev/disk/by-path/pci-0000:c0:00.0-nvme-1",
+               "serialNumber": "S794NC0X512433",
+               "capacity": "3.84TB",
+               "manufacture": "SAMSUNG"
+            },
+            {
+               "productName": "SAMSUNG MZWLO3T8HCLS-00A07",
+               "location": "Bay 1",
+               "slotNumber": "1",
+               "osDriveNameByPath": "/dev/disk/by-path/pci-0000:bf:00.0-nvme-1",
+               "serialNumber": "S794NC0X512370",
+               "capacity": "3.84TB",
+               "manufacture": "SAMSUNG"
+            },
+            {
+               "productName": "SAMSUNG MZWLO3T8HCLS-00A07",
+               "location": "Bay 2",
+               "slotNumber": "2",
+               "osDriveNameByPath": "/dev/disk/by-path/pci-0000:be:00.0-nvme-1",
+               "serialNumber": "S794NC0X300374",
+               "capacity": "3.84TB",
+               "manufacture": "SAMSUNG"
+            },
+            {
+               "productName": "SAMSUNG MZWLO3T8HCLS-00A07",
+               "location": "Bay 3",
+               "slotNumber": "3",
+               "osDriveNameByPath": "/dev/disk/by-path/pci-0000:bd:00.0-nvme-1",
+               "serialNumber": "S794NC0X300369",
+               "capacity": "3.84TB",
+               "manufacture": "SAMSUNG"
+            },
+            {
+               "productName": "SAMSUNG MZWLO3T8HCLS-00A07",
+               "location": "Bay 4",
+               "slotNumber": "4",
+               "osDriveNameByPath": "/dev/disk/by-path/pci-0000:d2:00.0-nvme-1",
+               "serialNumber": "S794NC0X300396",
+               "capacity": "3.84TB",
+               "manufacture": "SAMSUNG"
+            }
+         ]
+      },
+      {
+         "ipv6ULA": "fd8c:215d:178e:c0de:765d:22ff:fee4:1825",
+         "ipv6LLA": "fe80::765d:22ff:fee4:1825",
+         "serialNum": "JZ004CR6",
+         "mtm": "7D73CTO1WW",
+         "manufacturer": "Lenovo",
+         "ibmSerialNumber": "G2AUTO1-RU4",
+         "ibmMTM": "9155-C10",
+         "uuid": "6940151C441B11EFBE23765D22E41827",
+         "type": "storage",
+         "OCPRole": "control-1-ru4",
+         "location": "RU4",
+         "nodeIndex": "3",
+         "name": "IMM_RU4",
+         "bootDevice": "/dev/disk/by-path/pci-0000:03:00.0-nvme-1",
+         "users": [
+            {
+               "user": "CEUSER",
+               "password": "c0k4WkZlVDRWX2k=",
+               "group": "Administrator",
+               "number": 2
+            },
+            {
+               "user": "ISFUSER",
+               "password": "R0pkaHdtNWM5LWk=",
+               "group": "Administrator",
+               "number": 3
+            },
+            {
+               "user": "USERID",
+               "password": "YWhLWEdUcG9jMw==",
+               "group": "Administrator",
+               "number": 1
+            }
+         ],
+         "pxeSlotLabel": "UEFI:   SLOT 1 (2A/0/0) PXE IPv4  Mellanox ConnectX-6 Lx 10/25GbE SFP28 2-port PCIe Ethernet Adapter - 58:A2:E1:54:93:A6",
+         "networkCards": [
+            {
+               "slot-1": [
+                  "58:a2:e1:54:93:a6",
+                  "58:a2:e1:54:93:a7"
+               ]
+            },
+            {
+               "slot-3": [
+                  "a0:88:c2:a1:a5:ea",
+                  "a0:88:c2:a1:a5:eb"
+               ]
+            },
+            {
+               "slot-6": [
+                  "6c:fe:54:99:f2:1c",
+                  "6c:fe:54:99:f2:1d",
+                  "6c:fe:54:99:f2:1e",
+                  "6c:fe:54:99:f2:1f"
+               ]
+            }
+         ],
+         "networkInterfaces": [
+            {
+               "macAddress": "58:a2:e1:54:93:a6",
+               "secondaryMacAddress": "58:a2:e1:54:93:a7",
+               "interfaceName": "bond1",
+               "interfaceLeg1": "ens1f0np0",
+               "interfaceLeg2": "ens1f1np1",
+               "interfaceType": "provisioning"
+            },
+            {
+               "macAddress": "a0:88:c2:a1:a5:ea",
+               "secondaryMacAddress": "a0:88:c2:a1:a5:eb",
+               "interfaceName": "bond0",
+               "interfaceLeg1": "ens3f0np0",
+               "interfaceLeg2": "ens3f1np1",
+               "interfaceType": "baremetal"
+            }
+         ],
+         "unusedInterfaces": [
+            "ens6f0",
+            "ens6f1",
+            "ens6f2",
+            "ens6f3"
+         ],
+         "nvme": [
+            {
+               "productName": "SAMSUNG MZWLO3T8HCLS-00A07",
+               "location": "Bay 0",
+               "slotNumber": "0",
+               "osDriveNameByPath": "/dev/disk/by-path/pci-0000:c0:00.0-nvme-1",
+               "serialNumber": "S794NC0X504785",
+               "capacity": "3.84TB",
+               "manufacture": "SAMSUNG"
+            },
+            {
+               "productName": "SAMSUNG MZWLO3T8HCLS-00A07",
+               "location": "Bay 1",
+               "slotNumber": "1",
+               "osDriveNameByPath": "/dev/disk/by-path/pci-0000:bf:00.0-nvme-1",
+               "serialNumber": "S794NC0X504760",
+               "capacity": "3.84TB",
+               "manufacture": "SAMSUNG"
+            },
+            {
+               "productName": "SAMSUNG MZWLO3T8HCLS-00A07",
+               "location": "Bay 2",
+               "slotNumber": "2",
+               "osDriveNameByPath": "/dev/disk/by-path/pci-0000:be:00.0-nvme-1",
+               "serialNumber": "S794NC0X301476",
+               "capacity": "3.84TB",
+               "manufacture": "SAMSUNG"
+            },
+            {
+               "productName": "SAMSUNG MZWLO3T8HCLS-00A07",
+               "location": "Bay 3",
+               "slotNumber": "3",
+               "osDriveNameByPath": "/dev/disk/by-path/pci-0000:bd:00.0-nvme-1",
+               "serialNumber": "S794NC0X300765",
+               "capacity": "3.84TB",
+               "manufacture": "SAMSUNG"
+            },
+            {
+               "productName": "MZWLJ3T8HBLS-000V5",
+               "location": "Bay 4",
+               "slotNumber": "4",
+               "osDriveNameByPath": "/dev/disk/by-path/pci-0000:d2:00.0-nvme-1",
+               "serialNumber": "S5LTNA0T100237",
+               "capacity": "3.84TB",
+               "manufacture": "LENOVO (SAMSUNG)"
+            }
+         ]
+      },
+      {
+         "ipv6ULA": "fd8c:215d:178e:c0de:765d:22ff:fee4:1ce4",
+         "ipv6LLA": "fe80::765d:22ff:fee4:1ce4",
+         "serialNum": "JZ004CRA",
+         "mtm": "7D73CTO1WW",
+         "manufacturer": "Lenovo",
+         "ibmSerialNumber": "G2AUTO1-RU5",
+         "ibmMTM": "9155-C10",
+         "uuid": "59A49098441B11EFA549765D22E41CE6",
+         "type": "storage",
+         "OCPRole": "compute-1-ru5",
+         "location": "RU5",
+         "nodeIndex": "4",
+         "name": "IMM_RU5",
+         "bootDevice": "/dev/disk/by-path/pci-0000:03:00.0-nvme-1",
+         "users": [
+            {
+               "user": "CEUSER",
+               "password": "ejBRdWp5aDFoNl8=",
+               "group": "Administrator",
+               "number": 2
+            },
+            {
+               "user": "ISFUSER",
+               "password": "QjY4N05QYUJnLTE=",
+               "group": "Administrator",
+               "number": 3
+            },
+            {
+               "user": "USERID",
+               "password": "SlVoV1RpUTlsNw==",
+               "group": "Administrator",
+               "number": 1
+            }
+         ],
+         "pxeSlotLabel": "UEFI:   SLOT 1 (2A/0/0) PXE IPv4  Mellanox ConnectX-6 Lx 10/25GbE SFP28 2-port PCIe Ethernet Adapter - 58:A2:E1:54:93:92",
+         "networkCards": [
+            {
+               "slot-1": [
+                  "58:a2:e1:54:93:92",
+                  "58:a2:e1:54:93:93"
+               ]
+            },
+            {
+               "slot-3": [
+                  "a0:88:c2:a1:a8:6e",
+                  "a0:88:c2:a1:a8:6f"
+               ]
+            },
+            {
+               "slot-6": [
+                  "6c:fe:54:92:1d:f8",
+                  "6c:fe:54:92:1d:f9",
+                  "6c:fe:54:92:1d:fa",
+                  "6c:fe:54:92:1d:fb"
+               ]
+            }
+         ],
+         "networkInterfaces": [
+            {
+               "macAddress": "58:a2:e1:54:93:92",
+               "secondaryMacAddress": "58:a2:e1:54:93:93",
+               "interfaceName": "bond1",
+               "interfaceLeg1": "ens1f0np0",
+               "interfaceLeg2": "ens1f1np1",
+               "interfaceType": "provisioning"
+            },
+            {
+               "macAddress": "a0:88:c2:a1:a8:6e",
+               "secondaryMacAddress": "a0:88:c2:a1:a8:6f",
+               "interfaceName": "bond0",
+               "interfaceLeg1": "ens3f0np0",
+               "interfaceLeg2": "ens3f1np1",
+               "interfaceType": "baremetal"
+            }
+         ],
+         "unusedInterfaces": [
+            "ens6f0",
+            "ens6f1",
+            "ens6f2",
+            "ens6f3"
+         ],
+         "nvme": [
+            {
+               "productName": "SAMSUNG MZWLO3T8HCLS-00A07",
+               "location": "Bay 0",
+               "slotNumber": "0",
+               "osDriveNameByPath": "/dev/disk/by-path/pci-0000:c0:00.0-nvme-1",
+               "serialNumber": "S794NC0X512330",
+               "capacity": "3.84TB",
+               "manufacture": "SAMSUNG"
+            },
+            {
+               "productName": "SAMSUNG MZWLO3T8HCLS-00A07",
+               "location": "Bay 1",
+               "slotNumber": "1",
+               "osDriveNameByPath": "/dev/disk/by-path/pci-0000:bf:00.0-nvme-1",
+               "serialNumber": "S794NC0X512507",
+               "capacity": "3.84TB",
+               "manufacture": "SAMSUNG"
+            },
+            {
+               "productName": "MZWLJ3T8HBLS-000V5",
+               "location": "Bay 2",
+               "slotNumber": "2",
+               "osDriveNameByPath": "/dev/disk/by-path/pci-0000:be:00.0-nvme-1",
+               "serialNumber": "S5LTNA0T100212",
+               "capacity": "3.84TB",
+               "manufacture": "LENOVO (SAMSUNG)"
+            },
+            {
+               "productName": "MZWLJ3T8HBLS-000V5",
+               "location": "Bay 3",
+               "slotNumber": "3",
+               "osDriveNameByPath": "/dev/disk/by-path/pci-0000:bd:00.0-nvme-1",
+               "serialNumber": "S5LTNA0T100046",
+               "capacity": "3.84TB",
+               "manufacture": "LENOVO (SAMSUNG)"
+            },
+            {
+               "productName": "MZWLJ3T8HBLS-000V5",
+               "location": "Bay 4",
+               "slotNumber": "4",
+               "osDriveNameByPath": "/dev/disk/by-path/pci-0000:d2:00.0-nvme-1",
+               "serialNumber": "S5LTNA0T100037",
+               "capacity": "3.84TB",
+               "manufacture": "LENOVO (SAMSUNG)"
+            }
+         ]
+      },
+      {
+         "ipv6ULA": "fd8c:215d:178e:c0de:765d:22ff:fee4:326a",
+         "ipv6LLA": "fe80::765d:22ff:fee4:326a",
+         "serialNum": "JZ004CR5",
+         "mtm": "7D73CTO1WW",
+         "manufacturer": "Lenovo",
+         "ibmSerialNumber": "G2AUTO1-RU6",
+         "ibmMTM": "9155-C10",
+         "uuid": "774159E644AE11EF9806765D22E4326C",
+         "type": "storage",
+         "OCPRole": "compute-1-ru6",
+         "location": "RU6",
+         "nodeIndex": "5",
+         "name": "IMM_RU6",
+         "bootDevice": "/dev/disk/by-path/pci-0000:03:00.0-nvme-1",
+         "users": [
+            {
+               "user": "CEUSER",
+               "password": "aEpTc202OFVxXzE=",
+               "group": "Administrator",
+               "number": 2
+            },
+            {
+               "user": "ISFUSER",
+               "password": "Y0dpQFpHRzk2NmU=",
+               "group": "Administrator",
+               "number": 3
+            },
+            {
+               "user": "USERID",
+               "password": "MkV4U2pKb3pxOQ==",
+               "group": "Administrator",
+               "number": 1
+            }
+         ],
+         "pxeSlotLabel": "UEFI:   SLOT 1 (2A/0/0) PXE IPv4  Mellanox ConnectX-6 Lx 10/25GbE SFP28 2-port PCIe Ethernet Adapter - 58:A2:E1:54:85:8E",
+         "networkCards": [
+            {
+               "slot-1": [
+                  "58:a2:e1:54:85:8e",
+                  "58:a2:e1:54:85:8f"
+               ]
+            },
+            {
+               "slot-3": [
+                  "a0:88:c2:a1:a5:f2",
+                  "a0:88:c2:a1:a5:f3"
+               ]
+            },
+            {
+               "slot-6": [
+                  "6c:fe:54:99:ef:9c",
+                  "6c:fe:54:99:ef:9d",
+                  "6c:fe:54:99:ef:9e",
+                  "6c:fe:54:99:ef:9f"
+               ]
+            }
+         ],
+         "networkInterfaces": [
+            {
+               "macAddress": "58:a2:e1:54:85:8e",
+               "secondaryMacAddress": "58:a2:e1:54:85:8f",
+               "interfaceName": "bond1",
+               "interfaceLeg1": "ens1f0np0",
+               "interfaceLeg2": "ens1f1np1",
+               "interfaceType": "provisioning"
+            },
+            {
+               "macAddress": "a0:88:c2:a1:a5:f2",
+               "secondaryMacAddress": "a0:88:c2:a1:a5:f3",
+               "interfaceName": "bond0",
+               "interfaceLeg1": "ens3f0np0",
+               "interfaceLeg2": "ens3f1np1",
+               "interfaceType": "baremetal"
+            }
+         ],
+         "unusedInterfaces": [
+            "ens6f0",
+            "ens6f1",
+            "ens6f2",
+            "ens6f3"
+         ],
+         "nvme": [
+            {
+               "productName": "SAMSUNG MZWLO3T8HCLS-00A07",
+               "location": "Bay 0",
+               "slotNumber": "0",
+               "osDriveNameByPath": "/dev/disk/by-path/pci-0000:c0:00.0-nvme-1",
+               "serialNumber": "S794NC0X512323",
+               "capacity": "3.84TB",
+               "manufacture": "SAMSUNG"
+            },
+            {
+               "productName": "SAMSUNG MZWLO3T8HCLS-00A07",
+               "location": "Bay 1",
+               "slotNumber": "1",
+               "osDriveNameByPath": "/dev/disk/by-path/pci-0000:bf:00.0-nvme-1",
+               "serialNumber": "S794NC0X512520",
+               "capacity": "3.84TB",
+               "manufacture": "SAMSUNG"
+            },
+            {
+               "productName": "MZWLJ7T6HALA-000V5",
+               "location": "Bay 2",
+               "slotNumber": "2",
+               "osDriveNameByPath": "/dev/disk/by-path/pci-0000:be:00.0-nvme-1",
+               "serialNumber": "S5LLNE0R500939",
+               "capacity": "7.68TB",
+               "manufacture": "LENOVO (SAMSUNG)"
+            },
+            {
+               "productName": "MZWLJ3T8HBLS-000V5",
+               "location": "Bay 3",
+               "slotNumber": "3",
+               "osDriveNameByPath": "/dev/disk/by-path/pci-0000:bd:00.0-nvme-1",
+               "serialNumber": "S5LTNA0T100238",
+               "capacity": "3.84TB",
+               "manufacture": "LENOVO (SAMSUNG)"
+            },
+            {
+               "productName": "MZWLJ3T8HBLS-000V5",
+               "location": "Bay 4",
+               "slotNumber": "4",
+               "osDriveNameByPath": "/dev/disk/by-path/pci-0000:d2:00.0-nvme-1",
+               "serialNumber": "S5LTNA0T100040",
+               "capacity": "3.84TB",
+               "manufacture": "LENOVO (SAMSUNG)"
+            }
+         ]
+      },
+      {
+         "ipv6ULA": "fd8c:215d:178e:c0de:765d:22ff:fee4:18b6",
+         "ipv6LLA": "fe80::765d:22ff:fee4:18b6",
+         "serialNum": "JZ004CR7",
+         "mtm": "7D73CTO1WW",
+         "manufacturer": "Lenovo",
+         "ibmSerialNumber": "G2AUTO1-RU7",
+         "ibmMTM": "9155-C10",
+         "uuid": "4F0E67E8441A11EF82EE765D22E418B8",
+         "type": "storage",
+         "OCPRole": "compute-1-ru7",
+         "location": "RU7",
+         "nodeIndex": "6",
+         "name": "IMM_RU7",
+         "bootDevice": "/dev/disk/by-path/pci-0000:03:00.0-nvme-1",
+         "users": [
+            {
+               "user": "CEUSER",
+               "password": "dkE0X3A1UGZrcGg=",
+               "group": "Administrator",
+               "number": 2
+            },
+            {
+               "user": "ISFUSER",
+               "password": "VUB0aTNvNmJaaGE=",
+               "group": "Administrator",
+               "number": 3
+            },
+            {
+               "user": "USERID",
+               "password": "NTU5dml2WTBTNg==",
+               "group": "Administrator",
+               "number": 1
+            }
+         ],
+         "pxeSlotLabel": "UEFI:   SLOT 1 (2A/0/0) PXE IPv4  Mellanox ConnectX-6 Lx 10/25GbE SFP28 2-port PCIe Ethernet Adapter - 58:A2:E1:54:93:9E",
+         "networkCards": [
+            {
+               "slot-1": [
+                  "58:a2:e1:54:93:9e",
+                  "58:a2:e1:54:93:9f"
+               ]
+            },
+            {
+               "slot-3": [
+                  "a0:88:c2:a1:a9:ae",
+                  "a0:88:c2:a1:a9:af"
+               ]
+            },
+            {
+               "slot-6": [
+                  "6c:fe:54:99:f4:24",
+                  "6c:fe:54:99:f4:25",
+                  "6c:fe:54:99:f4:26",
+                  "6c:fe:54:99:f4:27"
+               ]
+            }
+         ],
+         "networkInterfaces": [
+            {
+               "macAddress": "58:a2:e1:54:93:9e",
+               "secondaryMacAddress": "58:a2:e1:54:93:9f",
+               "interfaceName": "bond1",
+               "interfaceLeg1": "ens1f0np0",
+               "interfaceLeg2": "ens1f1np1",
+               "interfaceType": "provisioning"
+            },
+            {
+               "macAddress": "a0:88:c2:a1:a9:ae",
+               "secondaryMacAddress": "a0:88:c2:a1:a9:af",
+               "interfaceName": "bond0",
+               "interfaceLeg1": "ens3f0np0",
+               "interfaceLeg2": "ens3f1np1",
+               "interfaceType": "baremetal"
+            }
+         ],
+         "unusedInterfaces": [
+            "ens6f0",
+            "ens6f1",
+            "ens6f2",
+            "ens6f3"
+         ],
+         "nvme": [
+            {
+               "productName": "SAMSUNG MZWLO3T8HCLS-00A07",
+               "location": "Bay 0",
+               "slotNumber": "0",
+               "osDriveNameByPath": "/dev/disk/by-path/pci-0000:c0:00.0-nvme-1",
+               "serialNumber": "S794NC0X512334",
+               "capacity": "3.84TB",
+               "manufacture": "Samsung"
+            },
+            {
+               "productName": "SAMSUNG MZWLO3T8HCLS-00A07",
+               "location": "Bay 1",
+               "slotNumber": "1",
+               "osDriveNameByPath": "/dev/disk/by-path/pci-0000:bf:00.0-nvme-1",
+               "serialNumber": "S794NC0X512368",
+               "capacity": "3.84TB",
+               "manufacture": "SAMSUNG"
+            },
+            {
+               "productName": "MZWLJ3T8HBLS-000V5",
+               "location": "Bay 2",
+               "slotNumber": "2",
+               "osDriveNameByPath": "/dev/disk/by-path/pci-0000:be:00.0-nvme-1",
+               "serialNumber": "S5LTNA0T100215",
+               "capacity": "3.84TB",
+               "manufacture": "LENOVO (SAMSUNG)"
+            },
+            {
+               "productName": "MZWLJ3T8HBLS-000V5",
+               "location": "Bay 3",
+               "slotNumber": "3",
+               "osDriveNameByPath": "/dev/disk/by-path/pci-0000:bd:00.0-nvme-1",
+               "serialNumber": "S5LTNA0T100217",
+               "capacity": "3.84TB",
+               "manufacture": "LENOVO (SAMSUNG)"
+            },
+            {
+               "productName": "SAMSUNG MZWLO3T8HCLS-00A07",
+               "location": "Bay 4",
+               "slotNumber": "4",
+               "osDriveNameByPath": "/dev/disk/by-path/pci-0000:d2:00.0-nvme-1",
+               "serialNumber": "S794NC0X300368",
+               "capacity": "3.84TB",
+               "manufacture": "Samsung"
+            }
+         ]
+      },
+      {
+         "ipv6ULA": "fd8c:215d:178e:c0de:765d:22ff:fedd:5bd9",
+         "ipv6LLA": "fe80::765d:22ff:fedd:5bd9",
+         "serialNum": "JZ004WY0",
+         "mtm": "7D73CTO1WW",
+         "manufacturer": "Lenovo",
+         "ibmSerialNumber": "G2AUTO1-RU23",
+         "ibmMTM": "9155-C10",
+         "uuid": "F75777984B6611EFAED8765D22DD5BDB",
+         "type": "servicenode",
+         "OCPRole": "servicenode-1",
+         "location": "RU23",
+         "nodeIndex": "0",
+         "name": "IMM_RU23",
+         "bootDevice": "/dev/disk/by-path/pci-0000:03:00.0-nvme-1",
+         "users": [
+            {
+               "user": "CEUSER",
+               "password": "cG1fbmVzOWtBMXE=",
+               "group": "Administrator",
+               "number": 2
+            },
+            {
+               "user": "ISFUSER",
+               "password": "bFE3OGZANllvYko=",
+               "group": "Administrator",
+               "number": 3
+            },
+            {
+               "user": "USERID",
+               "password": "YzNGQXphUFhyNw==",
+               "group": "Administrator",
+               "number": 1
+            }
+         ],
+         "pxeSlotLabel": null,
+         "networkCards": [
+            {
+               "slot-1": [
+                  "10:70:fd:d8:6c:7c",
+                  "10:70:fd:d8:6c:7d"
+               ]
+            },
+            {
+               "slot-6": [
+                  "6c:fe:54:8b:6b:32",
+                  "6c:fe:54:8b:6b:33",
+                  "6c:fe:54:8b:6b:34",
+                  "6c:fe:54:8b:6b:35"
+               ]
+            }
+         ],
+         "networkInterfaces": [
+            {
+               "macAddress": "6c:fe:54:8b:6b:33",
+               "secondaryMacAddress": "6c:fe:54:8b:6b:34",
+               "interfaceName": "bond1",
+               "interfaceLeg1": "ens6f1",
+               "interfaceLeg2": "ens6f2",
+               "interfaceType": "provisioning"
+            },
+            {
+               "macAddress": "10:70:fd:d8:6c:7c",
+               "secondaryMacAddress": "10:70:fd:d8:6c:7d",
+               "interfaceName": "bond0",
+               "interfaceLeg1": "ens1f0np0",
+               "interfaceLeg2": "ens1f1np1",
+               "interfaceType": "baremetal"
+            }
+         ],
+         "unusedInterfaces": [
+            "ens6f0",
+            "ens6f1",
+            "ens6f2",
+            "ens6f3"
+         ],
+         "nvme": null
+      }
+   ],
+   "provisioners": [
+      {
+         "ipv6": "fd8c:215d:178e:c0de:6efe:54ff:fe8b:6b33",
+         "name": "servicenode",
+         "location": "RU23",
+         "type": "provisioner",
+         "bootstrapMACAddress": "00:16:3e:54:c0:34",
+         "users": [
+            {
+               "user": "kni",
+               "group": "kni",
+               "password": "passw0rd"
+            },
+            {
+               "user": "root",
+               "group": "root",
+               "password": "passw0rd"
+            }
+         ]
+      }
+   ]
+} 

@@ -9,11 +9,11 @@
   failed_when: detected_iface.stdout_lines|length == 0
   changed_when: false
 
-- name: Set BMC link local address interface
+- name: Configure BMC link local address interface
   set_fact:
     bmc_lla_interface: "{{ detected_iface.stdout_lines[0] | trim }}"
 
-- name: Get current BMC information before reset
+- name: Retrieve current BMC information before reset
   uri:
     url: "https://[{{ ipv6_address }}]/redfish/v1/Managers/1"
     method: GET

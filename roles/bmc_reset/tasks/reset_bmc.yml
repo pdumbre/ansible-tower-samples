@@ -95,8 +95,9 @@
   until:
     - bmc_status.rc == 0
     - bmc_status.stdout is search('RedfishVersion')
+  loop_control:
+    label: "Checking BMC status..." 
   delegate_to: mgen
-  no_log: true
 
 - name: Inform that BMC is available
   debug:

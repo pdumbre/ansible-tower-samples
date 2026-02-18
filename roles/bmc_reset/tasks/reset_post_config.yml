@@ -6,6 +6,7 @@
     username: "{{ redfish_user }}"
     password: "{{ redfish_password }}"
     validate_certs: false
+  delegate_to: mgen
 
 
 - name: Give BMC a few seconds to initialize network
@@ -19,7 +20,7 @@
     timeout: "{{ xcc_wait_timeout }}"
     delay: 20
     state: started
-  delegate_to: localhost
+  delegate_to: mgen
 
   
 - name: Wait for Redfish service to become ready
@@ -39,3 +40,4 @@
     - redfish_check.json is defined
     - redfish_check.json.RedfishVersion is defined
   failed_when: false
+  delegate_to: mgen

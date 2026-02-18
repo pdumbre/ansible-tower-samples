@@ -103,11 +103,13 @@
     msg:
       - "BMC reboot completed successfully."
 
-- name: Wait for SSH service
-  wait_for:
-    host: "[{{ bmc_lla_ip }}%{{ bmc_lla_interface }}]"
-    port: 22
-    timeout: 600
+- name: Wait for BMC SSH to become reachable
+  shell: |
+    nc -z -6 {{ bmc_lla_ip }}%{{ bmc_lla_interface }} 22
+  register: ssh_check
+  retries: 60
+  delay: 10
+  until: ssh_check.rc == 0
   delegate_to: mgen
 
 - name: Generate BMC secret

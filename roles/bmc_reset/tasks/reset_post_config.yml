@@ -1,0 +1,41 @@
+- name: Reset BMC
+  community.general.redfish_command:
+    category: Manager
+    command: GracefulRestart
+    baseuri: "[{{ ipv6_address }}]"
+    username: "{{ redfish_user }}"
+    password: "{{ redfish_password }}"
+    validate_certs: false
+
+
+- name: Give BMC a few seconds to initialize network
+  pause:
+    seconds: 15
+
+- name: Wait for BMC HTTPS to come back
+  wait_for:
+    host: "[{{ ipv6_address }}]"
+    port: 443
+    timeout: "{{ xcc_wait_timeout }}"
+    delay: 20
+    state: started
+  delegate_to: localhost
+
+  
+- name: Wait for Redfish service to become ready
+  uri:
+    url: "https://[{{ ipv6_address }}]/redfish/v1"
+    method: GET
+    user: "{{ redfish_user }}"
+    password: "{{ redfish_password }}"
+    validate_certs: no
+    force_basic_auth: yes
+    return_content: yes
+  register: redfish_check
+  retries: 60
+  delay: 10
+  until:
+    - redfish_check.status == 200
+    - redfish_check.json is defined
+    - redfish_check.json.RedfishVersion is defined
+  failed_when: false

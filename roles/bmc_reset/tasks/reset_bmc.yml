@@ -72,7 +72,7 @@
     
 - name: Wait for BMC to begin reboot
   pause:
-    seconds: 30
+    seconds: 60
   when:
     - not ansible_check_mode
     - factory_reset_result is succeeded

@@ -263,7 +263,8 @@
   delegate_to: mgen
   shell: >
     sshpass -p '{{ hostvars[inventory_hostname].new_redfish_password }}'
-    ssh -o StrictHostKeyChecking=no
+    ssh -6
+    {{ bmc_ssh_options | join(' ') }}
     {{ hostvars[inventory_hostname].redfish_user }}@{{ hostvars[inventory_hostname].bmc_lla_ip }}%{{ hostvars[inventory_hostname].bmc_lla_interface }}
     "asu set OperatingModes.ChooseOperatingMode {{ operating_mode }}"
   register: operating_mode_result

@@ -1,0 +1,14 @@
+# roles/bmc_config/tasks/discover.yml
+
+- name: Get Managers
+  uri:
+    url: "https://{{ bmc_ip }}/redfish/v1/Managers"
+    method: GET
+    user: "{{ bmc_user }}"
+    password: "{{ bmc_password }}"
+    validate_certs: false
+  register: managers
+
+- name: Set manager URL
+  set_fact:
+    redfish_manager_url: "{{ managers.json.Members[0]['@odata.id'] }}"

@@ -1,1 +1,17 @@
+# roles/bmc_config/tasks/main.yml
+
+- name: Discover Redfish Endpoints
+  include_tasks: discover.yml
+
+- name: Configure BMC Network
+  include_tasks: network.yml
+
+- name: Configure NTP
+  include_tasks: ntp.yml
+
+- name: Configure DNS
+  include_tasks: dns.yml
+
+- name: Configure User Accounts
+  include_tasks: users.yml
 

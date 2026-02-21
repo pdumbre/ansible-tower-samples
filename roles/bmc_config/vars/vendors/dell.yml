@@ -1,3 +1,10 @@
-redfish_manager_url: "/redfish/v1/Managers/iDRAC.Embedded.1"
-redfish_ethernet_collection: "/redfish/v1/Managers/iDRAC.Embedded.1/EthernetInterfaces"
-redfish_network_patch_url: "/redfish/v1/Managers/iDRAC.Embedded.1/Oem/Dell/Network"
+
+redfish_urls:
+  manager: "/redfish/v1/Managers/iDRAC.Embedded.1"
+  ethernet: "/redfish/v1/Managers/iDRAC.Embedded.1/EthernetInterfaces"
+  network: "/redfish/v1/Managers/iDRAC.Embedded.1/Oem/Dell/Network"
+
+bmc_capabilities:
+  supports_standard_redfish_network: true
+  requires_ssh_for_bios: true
+  ssh_command_type: racadm

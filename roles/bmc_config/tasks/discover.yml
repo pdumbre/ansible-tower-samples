@@ -35,7 +35,7 @@
 
 - name: Detect vendor
   set_fact:
-    bmc_vendor: "{{ system_details.json.Oem.keys() | list | first }}"
+    bmc_vendor: "{{ system_details.json.Oem.keys() | list | first | lower }}"
 
 - name: Debug vendor
   debug:

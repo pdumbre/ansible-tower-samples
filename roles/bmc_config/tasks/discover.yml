@@ -4,11 +4,10 @@
   set_fact:
     redfish_base_url: >-
       https://{{
-        '[' + ipv6 + ']'
-        if ipv6 is defined and ipv6|length > 0
+        '[' + ipv6ULA + ']'
+        if ipv6ULA is defined and ipv6ULA|length > 0
         else ipv4
       }}
-  no_log: true
 
 - name: Debug url
   debug:

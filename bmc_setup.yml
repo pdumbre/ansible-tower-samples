@@ -4,4 +4,4 @@
   gather_facts: false
     
   roles:
-    - role: bmc_reset
+    - role: bmc_config

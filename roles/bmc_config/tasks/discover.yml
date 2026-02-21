@@ -33,9 +33,18 @@
   delegate_to: mgen
   register: system_details
 
-- name: Set vendor fact safely
+- name: Detect vendor
   set_fact:
-    bmc_vendor: "{{ system_details.json.Manufacturer | default('unknown') | lower }}"
+    bmc_vendor: >-
+      {{
+        system_details.json.Manufacturer
+        | default(
+            system_details.json.Oem.keys() | list | first,
+            true
+          )
+        | default('unknown')
+        | lower
+      }}
 
 - name: Debug vendor
   debug:

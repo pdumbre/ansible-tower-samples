@@ -1,0 +1,3 @@
+redfish_manager_url: "/redfish/v1/Managers/1"
+redfish_ethernet_collection: "/redfish/v1/Managers/1/EthernetInterfaces"
+redfish_network_patch_url: "/redfish/v1/Managers/1/EthernetInterfaces/1"

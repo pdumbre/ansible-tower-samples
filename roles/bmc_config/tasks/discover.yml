@@ -9,18 +9,20 @@
   uri:
     url: "{{ redfish_base_url }}/redfish/v1/Systems"
     method: GET
-    user: "{{ redfish_username }}"
-    password: "{{ redfish_password }}"
+    user: "{{ bmc_user }}"
+    password: "{{ bmc_password }}"
     validate_certs: false
+  delegate_to: mgen
   register: systems
 
 - name: Get System details
   uri:
     url: "{{ redfish_base_url }}{{ systems.json.Members[0]['@odata.id'] }}"
     method: GET
-    user: "{{ redfish_username }}"
-    password: "{{ redfish_password }}"
+    user: "{{ bmc_user }}"
+    password: "{{ bmc_password }}"
     validate_certs: false
+  delegate_to: mgen
   register: system_details
 
 - name: Set vendor fact safely

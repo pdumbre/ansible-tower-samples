@@ -37,5 +37,7 @@
   set_fact:
     bmc_vendor: "{{ system_details.json.Manufacturer | default('unknown') | lower }}"
 
-
+- name: Debug vendor
+  debug:
+    msg: "vendor: {{ bmc_vendor }}"
     

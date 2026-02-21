@@ -13,32 +13,26 @@
 - name: Set manager URL
   set_fact:
     redfish_manager_url: "{{ managers.json.Members[0]['@odata.id'] }}"
-
-- name: Debug manager URL
-  debug:
-    msg: "redfish_manager_url: {{ managers.json.Members[0]['@odata.id'] }}"
-
-- name: Get Redfish root
+    
+- name: Get manager details
   uri:
-    url: "https://[{{ ipv6ULA }}]"
+    url: "{{ redfish_base_url }}{{ redfish_manager_url }}"
     method: GET
     user: "{{ bmc_user }}"
     password: "{{ bmc_password }}"
     validate_certs: false
   delegate_to: mgen
-  register: redfish_root
+  register: manager_details
 
-- name: Debug vendor fact
+- debug:
+    var: manager_details.json
+
+- name: Set vendor fact
+  set_fact:
+    bmc_vendor: "{{ manager_details.json.Manufacturer | lower }}"
+ 
+- name: Debug vendor
   debug:
-    msg: "vendor: {{ redfish_root }}"
-
-#- name: Set vendor fact
- # set_fact:
-  #  bmc_vendor: "{{ redfish_root.json.Vendor | lower }}"
-
-#- name: Debug vendor fact
- # debug:
-  #  msg: "vendor: {{ bmc_vendor }}"
-
+    msg: "bmc_vendor: {{ bmc_vendor }}"
 
     

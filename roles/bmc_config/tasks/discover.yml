@@ -33,23 +33,10 @@
   delegate_to: mgen
   register: system_details
 
-- name: Debug vendor
-  debug:
-    msg: "vendor: {{ system_details.json.Oem.keys() }}"
-    
 - name: Detect vendor
   set_fact:
-    bmc_vendor: >-
-      {{
-        system_details.json.Manufacturer
-        | default(
-            system_details.json.Oem.keys() | list | first,
-            true
-          )
-        | default('unknown')
-        | lower
-      }}
-
+    bmc_vendor: {{ system_details.json.Oem.keys() | list | first }}
+   
 - name: Debug vendor
   debug:
     msg: "vendor: {{ bmc_vendor }}"

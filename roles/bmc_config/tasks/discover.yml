@@ -1,42 +1,26 @@
 # roles/bmc_config/tasks/discover.yml
 
-- name: Get Managers
+- name: Get Systems
   uri:
-    url: "https://[{{ ipv6ULA }}]/redfish/v1/Managers"
+    url: "{{ redfish_base_url }}/redfish/v1/Systems"
     method: GET
-    user: "{{ bmc_user }}"
-    password: "{{ bmc_password }}"
+    user: "{{ redfish_username }}"
+    password: "{{ redfish_password }}"
     validate_certs: false
-  delegate_to: mgen
-  register: managers
+  register: systems
 
-- name: Set manager URL
-  set_fact:
-    redfish_base_url: "https://[{{ ipv6ULA }}]"
-    redfish_manager_url: "{{ managers.json.Members[0]['@odata.id'] }}"
-    
-- debug:
-    var: redfish_base_url
-
-- debug:
-    var: redfish_manager_url
-    
-- name: Get manager details
+- name: Get System details
   uri:
-    url: "{{ redfish_base_url }}{{ redfish_manager_url }}"
+    url: "{{ redfish_base_url }}{{ systems.json.Members[0]['@odata.id'] }}"
     method: GET
-    user: "{{ bmc_user }}"
-    password: "{{ bmc_password }}"
+    user: "{{ redfish_username }}"
+    password: "{{ redfish_password }}"
     validate_certs: false
-  delegate_to: mgen
-  register: manager_details
+  register: system_details
 
-- debug:
-    var: manager_details.json
-
-- name: Set vendor fact
+- name: Set vendor fact safely
   set_fact:
-    bmc_vendor: "{{ manager_details.json.Manufacturer | lower }}"
+    bmc_vendor: "{{ system_details.json.Manufacturer | default('unknown') | lower }}"
  
 - name: Debug vendor
   debug:

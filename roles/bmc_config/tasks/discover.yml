@@ -1,5 +1,10 @@
 # roles/bmc_config/tasks/discover.yml
 
+- name: Set Redfish base url
+  set_fact:
+    redfish_base_url: "https://[{{ ipv6ULA }}]"
+  no_log: true
+
 - name: Get Systems
   uri:
     url: "{{ redfish_base_url }}/redfish/v1/Systems"

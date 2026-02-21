@@ -2,7 +2,7 @@
 
 - name: Get Managers
   uri:
-    url: "https://{{ ipv6addr }}/redfish/v1/Managers"
+    url: "https://{{ ipv6ULA }}/redfish/v1/Managers"
     method: GET
     user: "{{ bmc_user }}"
     password: "{{ bmc_password }}"
@@ -19,7 +19,7 @@
 
 - name: Get Redfish root
   uri:
-    url: "https://{{ ipv6addr }}"
+    url: "https://{{ ipv6ULA }}"
     method: GET
     user: "{{ bmc_user }}"
     password: "{{ bmc_password }}"

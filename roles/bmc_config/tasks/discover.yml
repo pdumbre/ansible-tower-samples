@@ -45,3 +45,21 @@
   include_vars:
     file: "vendors/{{ bmc_vendor }}.yml"
     dir: "{{ role_path }}/vars"
+
+- name: Discover interface for BMC link local address
+  shell: |
+    for iface in $(ls /sys/class/net); do
+      ping -6 -c1 -I $iface {{ bmc_lla_ip }} >/dev/null 2>&1 && echo $iface
+    done
+  register: detected_iface
+  delegate_to: mgen
+  failed_when: detected_iface.stdout_lines|length == 0
+  changed_when: false
+
+- name: Configure BMC link local address interface
+  set_fact:
+    bmc_lla_interface: "{{ detected_iface.stdout_lines[0] | trim }}"
+
+- name: Debug interface
+  debug:
+    var: "interface: {{ bmc_lla_interface }}"

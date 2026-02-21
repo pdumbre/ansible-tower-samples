@@ -1,9 +1,9 @@
 - name: Retrieve details of network configuration 
   uri:
-    url: "https://[{{ bmc_lla_ip }}%{{ bmc_lla_interface }}]/redfish/v1/Managers/1/EthernetInterfaces"
+    url: "https://[{{ bmc_lla_ip }}%{{ bmc_lla_interface }}]{{ redfish_urls.ethernet }}
     method: GET
-    user: "{{ redfish_user }}"
-    password: "{{ new_redfish_password }}"
+    user: "{{ bmc_user }}"
+    password: "{{ bmc_password }}"
     validate_certs: no
     force_basic_auth: yes
     return_content: yes
@@ -20,8 +20,8 @@
   uri:
     url: "https://[{{ bmc_lla_ip }}%{{ bmc_lla_interface }}]{{ network_interface_uri }}"
     method: GET
-    user: "{{ redfish_user }}"
-    password: "{{ new_redfish_password }}"
+    user: "{{ bmc_user }}"
+    password: "{{ bmc_password }}"
     force_basic_auth: yes
     validate_certs: no
     return_content: yes
@@ -44,8 +44,8 @@
   uri:
     url: "https://[{{ bmc_lla_ip }}%{{ bmc_lla_interface }}]{{ network_interface_uri }}"
     method: PATCH
-    user: "{{ redfish_user }}"
-    password: "{{ new_redfish_password }}"
+    user: "{{ bmc_user }}"
+    password: "{{ bmc_password }}"
     validate_certs: no
     force_basic_auth: yes
     headers:

@@ -7,6 +7,7 @@
     user: "{{ bmc_user }}"
     password: "{{ bmc_password }}"
     validate_certs: false
+  delegate_to: mgen
   register: managers
 
 - name: Set manager URL
@@ -24,6 +25,7 @@
     user: "{{ bmc_user }}"
     password: "{{ bmc_password }}"
     validate_certs: false
+  delegate_to: mgen
   register: redfish_root
 
 - name: Set vendor fact

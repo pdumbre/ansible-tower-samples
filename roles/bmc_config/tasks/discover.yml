@@ -15,6 +15,12 @@
     redfish_base_url: "https://[{{ ipv6ULA }}]"
     redfish_manager_url: "{{ managers.json.Members[0]['@odata.id'] }}"
     
+- debug:
+    var: redfish_base_url
+
+- debug:
+    var: redfish_manager_url
+    
 - name: Get manager details
   uri:
     url: "{{ redfish_base_url }}{{ redfish_manager_url }}"

@@ -40,12 +40,10 @@
 - name: Debug vendor
   debug:
     msg: "vendor: {{ bmc_vendor }}"
-    
-- name: Load vendor variables
-  include_vars:
-    file: "vendors/{{ bmc_vendor }}.yml"
-    dir: "{{ role_path }}/vars"
 
+- name: Load vendor variables
+  include_vars: "vendors/{{ bmc_vendor }}.yml"
+  
 - name: Discover interface for BMC link local address
   shell: |
     for iface in $(ls /sys/class/net); do

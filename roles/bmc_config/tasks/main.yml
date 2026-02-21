@@ -3,8 +3,8 @@
 - name: Discover vendor
   include_tasks: discover.yml
 
-- name: Run common Redfish config
-  include_tasks: common/network.yml
+#- name: Run common Redfish config
+ # include_tasks: common/network.yml
 
 #- name: Run vendor Redfish extensions
  # include_tasks: "vendors/{{ detected_vendor }}/redfish.yml"

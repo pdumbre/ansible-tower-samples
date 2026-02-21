@@ -2,7 +2,7 @@
 
 - name: Get Managers
   uri:
-    url: "https://{{ bmc_ip }}/redfish/v1/Managers"
+    url: "https://{{ ipv6addr }}/redfish/v1/Managers"
     method: GET
     user: "{{ bmc_user }}"
     password: "{{ bmc_password }}"
@@ -16,4 +16,18 @@
 - name: Debug manager URL
   debug:
     msg: "redfish_manager_url: {{ managers.json.Members[0]['@odata.id'] }}"
+
+- name: Get Redfish root
+  uri:
+    url: "https://{{ ipv6addr }}"
+    method: GET
+    user: "{{ bmc_user }}"
+    password: "{{ bmc_password }}"
+    validate_certs: false
+  register: redfish_root
+
+- name: Set vendor fact
+  set_fact:
+    bmc_vendor: "{{ redfish_root.json.Vendor | lower }}"
+
     

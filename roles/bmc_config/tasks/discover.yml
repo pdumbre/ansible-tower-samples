@@ -14,5 +14,5 @@
     redfish_manager_url: "{{ managers.json.Members[0]['@odata.id'] }}"
 
 - name: Debug manager URL
-  message:
-    redfish_manager_url: "{{ managers.json.Members[0]['@odata.id'] }}"
+  msg: redfish_manager_url: "{{ managers.json.Members[0]['@odata.id'] }}"
+    

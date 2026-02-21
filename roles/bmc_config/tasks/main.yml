@@ -1,7 +1,18 @@
 # roles/bmc_config/tasks/main.yml
 
-- name: Discover Redfish Endpoints
+- name: Discover vendor
   include_tasks: discover.yml
+
+- name: Run common Redfish config
+  include_tasks: common/network.yml
+
+#- name: Run vendor Redfish extensions
+ # include_tasks: "vendors/{{ detected_vendor }}/redfish.yml"
+
+#- name: Run SSH fallback if required
+ # include_tasks: "vendors/{{ detected_vendor }}/ssh.yml"
+  #when: bmc_capabilities.requires_ssh_for_bios
+
 
 #- name: Configure BMC Network
  # include_tasks: network.yml

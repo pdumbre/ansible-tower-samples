@@ -2,9 +2,18 @@
 
 - name: Set Redfish base url
   set_fact:
-    redfish_base_url: "https://[{{ ipv6ULA }}]"
+    redfish_base_url: >-
+      https://{{
+        '[' + ipv6 + ']'
+        if ipv6 is defined and ipv6|length > 0
+        else ipv4
+      }}
   no_log: true
 
+- name: Debug url
+  debug:
+    msg: "redfish_base_url: {{ redfish_base_url }}"
+    
 - name: Get Systems
   uri:
     url: "{{ redfish_base_url }}/redfish/v1/Systems"
@@ -28,9 +37,6 @@
 - name: Set vendor fact safely
   set_fact:
     bmc_vendor: "{{ system_details.json.Manufacturer | default('unknown') | lower }}"
- 
-- name: Debug vendor
-  debug:
-    msg: "bmc_vendor: {{ bmc_vendor }}"
+
 
     

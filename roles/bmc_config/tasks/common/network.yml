@@ -15,7 +15,7 @@
     
 - name: Clear iDRAC job queue
   uri:
-    url: "{{ bmc_base_url }} {{ bmc_urls.clearJobQueue }}"
+    url: "{{ bmc_base_url }}{{ bmc_urls.clearJobQueue }}"
     method: POST
     user: "{{ bmc_user }}"
     password: "{{ bmc_password }}"
@@ -37,7 +37,7 @@
 - name: Retrieve details of network configuration 
   uri:
     #url: "https://[{{ bmc_lla_ip }}%{{ bmc_lla_interface }}]{{ redfish_urls.ethernet }}
-    url: "{{ bmc_base_url }} {{ bmc_urls.ethernet }}"
+    url: "{{ bmc_base_url }}{{ bmc_urls.ethernet }}"
     method: GET
     user: "{{ bmc_user }}"
     password: "{{ bmc_password }}"

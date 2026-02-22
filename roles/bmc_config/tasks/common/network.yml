@@ -7,6 +7,8 @@
     username: "{{ bmc_user }}"
     password: "{{ bmc_password }}"
     validate_certs: false
+  delegate_to: localhost
+  connection: local
   when:
     - bmc_capabilities.requires_delete_jobs is defined
     - bmc_capabilities.requires_delete_jobs | bool

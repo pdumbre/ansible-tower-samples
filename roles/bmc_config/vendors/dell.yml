@@ -5,6 +5,7 @@ bmc_urls:
   jobs: "/redfish/v1/Managers/iDRAC.Embedded.1/Jobs"
   attributes: "/redfish/v1/Managers/iDRAC.Embedded.1/Attributes"
   bios: "/redfish/v1/Systems/System.Embedded.1/Bios/Settings"
+  supportAssist: "/redfish/v1/Managers/iDRAC.Embedded.1/Oem/Dell/DellSupportAssist"
 
 bmc_capabilities:
   supports_standard_redfish_network: true

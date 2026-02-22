@@ -1,1 +1,22 @@
 
+# Configure alert entries on iDRAC using Redfish API
+# Equivalent to: idrac.setAlertEntryConfigDell()
+
+- name: Configure remote syslog
+  uri:
+    url: "https://{{ ansible_host }}/redfish/v1/Managers/iDRAC.Embedded.1/Attributes"
+    method: PATCH
+    user: "{{ ansible_user }}"
+    password: "{{ ansible_password }}"
+    validate_certs: no
+    force_basic_auth: yes
+    body_format: json
+    body:
+      Attributes:
+        SysLog.1.Enable: "Enabled"
+        SysLog.1.Server1: "{{ syslog_server | default('') }}"
+        SysLog.1.Port: "{{ syslog_port | default(514) }}"
+    status_code: [200, 202]
+  register: syslog_config
+  delegate_to: localhost
+  when: syslog_server is defined

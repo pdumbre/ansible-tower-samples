@@ -1,0 +1,14 @@
+- name: Configure Power Restore Policy
+  uri:
+    url: "{{ bmc_base_url }}{{ power_policy.url }}"
+    method: PATCH
+    user: "{{ bmc_user }}"
+    password: "{{ bmc_password }}"
+    validate_certs: false
+    body_format: json
+    body:
+      Attributes:
+        "{{ power_policy.attribute_key }}": "{{ desired_power_policy }}"
+  register: power_result
+  delegate_to: "{{ bmc_delegate_host }}"
+  failed_when: false

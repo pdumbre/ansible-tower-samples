@@ -4,7 +4,7 @@
   set_fact:
     bmc_base_url: >-
       https://{{
-        ipv4
+        (ipv4 | default('') | trim)
         if (ipv4 is defined and ipv4 | trim | length > 0)
         else
         '[' + ipv6ULA | trim + ']'

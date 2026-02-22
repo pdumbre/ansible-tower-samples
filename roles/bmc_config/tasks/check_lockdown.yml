@@ -23,12 +23,14 @@
     lockdown_status: "{{ idrac_attributes.json.Attributes['SystemLockdown.1.SystemLockdownMode'] | default('Disabled') }}"
   when:
     - idrac_attributes is defined
+    - idrac_attributes.json is defined
 
 - name: Display lockdown status
   debug:
     msg: "System Lockdown Mode: {{ lockdown_status }}"
   when:
     - idrac_attributes is defined
+    - idrac_attributes.json is defined
 
 - name: Disable System Lockdown if enabled
   uri:
@@ -47,12 +49,15 @@
   delegate_to: localhost
   when: 
     - idrac_attributes is defined
+    - idrac_attributes.json is defined
     - lockdown_status != 'Disabled'
 
 - name: Wait for iDRAC to apply lockdown changes
   pause:
     seconds: 5
-  when: idrac_attributes is defined and lockdown_status != 'Disabled' 
+   when: 
+    - idrac_attributes is defined
+    - lockdown_status != 'Disabled'
 
 - name: Verify System Lockdown is now disabled
   uri:
@@ -83,4 +88,6 @@
 - name: Confirm System Lockdown is disabled
   debug:
     msg: "System Lockdown is disabled - proceeding with configuration"
-  when: idrac_attributes is defined
+  when: 
+    - idrac_attributes is defined
+    - idrac_attributes.json is defined

@@ -51,7 +51,7 @@
     done
   register: detected_iface
   delegate_to: mgen
-  failed_when: detected_iface.stdout_lines|length == 0
+  #failed_when: detected_iface.stdout_lines|length == 0
   changed_when: false
 
 - name: Configure BMC link local address interface

@@ -37,3 +37,9 @@ port_config:
       Telnet.1.Enable: "Disabled"
       # Syslog configuration
       SysLog.1.Enable: "Enabled"
+
+#Power Restore Policy
+power_policy:
+  url: "/redfish/v1/Systems/System.Embedded.1/Bios/Settings"
+  attribute_key: "SysProfileSettings.PowerRestorePolicy"
+  requires_reboot: true

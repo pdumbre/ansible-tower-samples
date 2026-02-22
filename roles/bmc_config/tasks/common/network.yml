@@ -8,9 +8,8 @@
     password: "{{ bmc_password }}"
     validate_certs: false
   when:
-    - bmc_delete_jobs is defined
-
-
+    - bmc_capabilities.requires_delete_jobs is defined
+    - bmc_capabilities.requires_delete_jobs | bool
 
 - name: Retrieve details of network configuration 
   uri:

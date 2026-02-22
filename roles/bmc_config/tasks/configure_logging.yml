@@ -20,6 +20,6 @@
       - 200
       - 204
   delegate_to: "{{ bmc_delegate_host }}"
-   when:
+  when:
     - bmc_capabilities.requires_logging_and_supportAssist is defined
     - bmc_capabilities.requires_logging_and_supportAssist | bool

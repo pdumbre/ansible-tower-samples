@@ -4,11 +4,25 @@
   set_fact:
     redfish_base_url: >-
       https://{{
+        ipv4
+        if (ipv4 is defined and ipv4 | trim | length > 0)
+        else
         '[' + ipv6ULA + ']'
-        if ipv6ULA is defined and ipv6ULA|length > 0
-        else ipv4
+        if (ipv6ULA is defined and ipv6ULA | trim | length > 0)
+        else
+        ''
       }}
 
+
+#- name: Set Redfish base url
+ # set_fact:
+  #  redfish_base_url: >-
+   #   https://{{
+    #    '[' + ipv6ULA + ']'
+     #   if ipv6ULA is defined and ipv6ULA|length > 0
+      #  else ipv4
+      #}}
+      
 - name: Debug url
   debug:
     msg: "redfish_base_url: {{ redfish_base_url }}"

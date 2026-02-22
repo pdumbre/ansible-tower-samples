@@ -9,6 +9,6 @@
     validate_certs: false
     body_format: json
     body: "{{ port_config.body }}"
-  status_code: [200, 202, 204]
+    status_code: [200, 202, 204]
   register: ports_config
   delegate_to: "{{ bmc_delegate_host }}"

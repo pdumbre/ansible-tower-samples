@@ -3,14 +3,14 @@
 - name: Discover vendor
   include_tasks: discover.yml
 
-- name: Clean Jobs
-  include_tasks: clean_jobs.yml
+#- name: Clean Jobs
+ # include_tasks: clean_jobs.yml
 
-- name: Check System Lockdown
-  include_tasks: check_lockdown.yml
+#- name: Configure System Lockdown
+ # include_tasks: check_lockdown.yml
 
-#- name: Run common Redfish config
- # include_tasks: common/network.yml
+- name: Configure Network
+  include_tasks: configure_network.yml
 
 #- name: Run vendor Redfish extensions
  # include_tasks: "vendors/{{ detected_vendor }}/redfish.yml"

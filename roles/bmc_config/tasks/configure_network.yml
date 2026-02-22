@@ -1,0 +1,118 @@
+  
+- name: Retrieve details of network configuration 
+  uri:
+    #url: "https://[{{ bmc_lla_ip }}%{{ bmc_lla_interface }}]{{ redfish_urls.ethernet }}
+    url: "{{ bmc_base_url }}{{ bmc_urls.ethernet }}"
+    method: GET
+    user: "{{ bmc_user }}"
+    password: "{{ bmc_password }}"
+    validate_certs: no
+    force_basic_auth: yes
+    return_content: yes
+    status_code: [200]
+  register: current_network
+  delegate_to: mgen
+    
+- name: Retrieve network interface from discovery response
+  set_fact:
+    network_interface_uri: "{{ current_network.json.Members[0]['@odata.id'] }}"
+  when: current_network.json.Members | length > 0
+    
+- name: Retrieve network interface details
+  uri:
+    #url: "https://[{{ bmc_lla_ip }}%{{ bmc_lla_interface }}]{{ network_interface_uri }}"
+    url: "{{ bmc_base_url }}{{ network_interface_uri }}"
+    method: GET
+    user: "{{ bmc_user }}"
+    password: "{{ bmc_password }}"
+    force_basic_auth: yes
+    validate_certs: no
+    return_content: yes
+  register: network_interface_detail
+  delegate_to: mgen
+  when: network_interface_uri is defined
+
+- name: Retrieve existing network configuration
+  set_fact:
+    current_mac: "{{ network_interface_detail.json.MACAddress | default('Not available') }}"
+    current_ipv6_addresses: "{{ network_interface_detail.json.IPv6Addresses | default([]) }}"
+    current_ipv6_addr: "{{ network_interface_detail.json.IPv6Addresses[0].Address | default('') }}"
+    current_dhcp: "{{ network_interface_detail.json.DHCPv4.DHCPEnabled | default(false) }}"
+    
+- name: Check if IPv6 address needs update
+  set_fact:
+    ipv6_needs_update: "{{ ipv6ULA is defined and current_ipv6_addr != ipv6ULA }}"
+
+- name: Debug URL
+  debug:
+    msg: "https://{{ ipv4 }}{{ network_interface_uri }}"
+    
+- name: Debug mac
+  debug: 
+    msg: "{{ current_mac }}"
+
+- name: Debug dhcp
+  debug: 
+    msg: "{{ current_dhcp }}"
+
+- name: Configure IPv6 and IPv4 Network Settings
+  uri:
+    #url: "https://[{{ bmc_lla_ip }}%{{ bmc_lla_interface }}]{{ network_interface_uri }}"
+    url: "{{ bmc_base_url }}{{ network_interface_uri }}"
+    method: PATCH
+    user: "{{ bmc_user }}"
+    password: "{{ bmc_password }}"
+    validate_certs: no
+    force_basic_auth: yes
+    headers:
+      Content-Type: "application/json"
+    body_format: json
+    body:
+      DHCPv6: 
+        OperatingMode: "{{ 'Enabled' if bmc_network.dhcp6_enabled | bool else 'Disabled' }}"
+      IPv6StaticAddresses:
+        - Address: "{{ ipv6ULA }}"
+          SubnetMask: "{{ ipv6_netmask | default('255.255.0.0') }}"
+          Gateway: "{{ bmc_network.ipv6_gateway }}"
+          AddressOrigin: "Static"
+      DHCPv4:
+        Enabled: "{{ bmc_network.dhcp6_enabled | bool }}"
+      IPv4StaticAddresses:
+        - Address: "{{ ipv4 }}"
+          SubnetMask: "{{ ipv4_netmask | default('255.255.0.0') }}"
+    status_code: [200, 204]
+  delegate_to: mgen  
+  register: ipv6_config
+  when:
+    - ipv6ULA is defined
+    - ipv6_needs_update | bool
+
+- name: Configure Network Settings
+  uri:
+    #url: "https://[{{ bmc_lla_ip }}%{{ bmc_lla_interface }}]{{ network_interface_uri }}"
+    url: "{{ bmc_base_url }}{ network_interface_uri }}"
+    method: PATCH
+    user: "{{ bmc_user }}"
+    password: "{{ bmc_password }}"
+    validate_certs: no
+    force_basic_auth: yes
+    headers:
+      Content-Type: "application/json"
+    body_format: json
+    body:
+      SLAAC:
+            Enabled: "{{ bmc_network.stateless_autoconfig_enabled | bool }}"
+      Oem:
+        Lenovo:
+          NetworkSettingSync: "{{ bmc_network.name_server_sync_enabled | bool }}"
+    status_code: [200, 204]
+  delegate_to: mgen  
+  register: oem_config
+  when:
+    - bmc_network is defined
+    - bmc_network.name_server_sync_enabled is defined
+    - bmc_network.stateless_autoconfig_enabled is defined
+
+- name: Wait for network configuration to be effective
+  pause:
+    seconds: 30

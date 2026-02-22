@@ -4,7 +4,7 @@
 
 - name: Get list of jobs from iDRAC
   uri:
-    url: "https://{{ ansible_host }}/redfish/v1/Managers/iDRAC.Embedded.1/Jobs"
+    url: "{{ bmc_base_url }}{{ bmc_urls.jobs }}"
     method: GET
     user: "{{ ansible_user }}"
     password: "{{ ansible_password }}"

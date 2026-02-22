@@ -1,4 +1,7 @@
-  
+- name: Debug URL
+  debug:
+    msg: "{{ bmc_base_url }}{{ bmc_urls.ethernet }}"
+    
 - name: Retrieve details of network configuration 
   uri:
     #url: "https://[{{ bmc_lla_ip }}%{{ bmc_lla_interface }}]{{ redfish_urls.ethernet }}

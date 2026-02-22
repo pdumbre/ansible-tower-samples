@@ -1,4 +1,18 @@
 
+
+- name: Debug base url
+  debug:
+    msg: "URL:  '{{ bmc_base_url }}'"
+
+- name: Debug clear url
+  debug:
+    msg: "URL:  '{{ bmc_urls.clearJobQueue }}'"
+
+- name: Debug job url
+  debug:
+    msg: "URL:  '{{ bmc_base_url }} {{ bmc_urls.clearJobQueue }}'"
+
+    
 - name: Clear iDRAC job queue
   uri:
     url: "{{ bmc_base_url }} {{ bmc_urls.clearJobQueue }}"

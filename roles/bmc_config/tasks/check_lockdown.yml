@@ -30,15 +30,57 @@
   when:
     - idrac_attributes is defined
 
-- name: Fail if System Lockdown is enabled
-  fail:
-    msg: "System Lockdown is enabled. Please disable it before proceeding."
-  when:
+- name: Disable System Lockdown if enabled
+  uri:
+    url: "{{ bmc_base_url }}{{ bmc_urls.attributes }}"
+    method: PATCH
+    user: "{{ bmc_user }}"
+    password: "{{ bmc_password }}"
+    validate_certs: no
+    force_basic_auth: yes
+    body_format: json
+    body:
+      Attributes:
+        SystemLockdown.1.SystemLockdownMode: "Disabled"
+    status_code: [200]
+  register: disable_lockdown_result
+  delegate_to: localhost
+  when: 
     - idrac_attributes is defined
     - lockdown_status != 'Disabled'
+
+- name: Wait for iDRAC to apply lockdown changes
+  pause:
+    seconds: 5
+  when: idrac_attributes is defined and lockdown_status != 'Disabled' 
+
+- name: Verify System Lockdown is now disabled
+  uri:
+    url: "{{ bmc_base_url }}{{ bmc_urls.attributes }}"
+    method: GET
+    user: "{{ bmc_user }}"
+    password: "{{ bmc_password }}"
+    validate_certs: no
+    force_basic_auth: yes
+    return_content: yes
+    status_code: [200]
+  register: verify_lockdown
+  delegate_to: localhost
+  when: 
+    - idrac_attributes is defined
+    - lockdown_status != 'Disabled'
+
+- name: Update lockdown status after disable
+  set_fact:
+    lockdown_status: "{{ verify_lockdown.json.Attributes['SystemLockdown.1.SystemLockdownMode'] | default('Disabled') }}"
+  when: lockdown_status != 'Disabled' and verify_lockdown is defined
+
+- name: Fail if System Lockdown could not be disabled
+  fail:
+    msg: "Failed to disable System Lockdown. Current status: {{ lockdown_status }}"
+  when: lockdown_status != 'Disabled' and verify_lockdown is defined
 
 - name: Confirm System Lockdown is disabled
   debug:
     msg: "System Lockdown is disabled - proceeding with configuration"
-  when:
-    - idrac_attributes is defined
+  when: idrac_attributes is defined

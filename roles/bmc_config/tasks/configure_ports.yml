@@ -1,26 +1,11 @@
-# Configure ports on iDRAC using Redfish API
-# Equivalent to: idrac.setPortsConfigDell()
+# Configure ports 
 
-- name: Configure all ports on iDRAC (SSH, HTTPS, HTTP, Telnet)
+- name: Configure management port
   uri:
-    url: "{{ bmc_base_url }}{{ bmc_urls.attributes }}"
+    url: "{{ bmc_base_url }}{{ port_config.url }}"
     method: PATCH
-    user: "{{ ansible_user }}"
-    password: "{{ ansible_password }}"
-    validate_certs: no
-    force_basic_auth: yes
+    user: "{{ bmc_user }}"
+    password: "{{ bmc_password }}"
+    validate_certs: false
     body_format: json
-    body:
-      Attributes:
-        # SSH Configuration
-        SSH.1.Enable: "Enabled"
-        SSH.1.Port: 22
-        # Web Server Configuration (HTTPS and HTTP)
-        WebServer.1.Enable: "Enabled"
-        WebServer.1.HttpsPort: 443
-        WebServer.1.HttpPort: 80
-        # Telnet Configuration (disabled for security)
-        Telnet.1.Enable: "Disabled"
-    status_code: [200, 202]
-  register: ports_config
-  delegate_to: "{{ bmc_delegate_host }}"
+    body: "{{ port_config.body }}"

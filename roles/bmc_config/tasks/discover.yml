@@ -1,14 +1,19 @@
 # roles/bmc_config/tasks/discover.yml
 
-- name: Set Redfish base url
+- name: Configure bmc base url
   set_fact:
+    ipv4_clean: "{{ ipv4 | default('') | trim | replace('\n','') }}"
+    ipv6_clean: "{{ ipv6ULA | default('') | trim | replace('\n','') }}"
+    # Build base URL
     bmc_base_url: >-
-      https://{{ (ipv4 | default('') | trim)
-                  if (ipv4 is defined and ipv4 | trim | length > 0)
-                  else ('[' + (ipv6ULA | trim) + ']')
-                      if (ipv6ULA is defined and ipv6ULA | trim | length > 0)
-                      else '' }}
-            
+      {% if ipv4_clean | length > 0 %}
+        https://{{ ipv4_clean }}
+      {% elif ipv6_clean | length > 0 %}
+        https://[{{ ipv6_clean }}]
+      {% else %}
+        ''
+      {% endif %}
+              
 - name: Debug url
   debug:
     msg: "redfish_base_url: {{ bmc_base_url }}"

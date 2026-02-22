@@ -40,7 +40,7 @@
     
 - name: Check if IPv6 address needs update
   set_fact:
-    ipv6_needs_update: "{{ ipv6_address is defined and current_ipv6_addr != ipv6_address }}"
+    ipv6_needs_update: "{{ ipv6ULA is defined and current_ipv6_addr != ipv6ULA }}"
 
 - name: Debug URL
   debug:
@@ -54,7 +54,7 @@
   debug: 
     msg: "{{ current_dhcp }}"
 
-- name: Configure Network Settings
+- name: Configure IPv6 and IPv4 Network Settings
   uri:
     #url: "https://[{{ bmc_lla_ip }}%{{ bmc_lla_interface }}]{{ network_interface_uri }}"
     url: "https://{{ ipv4 }}{ network_interface_uri }}"
@@ -69,16 +69,36 @@
     body:
       DHCPv6: 
         OperatingMode: "{{ 'Enabled' if bmc_network.dhcp6_enabled | bool else 'Disabled' }}"
-      DHCPv4:
-        Enabled: "{{ bmc_network.dhcp6_enabled | bool }}"
       IPv6StaticAddresses:
-        - Address: "{{ ipv6_address }}"
+        - Address: "{{ ipv6ULA }}"
           SubnetMask: "{{ ipv6_netmask | default('255.255.0.0') }}"
           Gateway: "{{ bmc_network.ipv6_gateway }}"
           AddressOrigin: "Static"
+      DHCPv4:
+        Enabled: "{{ bmc_network.dhcp6_enabled | bool }}"
       IPv4StaticAddresses:
-        - Address: "{{ ipv4_address }}"
+        - Address: "{{ ipv4 }}"
           SubnetMask: "{{ ipv4_netmask | default('255.255.0.0') }}"
+    status_code: [200, 204]
+  delegate_to: mgen  
+  register: ipv6_config
+  when:
+    - ipv6ULA is defined
+    - ipv6_needs_update | bool
+
+- name: Configure Network Settings
+  uri:
+    #url: "https://[{{ bmc_lla_ip }}%{{ bmc_lla_interface }}]{{ network_interface_uri }}"
+    url: "https://{{ ipv4 }}{ network_interface_uri }}"
+    method: PATCH
+    user: "{{ bmc_user }}"
+    password: "{{ bmc_password }}"
+    validate_certs: no
+    force_basic_auth: yes
+    headers:
+      Content-Type: "application/json"
+    body_format: json
+    body:
       SLAAC:
             Enabled: "{{ bmc_network.stateless_autoconfig_enabled | bool }}"
       Oem:
@@ -86,11 +106,10 @@
           NetworkSettingSync: "{{ bmc_network.name_server_sync_enabled | bool }}"
     status_code: [200, 204]
   delegate_to: mgen  
-  register: ipv6_oem_config
+  register: oem_config
   when:
-    - ipv6_address is defined
-    - ipv6_needs_update | bool
     - bmc_network.name_server_sync_enabled is defined
+    - bmc_network.slaac is defined
 
 - name: Wait for network configuration to be effective
   pause:

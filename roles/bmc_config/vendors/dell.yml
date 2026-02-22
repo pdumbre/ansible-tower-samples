@@ -13,6 +13,7 @@ bmc_capabilities:
   requires_delete_jobs: true
   requires_lockdown_check: true
   requires_logging_and_supportAssist: true
+  requires_power_recovery: true
 
 # Network Configuration Parameters
 bmc_network:

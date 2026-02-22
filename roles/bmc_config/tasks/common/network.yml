@@ -75,6 +75,7 @@
         - Address: "{{ ipv6_address }}"
           SubnetMask: "{{ ipv6_netmask | default('255.255.0.0') }}"
           Gateway: "{{ bmc_network.ipv6_gateway }}"
+          AddressOrigin: "Static"
       IPv4StaticAddresses:
         - Address: "{{ ipv4_address }}"
           SubnetMask: "{{ ipv4_netmask | default('255.255.0.0') }}"

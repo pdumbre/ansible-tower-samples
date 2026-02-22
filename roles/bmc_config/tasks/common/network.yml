@@ -42,6 +42,18 @@
   set_fact:
     ipv6_needs_update: "{{ ipv6_address is defined and current_ipv6_addr != ipv6_address }}"
 
+- name: Debug url
+  debug: 
+    var: "https://{{ ipv4 }}{ network_interface_uri }}"
+
+- name: Debug mac
+  debug: 
+    var: "{{ current_mac }}"
+
+- name: Debug dhcp
+  debug: 
+    var: "{{ current_dhcp }}"
+
 - name: Configure Network Settings
   uri:
     #url: "https://[{{ bmc_lla_ip }}%{{ bmc_lla_interface }}]{{ network_interface_uri }}"

@@ -23,3 +23,16 @@
   when:
     - bmc_capabilities.requires_power_recovery is defined
     - bmc_capabilities.requires_power_recovery | bool
+
+
+- name: Configure Power Restore policies
+  delegate_to: "{{ bmc_delegate_host }}"
+  shell: >
+    sshpass -p '{{ hostvars[inventory_hostname].new_redfish_password }}'
+    ssh -6
+    {{ bmc_ssh_options | join(' ') }}
+    {{ hostvars[inventory_hostname].bmc_user }}@{{ hostvars[inventory_hostname].bmc_ip }}
+    "power -rp {{ powerrp }} && usbeth -en enabled"
+  register: ssh_result
+  failed_when: ssh_result.rc != 0
+  when: bmc_capabilities.require_ssh_for_power is defined

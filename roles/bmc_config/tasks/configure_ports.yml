@@ -1,0 +1,57 @@
+# Configure ports on iDRAC using Redfish API
+# Equivalent to: idrac.setPortsConfigDell()
+
+- name: Configure SSH port on iDRAC
+  uri:
+    url: "https://{{ ansible_host }}/redfish/v1/Managers/iDRAC.Embedded.1/Attributes"
+    method: PATCH
+    user: "{{ ansible_user }}"
+    password: "{{ ansible_password }}"
+    validate_certs: no
+    force_basic_auth: yes
+    body_format: json
+    body:
+      Attributes:
+        SSH.1.Enable: "Enabled"
+        SSH.1.Port: 22
+    status_code: [200, 202]
+  register: ssh_config
+  delegate_to: localhost
+
+- name: Configure HTTPS port on iDRAC
+  uri:
+    url: "https://{{ ansible_host }}/redfish/v1/Managers/iDRAC.Embedded.1/Attributes"
+    method: PATCH
+    user: "{{ ansible_user }}"
+    password: "{{ ansible_password }}"
+    validate_certs: no
+    force_basic_auth: yes
+    body_format: json
+    body:
+      Attributes:
+        WebServer.1.Enable: "Enabled"
+        WebServer.1.HttpsPort: 443
+        WebServer.1.HttpPort: 80
+    status_code: [200, 202]
+  register: https_config
+  delegate_to: localhost
+
+- name: Configure Telnet (disabled for security)
+  uri:
+    url: "https://{{ ansible_host }}/redfish/v1/Managers/iDRAC.Embedded.1/Attributes"
+    method: PATCH
+    user: "{{ ansible_user }}"
+    password: "{{ ansible_password }}"
+    validate_certs: no
+    force_basic_auth: yes
+    body_format: json
+    body:
+      Attributes:
+        Telnet.1.Enable: "Disabled"
+    status_code: [200, 202]
+  register: telnet_config
+  delegate_to: localhost
+
+- name: Display port configuration status
+  debug:
+    msg: "Ports configured - SSH: Enabled, HTTPS: Enabled, Telnet: Disabled"

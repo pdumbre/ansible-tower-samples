@@ -12,6 +12,9 @@
 - name: Configure Network
   include_tasks: configure_network.yml
 
+- name: Configure Ports
+  include_tasks: configure_ports.yml
+
 #- name: Run vendor Redfish extensions
  # include_tasks: "vendors/{{ detected_vendor }}/redfish.yml"
 

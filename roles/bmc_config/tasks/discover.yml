@@ -47,6 +47,14 @@
          if (ipv6ULA is defined and ipv6ULA | length > 0)
          else 'localhost' }}
 
+- name: Configure delegate host
+  set_fact:
+    bmc_delegate_host: >-
+      {{ 'localhost'
+         if (ipv4 is defined and ipv4 | length > 0)
+         else 'jump-host' }}
+
+         
 - name: Debug delegate
   debug:
     msg: "{{ bmc_delegate_host }}"

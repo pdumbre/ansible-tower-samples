@@ -6,6 +6,7 @@ bmc_urls:
   attributes: "/redfish/v1/Managers/iDRAC.Embedded.1/Attributes"
   bios: "/redfish/v1/Systems/System.Embedded.1/Bios/Settings"
   supportAssist: "/redfish/v1/Managers/iDRAC.Embedded.1/Oem/Dell/DellSupportAssist"
+  acceptSupportAssist: "/redfish/v1/Dell/Managers/iDRAC.Embedded.1/DellLCService/Actions/DellLCService.SupportAssistAcceptEULA"
 
 bmc_capabilities:
   supports_standard_redfish_network: true

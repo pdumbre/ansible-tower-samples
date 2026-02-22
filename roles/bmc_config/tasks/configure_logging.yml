@@ -1,17 +1,25 @@
 # Configure iDRAC Logging and supportAssist
 
 - name: Configure iDRAC Logging and SupportAssist
-  dellemc.openmanage.idrac_attributes:
-    idrac_ip: "{{ bmc_ip }}"
-    idrac_user: "{{ bmc_user }}"
-    idrac_password: "{{ bmc_password }}"
-    validate_certs: false
-    attributes:
-      SysLog.SysLogEnable: "Enabled"
-      LogAggregation.Enable: "Enabled"
-      SupportAssist.AcceptEULA: "Accepted"
-  register: idrac_config
-  when:
+  uri:
+    url: {{ bmc_base_url }}{{ bmc_urls.attributes }}
+    method: PATCH
+    user: "{{ bmc_user }}"
+    password: "{{ bmc_password }}"
+    force_basic_auth: yes
+    validate_certs: no
+    headers:
+      Content-Type: application/json
+    body_format: json
+    body:
+      Attributes:
+        SysLog.SysLogEnable: "Enabled"
+        LogAggregation.Enable: "Enabled"
+        SupportAssist.1.EULAAccepted: "Accepted"
+    status_code:
+      - 200
+      - 204
+  delegate_to: "{{ bmc_delegate_host }}"
+   when:
     - bmc_capabilities.requires_logging_and_supportAssist is defined
     - bmc_capabilities.requires_logging_and_supportAssist | bool
-    

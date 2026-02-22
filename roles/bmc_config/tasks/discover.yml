@@ -46,7 +46,11 @@
       {{ 'jump-host'
          if (ipv6ULA is defined and ipv6ULA | length > 0)
          else 'localhost' }}
-    
+
+- name: Debug delegate
+  debug:
+    msg: "{{ bmc_delegate_host }}"
+        
 - name: Configure vendor
   set_fact:
     bmc_vendor: "{{ system_details.json.Oem.keys() | list | first | lower }}"

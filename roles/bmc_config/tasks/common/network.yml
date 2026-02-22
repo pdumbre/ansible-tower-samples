@@ -108,8 +108,9 @@
   delegate_to: mgen  
   register: oem_config
   when:
+    - bmc_network is defined
     - bmc_network.name_server_sync_enabled is defined
-    - bmc_network.slaac is defined
+    - bmc_network.stateless_autoconfig_enabled is defined
 
 - name: Wait for network configuration to be effective
   pause:

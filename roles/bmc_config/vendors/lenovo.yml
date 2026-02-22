@@ -31,19 +31,21 @@ ports:
 
 # Port Configuration Parameters
 port_config:
-    body:
-      SSH:
-        ProtocolEnabled: true
-        Port: 22
-      HTTPS:
-        ProtocolEnabled: true
-        Port: 443
-      HTTP:
-        ProtocolEnabled: true
-        Port: 80
-      SNMP:
-        ProtocolEnabled: true
-        Port: 161
+  body:
+    SSH:
+      ProtocolEnabled: true
+      Port: 22
+    HTTPS:
+      ProtocolEnabled: true
+      Port: 443
+    HTTP:
+      ProtocolEnabled: true
+      Port: 80
+    SNMP:
+      ProtocolEnabled: true
+      Port: 161
+
+      
 # Power Restore Policy
 powerrp: "restore"      # Options: restore, off, on
 

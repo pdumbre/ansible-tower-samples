@@ -6,6 +6,9 @@
 - name: Discover vendor
   include_tasks: clean_jobs.yml
 
+- name: Discover vendor
+  include_tasks: check_lockdown.yml
+
 #- name: Run common Redfish config
  # include_tasks: common/network.yml
 

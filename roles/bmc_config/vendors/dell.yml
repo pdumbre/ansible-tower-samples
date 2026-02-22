@@ -2,6 +2,7 @@ bmc_urls:
   manager: "/redfish/v1/Managers/iDRAC.Embedded.1"
   ethernet: "/redfish/v1/Managers/iDRAC.Embedded.1/EthernetInterfaces"
   network: "/redfish/v1/Managers/iDRAC.Embedded.1/Oem/Dell/Network"
+  clearJobQueue: "/redfish/v1/Managers/iDRAC.Embedded.1/Jobs/Actions/JobService.ClearQueue"
 
 bmc_capabilities:
   supports_standard_redfish_network: true

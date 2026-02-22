@@ -7,6 +7,8 @@ bmc_capabilities:
   supports_standard_redfish_network: true
   requires_ssh_for_bios: true
   ssh_command_type: racadm
+  requires_delete_jobs: true
+  requires_lockdown_check: true
 
 # Network Configuration Parameters
 bmc_network:

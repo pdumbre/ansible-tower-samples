@@ -43,3 +43,4 @@ power_policy:
   url: "/redfish/v1/Systems/System.Embedded.1/Bios/Settings"
   attribute_key: "SysProfileSettings.PowerRestorePolicy"
   requires_reboot: true
+  desired_power_policy: "LastState"

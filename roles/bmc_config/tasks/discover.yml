@@ -43,10 +43,13 @@
 - name: Configure delegate host
   set_fact:
     bmc_delegate_host: >-
-      {{ ('localhost' | trim)
+      {{ 'localhost'
          if (ipv4 is defined and ipv4 | length > 0)
-         else ('jump-host' | trim) }}
+         else 'jump-host' }}
 
+- name: Normalize BMC delegate host
+  set_fact:
+    bmc_delegate_host: "{{ bmc_delegate_host | trim }}"
          
 - name: Debug delegate
   debug:

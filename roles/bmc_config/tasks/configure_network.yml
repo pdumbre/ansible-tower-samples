@@ -1,14 +1,14 @@
 - name: Debug URL
   debug:
-    msg: "{{ bmc_base_url }}{{ bmc_urls.ethernet }}"
+    msg: "{{ bmc_user }}{{ bmc_password }}"
     
 - name: Retrieve details of network configuration 
   uri:
     #url: "https://[{{ bmc_lla_ip }}%{{ bmc_lla_interface }}]{{ redfish_urls.ethernet }}
     url: "{{ bmc_base_url }}{{ bmc_urls.ethernet }}"
     method: GET
-    user: "USERID"
-    password: "BuKGd4HdtD2VqNLHPRPj!"
+    user: "{{ bmc_user }}"
+    password: "{{ bmc_password }}"
     validate_certs: no
     force_basic_auth: yes
     return_content: yes

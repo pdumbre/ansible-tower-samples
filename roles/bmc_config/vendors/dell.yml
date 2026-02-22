@@ -11,6 +11,7 @@ bmc_capabilities:
   ssh_command_type: racadm
   requires_delete_jobs: true
   requires_lockdown_check: true
+  requires_logging_and_supportAssist: true
 
 # Network Configuration Parameters
 bmc_network:

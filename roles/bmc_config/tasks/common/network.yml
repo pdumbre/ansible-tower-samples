@@ -1,3 +1,17 @@
+
+- name: Delete all iDRAC jobs
+  community.general.redfish_command:
+    category: Manager
+    command: DeleteJobQueue
+    baseuri: "{{ bmc_base_url }}"
+    username: "{{ bmc_user }}"
+    password: "{{ bmc_password }}"
+    validate_certs: false
+  when:
+    - bmc_delete_jobs is defined
+
+
+
 - name: Retrieve details of network configuration 
   uri:
     #url: "https://[{{ bmc_lla_ip }}%{{ bmc_lla_interface }}]{{ redfish_urls.ethernet }}

@@ -29,7 +29,7 @@
 - name: Check SupportAssist EULA status
   uri:
     url: "{{ bmc_base_url }}{{ bmc_urls.supportAssist}}"
-    method: POST
+    method: GET
     user: "{{ bmc_user }}"
     password: "{{ bmc_password }}"
     validate_certs: no

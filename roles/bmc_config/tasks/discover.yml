@@ -7,7 +7,7 @@
         ipv4
         if (ipv4 is defined and ipv4 | trim | length > 0)
         else
-        '[' + ipv6ULA + ']'
+        '[' + ipv6ULA | trim + ']'
         if (ipv6ULA is defined and ipv6ULA | trim | length > 0)
         else
         ''

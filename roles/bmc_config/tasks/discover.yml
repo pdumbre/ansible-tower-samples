@@ -1,23 +1,19 @@
 # roles/bmc_config/tasks/discover.yml
 
-- name: Clean IPs and Configure BMC base URL
+- name: Clean IP variables and set BMC base URL
   set_fact:
-    base_url: >-
-      {%- set v4 = ipv4 | default('') | trim | replace('\n','') -%}
-      {%- set v6 = ipv6ULA | default('') | trim | replace('\n','') -%}
-      {%- if v4 | length > 0 -%}
-        https://{{ v4 }}
-      {%- elif v6 | length > 0 -%}
-        https://[{{ v6 }}]
-      {%- else -%}
+    # Clean IPv4 and IPv6 values
+    ipv4_clean: "{{ ipv4 | default('') | replace('\n','') | replace('\r','') | trim }}"
+    ipv6_clean: "{{ ipv6ULA | default('') | replace('\n','') | replace('\r','') | trim }}"
+    # Build URL safely
+    bmc_base_url: >-
+      {% if ipv4_clean | length > 0 %}
+        https://{{ ipv4_clean }}
+      {% elif ipv6_clean | length > 0 %}
+        https://[{{ ipv6_clean }}]
+      {% else %}
         ''
-      {%- endif -%}
-
-
-- name: Clean IPs and Configure BMC base URL
-  set_fact:
-    bmc_base_url: "{{ base_url | trim | replace('\n', '') | replace('\r', '') }}"
-
+      {% endif %}
     
 - name: Debug url
   debug:

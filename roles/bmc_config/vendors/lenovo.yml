@@ -29,6 +29,20 @@ ports:
   snmptp: "162"         # SNMP trap port
   cimhsp: "5989"        # CIM port HTTPS
 
+# Port Configuration Parameters
+port_config:
+  body:
+    Attributes:
+      # SSH Configuration
+      SSH.1.Enable: "Enabled"
+      SSH.1.Port: 22
+      # Web Server Configuration (HTTPS and HTTP)
+      WebServer.1.Enable: "Enabled"
+      WebServer.1.HttpsPort: 443
+      WebServer.1.HttpPort: 80
+      # Telnet Configuration (disabled for security)
+      Telnet.1.Enable: "Disabled"
+
 # Power Restore Policy
 powerrp: "restore"      # Options: restore, off, on
 

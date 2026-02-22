@@ -20,7 +20,7 @@
     
 - name: Debug url
   debug:
-    msg: "redfish_base_url: {{ bmc_base_url }}"
+    msg: "redfish_base_url: '{{ bmc_base_url }}'"
     
 - name: Get Systems
   uri:

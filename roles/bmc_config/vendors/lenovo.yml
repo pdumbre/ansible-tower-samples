@@ -31,6 +31,7 @@ ports:
 
 # Port Configuration Parameters
 port_config:
+  url: "/redfish/v1/Managers/1/NetworkProtocol"
   body:
     SSH:
       ProtocolEnabled: true

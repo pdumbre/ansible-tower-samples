@@ -20,6 +20,7 @@ bmc_network:
 
 # Port Configuration Parameters
 port_config:
+  url: "/redfish/v1/Managers/iDRAC.Embedded.1/Attributes"
   body:
     Attributes:
       # SSH Configuration

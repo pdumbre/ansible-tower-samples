@@ -1,6 +1,3 @@
-- name: Debug URL
-  debug:
-    msg: "{{ bmc_user }}{{ bmc_password }}"
     
 - name: Retrieve details of network configuration 
   uri:

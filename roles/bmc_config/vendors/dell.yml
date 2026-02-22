@@ -32,3 +32,5 @@ port_config:
       WebServer.1.HttpPort: 80
       # Telnet Configuration (disabled for security)
       Telnet.1.Enable: "Disabled"
+      # Syslog configuration
+      SysLog.1.Enable: "Enabled"

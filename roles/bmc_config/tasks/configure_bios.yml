@@ -20,3 +20,6 @@
       - 202
       - 204
   delegate_to: "{{ bmc_delegate_host }}"
+  when:
+    - bmc_capabilities.requires_power_recovery is defined
+    - bmc_capabilities.requires_power_recovery | bool

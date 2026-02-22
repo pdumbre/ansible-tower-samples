@@ -2,12 +2,13 @@
 
 - name: Set Redfish base url
   set_fact:
-    ipv4: "{{ ipv4 | default('') | trim }}"
-    ipv6: "{{ ipv6ULA | default('') | trim }}"
     bmc_base_url: >-
-      https://{{ ipv4 if ipv4 | length > 0 else '[' + ipv6 + ']' if ipv6| length > 0 else '' }}
-      
-      
+      https://{{ (ipv4 | default('') | trim)
+                  if (ipv4 is defined and ipv4 | trim | length > 0)
+                  else ('[' + (ipv6ULA | trim) + ']')
+                      if (ipv6ULA is defined and ipv6ULA | trim | length > 0)
+                      else '' }}
+            
 - name: Debug url
   debug:
     msg: "redfish_base_url: {{ bmc_base_url }}"

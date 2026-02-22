@@ -1,18 +1,4 @@
 
-- name: Delete all iDRAC jobs
-  community.general.redfish_command:
-    category: Manager
-    command: DeleteJobQueue
-    baseuri: "{{ bmc_base_url }}"
-    username: "{{ bmc_user }}"
-    password: "{{ bmc_password }}"
-    validate_certs: false
-  delegate_to: localhost
-  connection: local
-  when:
-    - bmc_capabilities.requires_delete_jobs is defined
-    - bmc_capabilities.requires_delete_jobs | bool
-
 - name: Clear iDRAC job queue
   uri:
     url: "{{ bmc_base_url }} {{ bmc_urls.clearJobQueue }}"
@@ -26,6 +12,9 @@
   register: delete_jobs_result
   delegate_to: localhost
   connection: local
+  when:
+    - bmc_capabilities.requires_delete_jobs is defined
+    - bmc_capabilities.requires_delete_jobs | bool
 
 - name: Debug job
   debug:

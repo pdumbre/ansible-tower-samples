@@ -25,10 +25,10 @@
 
 - name: Accept SupportAssist EULA (Dell OEM)
   uri:
-    url: "https://{{ redfish_host }}/redfish/v1/Managers/iDRAC.Embedded.1/Oem/Dell/DellSupportAssist"
+    url: "{{ bmc_base_url }}{{ bmc_urls.supportAssist }}"
     method: PATCH
-    user: "{{ redfish_user }}"
-    password: "{{ redfish_password }}"
+    user: "{{ bmc_user }}"
+    password: "{{ bmc_password }}"
     force_basic_auth: yes
     validate_certs: no
     body_format: json

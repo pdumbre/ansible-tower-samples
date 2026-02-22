@@ -33,8 +33,8 @@ ports:
 powerrp: "restore"      # Options: restore, off, on
 
 # BMC Connection Settings
-bmc_username: "USERID"
-bmc_password: "PASSW0RD"
+default_bmc_username: "USERID"
+default_bmc_password: "PASSW0RD"
 
 # BMC Operating Mode
 bmc_operating_mode: "Maximum Performance"

@@ -14,8 +14,7 @@
     body:
       Attributes:
         SysLog.SysLogEnable: "Enabled"
-        LogAggregation.Enable: "Enabled"
-        SupportAssist.1.EULAAccepted: "Accepted"
+        Logging.1.LCLogAggregation: "Enabled"
     status_code:
       - 200
       - 204

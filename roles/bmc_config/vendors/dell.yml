@@ -3,6 +3,7 @@ bmc_urls:
   ethernet: "/redfish/v1/Managers/iDRAC.Embedded.1/EthernetInterfaces"
   network: "/redfish/v1/Managers/iDRAC.Embedded.1/Oem/Dell/Network"
   jobs: "/redfish/v1/Managers/iDRAC.Embedded.1/Jobs"
+  attributes: "/redfish/v1/Managers/iDRAC.Embedded.1/Attributes"
 
 bmc_capabilities:
   supports_standard_redfish_network: true

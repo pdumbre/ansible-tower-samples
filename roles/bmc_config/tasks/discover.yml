@@ -2,7 +2,7 @@
 
 - name: Set Redfish base url
   set_fact:
-    redfish_base_url: >-
+    bmc_base_url: >-
       https://{{
         ipv4
         if (ipv4 is defined and ipv4 | trim | length > 0)
@@ -25,11 +25,11 @@
       
 - name: Debug url
   debug:
-    msg: "redfish_base_url: {{ redfish_base_url }}"
+    msg: "redfish_base_url: {{ bmc_base_url }}"
     
 - name: Get Systems
   uri:
-    url: "{{ redfish_base_url }}/redfish/v1/Systems"
+    url: "{{ bmc_base_url }}/redfish/v1/Systems"
     method: GET
     user: "{{ bmc_user }}"
     password: "{{ bmc_password }}"
@@ -39,7 +39,7 @@
     
 - name: Get System details
   uri:
-    url: "{{ redfish_base_url }}{{ systems.json.Members[0]['@odata.id'] }}"
+    url: "{{ bmc_base_url }}{{ systems.json.Members[0]['@odata.id'] }}"
     method: GET
     user: "{{ bmc_user }}"
     password: "{{ bmc_password }}"

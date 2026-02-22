@@ -23,6 +23,45 @@
     - bmc_capabilities.requires_logging_and_supportAssist is defined
     - bmc_capabilities.requires_logging_and_supportAssist | bool
 
+# Accept EULA License on iDRAC using Redfish API
+# Equivalent to: idrac.command("racadm supportassist accepteula")
+  
+- name: Check SupportAssist EULA status
+  uri:
+    url: "{{ bmc_base_url }}{{ bmc_urls.supportAssist}}"
+    method: POST
+    user: "{{ bmc_user }}"
+    password: "{{ bmc_password }}"
+    validate_certs: no
+    force_basic_auth: yes
+    body_format: json
+    body: {}
+    status_code: [200, 202]
+  register: eula_status
+  delegate_to: localhost
+  ignore_errors: yes
+
+- name: Accept SupportAssist EULA
+  uri:
+    url: "{{ bmc_base_url }} {{ bmc_urls."
+    method: POST
+    user: "{{ ansible_user }}"
+    password: "{{ ansible_password }}"
+    validate_certs: no
+    force_basic_auth: yes
+    body_format: json
+    body: {}
+    status_code: [200, 202, 204]
+  register: eula_accept
+  delegate_to: localhost
+  when: eula_status is defined
+
+- name: Display EULA acceptance status
+  debug:
+    msg: "SupportAssist EULA accepted successfully"
+  when: eula_accept is succeeded
+
+  
 - name: Accept SupportAssist EULA (Dell OEM)
   uri:
     url: "{{ bmc_base_url }}{{ bmc_urls.supportAssist }}"

@@ -57,7 +57,7 @@
 - name: Configure IPv6 and IPv4 Network Settings
   uri:
     #url: "https://[{{ bmc_lla_ip }}%{{ bmc_lla_interface }}]{{ network_interface_uri }}"
-    url: "https://{{ ipv4 }}{ network_interface_uri }}"
+    url: "https://{{ ipv4 }}{{ network_interface_uri }}"
     method: PATCH
     user: "{{ bmc_user }}"
     password: "{{ bmc_password }}"

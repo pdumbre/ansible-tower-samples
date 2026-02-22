@@ -1,4 +1,4 @@
-redfish_urls:
+bmc_urls:
   manager: "/redfish/v1/Managers/1"
   ethernet: "/redfish/v1/Managers/1/EthernetInterfaces"
   network: "/redfish/v1/Managers/1/EthernetInterfaces/1"

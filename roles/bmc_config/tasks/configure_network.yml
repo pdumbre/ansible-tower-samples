@@ -66,11 +66,6 @@
           SubnetMask: "{{ ipv6_netmask | default('255.255.0.0') }}"
           Gateway: "{{ bmc_network.ipv6_gateway }}"
           AddressOrigin: "Static"
-      DHCPv4:
-        Enabled: "{{ bmc_network.dhcp6_enabled | bool }}"
-      IPv4StaticAddresses:
-        - Address: "{{ ipv4 }}"
-          SubnetMask: "{{ ipv4_netmask | default('255.255.0.0') }}"
     status_code: [200, 204]
   delegate_to: mgen  
   register: ipv6_config

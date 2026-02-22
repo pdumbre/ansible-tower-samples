@@ -7,8 +7,8 @@
     #url: "https://[{{ bmc_lla_ip }}%{{ bmc_lla_interface }}]{{ redfish_urls.ethernet }}
     url: "{{ bmc_base_url }}{{ bmc_urls.ethernet }}"
     method: GET
-    user: "{{ bmc_user }}"
-    password: "{{ bmc_password }}"
+    user: "USERID"
+    password: "BuKGd4HdtD2VqNLHPRPj!"
     validate_certs: no
     force_basic_auth: yes
     return_content: yes

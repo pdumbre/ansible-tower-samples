@@ -1,6 +1,7 @@
 - name: Retrieve details of network configuration 
   uri:
-    url: "https://[{{ bmc_lla_ip }}%{{ bmc_lla_interface }}]{{ redfish_urls.ethernet }}
+    #url: "https://[{{ bmc_lla_ip }}%{{ bmc_lla_interface }}]{{ redfish_urls.ethernet }}
+    url: "https://{{ ipv4 }}{{ redfish_urls.ethernet }}
     method: GET
     user: "{{ bmc_user }}"
     password: "{{ bmc_password }}"
@@ -18,7 +19,8 @@
     
 - name: Retrieve network interface details
   uri:
-    url: "https://[{{ bmc_lla_ip }}%{{ bmc_lla_interface }}]{{ network_interface_uri }}"
+    #url: "https://[{{ bmc_lla_ip }}%{{ bmc_lla_interface }}]{{ network_interface_uri }}"
+    url: "https://{{ ipv4 }}{{ network_interface_uri }}"
     method: GET
     user: "{{ bmc_user }}"
     password: "{{ bmc_password }}"
@@ -42,7 +44,8 @@
 
 - name: Configure Network Settings
   uri:
-    url: "https://[{{ bmc_lla_ip }}%{{ bmc_lla_interface }}]{{ network_interface_uri }}"
+    #url: "https://[{{ bmc_lla_ip }}%{{ bmc_lla_interface }}]{{ network_interface_uri }}"
+    url: "https://{{ ipv4 }}{ network_interface_uri }}"
     method: PATCH
     user: "{{ bmc_user }}"
     password: "{{ bmc_password }}"

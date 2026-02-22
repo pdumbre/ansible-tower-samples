@@ -9,14 +9,23 @@
   set_fact:
     bmc_base_url: >-
       {% if ipv4_clean | length > 0 %}
-        https://{{ ipv4_clean }}
+      https://{{ ipv4_clean }}
       {% elif ipv6_clean | length > 0 %}
-        https://[{{ ipv6_clean }}]
+      https://[{{ ipv6_clean }}]
       {% else %}
-        ''
+      
       {% endif %}
-  vars: 
-    bmc_base_url: "{{ bmc_base_url | trim }}" 
+
+- name: Trim final BMC base URL
+  set_fact:
+    bmc_base_url: "{{ bmc_base_url | trim }}"
+
+- name: Debug cleaned variables
+  debug:
+    msg:
+      - "IPv4 (cleaned): '{{ ipv4_clean }}'"
+      - "IPv6 (cleaned): '{{ ipv6_clean }}'"
+      - "BMC Base URL: '{{ bmc_base_url }}'"
     
 - name: Debug url
   debug:

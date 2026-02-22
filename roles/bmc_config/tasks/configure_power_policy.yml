@@ -9,6 +9,7 @@
     body:
       Attributes:
         "{{ power_policy.attribute_key }}": "{{ desired_power_policy }}"
+    status_code: [200, 202, 204]
   register: power_result
   delegate_to: "{{ bmc_delegate_host }}"
   failed_when: false

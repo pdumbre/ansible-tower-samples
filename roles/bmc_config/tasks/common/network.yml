@@ -13,6 +13,24 @@
     - bmc_capabilities.requires_delete_jobs is defined
     - bmc_capabilities.requires_delete_jobs | bool
 
+- name: Clear iDRAC job queue
+  uri:
+    url: {{ bmc_base_url }} {{ bmc_urls.clearJobQueue }}
+    method: POST
+    user: "{{ bmc_user }}"
+    password: "{{ bmc_password }}"
+    validate_certs: false
+    body_format: json
+    body: {}
+    status_code: [200]
+  register: delete_jobs_result
+  delegate_to: localhost
+  connection: local
+
+- name: Debug job
+  debug:
+    msg: " {{ delete_jobs_result }}"
+  
 - name: Retrieve details of network configuration 
   uri:
     #url: "https://[{{ bmc_lla_ip }}%{{ bmc_lla_interface }}]{{ redfish_urls.ethernet }}
@@ -26,7 +44,7 @@
     status_code: [200]
   register: current_network
   delegate_to: mgen
-
+    
 - name: Retrieve network interface from discovery response
   set_fact:
     network_interface_uri: "{{ current_network.json.Members[0]['@odata.id'] }}"

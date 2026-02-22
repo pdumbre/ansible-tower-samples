@@ -1,6 +1,6 @@
 # Configure iDRAC Logging and supportAssist
 
-- name: Configure iDRAC Logging and SupportAssist
+- name: Configure iDRAC Logging
   uri:
     url: "{{ bmc_base_url }}{{ bmc_urls.attributes }}"
     method: PATCH
@@ -19,6 +19,24 @@
       - 200
       - 204
   delegate_to: "{{ bmc_delegate_host }}"
+  when:
+    - bmc_capabilities.requires_logging_and_supportAssist is defined
+    - bmc_capabilities.requires_logging_and_supportAssist | bool
+
+- name: Accept SupportAssist EULA (Dell OEM)
+  uri:
+    url: "https://{{ redfish_host }}/redfish/v1/Managers/iDRAC.Embedded.1/Oem/Dell/DellSupportAssist"
+    method: PATCH
+    user: "{{ redfish_user }}"
+    password: "{{ redfish_password }}"
+    force_basic_auth: yes
+    validate_certs: no
+    body_format: json
+    body:
+      EULAAccepted: true
+    status_code:
+      - 200
+      - 204
   when:
     - bmc_capabilities.requires_logging_and_supportAssist is defined
     - bmc_capabilities.requires_logging_and_supportAssist | bool

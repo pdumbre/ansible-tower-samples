@@ -21,16 +21,24 @@
 - name: Check if System Lockdown is disabled
   set_fact:
     lockdown_status: "{{ idrac_attributes.json.Attributes['SystemLockdown.1.SystemLockdownMode'] | default('Disabled') }}"
+  when:
+    - idrac_attributes is defined
 
 - name: Display lockdown status
   debug:
     msg: "System Lockdown Mode: {{ lockdown_status }}"
+  when:
+    - idrac_attributes is defined
 
 - name: Fail if System Lockdown is enabled
   fail:
     msg: "System Lockdown is enabled. Please disable it before proceeding."
-  when: lockdown_status != 'Disabled'
+  when:
+    - idrac_attributes is defined
+    - lockdown_status != 'Disabled'
 
 - name: Confirm System Lockdown is disabled
   debug:
     msg: "System Lockdown is disabled - proceeding with configuration"
+  when:
+    - idrac_attributes is defined

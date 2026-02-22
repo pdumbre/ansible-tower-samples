@@ -6,8 +6,8 @@
   uri:
     url: "{{ bmc_base_url }}{{ bmc_urls.jobs }}"
     method: GET
-    user: "{{ ansible_user }}"
-    password: "{{ ansible_password }}"
+    user: "{{ bmc_user }}"
+    password: "{{ bmc_password }}"
     validate_certs: no
     force_basic_auth: yes
     return_content: yes
@@ -22,10 +22,10 @@
 
 - name: Delete queued jobs
   uri:
-    url: "https://{{ ansible_host }}{{ item['@odata.id'] }}"
+    url: "{{ bmc_base_url }}{{ item['@odata.id'] }}"
     method: DELETE
-    user: "{{ ansible_user }}"
-    password: "{{ ansible_password }}"
+    user: "{{ bmc_user }}"
+    password: "{{ bmc_password }}"
     validate_certs: no
     force_basic_auth: yes
     status_code: [200, 204]

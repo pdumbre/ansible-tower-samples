@@ -19,6 +19,17 @@
 - name: Configure BMC Base Endpoint
   set_fact:
     bmc_base_url: "{{ bmc_base_url | trim }}"
+
+- name: Configure BMC IP address
+  set_fact:
+    bmc_ip: >-
+      {{ ipv4_clean
+         if (ipv4 is defined and ipv4 | length > 0)
+         else ipv6_clean }}
+
+- name: Debug BMC Base Endpoint
+  debug:
+    msg: "'{{ bmc_ip }}'"
     
 - name: Retrieve Systems information
   uri:

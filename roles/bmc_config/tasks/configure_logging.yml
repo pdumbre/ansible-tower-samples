@@ -2,7 +2,7 @@
 
 - name: Configure iDRAC Logging and SupportAssist
   uri:
-    url: {{ bmc_base_url }}{{ bmc_urls.attributes }}
+    url: "{{ bmc_base_url }}{{ bmc_urls.attributes }}"
     method: PATCH
     user: "{{ bmc_user }}"
     password: "{{ bmc_password }}"

@@ -1,0 +1,41 @@
+---
+# Clean queued jobs in iDRAC using Redfish API
+# Equivalent to: idrac.cleanJobs()
+
+- name: Get list of jobs from iDRAC
+  uri:
+    url: "https://{{ ansible_host }}/redfish/v1/Managers/iDRAC.Embedded.1/Jobs"
+    method: GET
+    user: "{{ ansible_user }}"
+    password: "{{ ansible_password }}"
+    validate_certs: no
+    force_basic_auth: yes
+    return_content: yes
+    status_code: [200, 201]
+  register: idrac_jobs
+  delegate_to: localhost
+
+- name: Display current jobs
+  debug:
+    msg: "Found {{ idrac_jobs.json.Members | length }} jobs in queue"
+  when: idrac_jobs.json.Members is defined
+
+- name: Delete queued jobs
+  uri:
+    url: "https://{{ ansible_host }}{{ item['@odata.id'] }}"
+    method: DELETE
+    user: "{{ ansible_user }}"
+    password: "{{ ansible_password }}"
+    validate_certs: no
+    force_basic_auth: yes
+    status_code: [200, 204]
+  loop: "{{ idrac_jobs.json.Members }}"
+  when: 
+    - idrac_jobs.json.Members is defined
+    - idrac_jobs.json.Members | length > 0
+  delegate_to: localhost
+  ignore_errors: yes
+
+- name: Wait for job queue to clear
+  pause:
+    seconds: 5

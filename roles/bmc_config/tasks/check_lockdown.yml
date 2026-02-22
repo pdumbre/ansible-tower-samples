@@ -1,0 +1,33 @@
+---
+# Check if SystemLockdown is disabled in iDRAC
+# Equivalent to: idrac.lockdownCheck()
+
+- name: Get System Lockdown Mode status
+  uri:
+    url: "{{ bmc_base_url }}{{ attributes }}"
+    method: GET
+    user: "{{ bmc_user }}"
+    password: "{{ bmc_password }}"
+    validate_certs: no
+    force_basic_auth: yes
+    return_content: yes
+    status_code: [200]
+  register: idrac_attributes
+  delegate_to: localhost
+
+- name: Check if System Lockdown is disabled
+  set_fact:
+    lockdown_status: "{{ idrac_attributes.json.Attributes['SystemLockdown.1.SystemLockdownMode'] | default('Disabled') }}"
+
+- name: Display lockdown status
+  debug:
+    msg: "System Lockdown Mode: {{ lockdown_status }}"
+
+- name: Fail if System Lockdown is enabled
+  fail:
+    msg: "System Lockdown is enabled. Please disable it before proceeding."
+  when: lockdown_status != 'Disabled'
+
+- name: Confirm System Lockdown is disabled
+  debug:
+    msg: "System Lockdown is disabled - proceeding with configuration"

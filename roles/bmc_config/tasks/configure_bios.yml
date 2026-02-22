@@ -1,0 +1,22 @@
+
+#Configuration of Power recovery
+
+- name: Set AC Power Recovery to Last state
+  uri:
+    url: "{{ bmc_base_url }}{{ bmc_urls.bios }}"
+    method: PATCH
+    user: "{{ bmc_user }}"
+    password: "{{ bmc_password }}"
+    force_basic_auth: yes
+    validate_certs: no
+    headers:
+      Content-Type: application/json
+    body_format: json
+    body:
+      Attributes:
+        AcPwrRcvry: "Last"
+    status_code:
+      - 200
+      - 202
+      - 204
+  delegate_to: "{{ bmc_delegate_host }}"

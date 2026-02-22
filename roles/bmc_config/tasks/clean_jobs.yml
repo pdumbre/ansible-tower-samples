@@ -13,7 +13,7 @@
     return_content: yes
     status_code: [200, 201]
   register: idrac_jobs
-  delegate_to: localhost
+  delegate_to: "{{ bmc_delegate_host }}"
   when:
     - bmc_capabilities.requires_delete_jobs is defined
     - bmc_capabilities.requires_delete_jobs | bool
@@ -36,7 +36,7 @@
   when: 
     - idrac_jobs.json.Members is defined
     - idrac_jobs.json.Members | length > 0
-  delegate_to: localhost
+  delegate_to: "{{ bmc_delegate_host }}"
   ignore_errors: yes
 
 - name: Wait for job queue to clear

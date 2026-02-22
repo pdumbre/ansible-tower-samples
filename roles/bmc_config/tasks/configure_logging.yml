@@ -38,8 +38,10 @@
     body: {}
     status_code: [200, 202]
   register: eula_status
-  delegate_to: localhost
-  ignore_errors: yes
+  delegate_to: "{{ bmc_delegate_host }}"
+  when:
+    - bmc_capabilities.requires_logging_and_supportAssist is defined
+    - bmc_capabilities.requires_logging_and_supportAssist | bool
 
 - name: Accept SupportAssist EULA
   uri:
@@ -53,30 +55,13 @@
     body: {}
     status_code: [200, 202, 204]
   register: eula_accept
-  delegate_to: localhost
-  when: eula_status is defined
+  delegate_to: "{{ bmc_delegate_host }}"
+  when:
+    - bmc_capabilities.requires_logging_and_supportAssist is defined
+    - bmc_capabilities.requires_logging_and_supportAssist | bool
+    - eula_status is defied
 
 - name: Display EULA acceptance status
   debug:
     msg: "SupportAssist EULA accepted successfully"
   when: eula_accept is succeeded
-
-  
-- name: Accept SupportAssist EULA (Dell OEM)
-  uri:
-    url: "{{ bmc_base_url }}{{ bmc_urls.supportAssist }}"
-    method: PATCH
-    user: "{{ bmc_user }}"
-    password: "{{ bmc_password }}"
-    force_basic_auth: yes
-    validate_certs: no
-    body_format: json
-    body:
-      EULAAccepted: true
-    status_code:
-      - 200
-      - 204
-  delegate_to: "{{ bmc_delegate_host }}"
-  when:
-    - bmc_capabilities.requires_logging_and_supportAssist is defined
-    - bmc_capabilities.requires_logging_and_supportAssist | bool

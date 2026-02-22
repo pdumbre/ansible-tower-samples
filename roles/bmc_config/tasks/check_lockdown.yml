@@ -15,7 +15,7 @@
         return_content: yes
         status_code: [200]
       register: idrac_attributes
-      delegate_to: localhost
+      delegate_to: "{{ bmc_delegate_host }}"
 
     - name: Check if System Lockdown is disabled
       set_fact:
@@ -45,7 +45,7 @@
             SystemLockdown.1.SystemLockdownMode: "Disabled"
         status_code: [200]
       register: disable_lockdown_result
-      delegate_to: localhost
+      delegate_to: "{{ bmc_delegate_host }}"
       when: 
         - idrac_attributes is defined
         - idrac_attributes.json is defined
@@ -69,7 +69,7 @@
         return_content: yes
         status_code: [200]
       register: verify_lockdown
-      delegate_to: localhost
+      delegate_to: "{{ bmc_delegate_host }}"
       when: 
         - idrac_attributes is defined
         - lockdown_status != 'Disabled'

@@ -7,3 +7,9 @@ bmc_capabilities:
   supports_standard_redfish_network: true
   requires_ssh_for_bios: true
   ssh_command_type: racadm
+
+# Network Configuration Parameters
+bmc_network:
+  ipv6_prefix:  "64"                    # IPv6 prefix length
+  ipv6_gateway:  "0::0"                 # IPv6 gateway
+  dhcp6_enabled: false                  # DHCPv6 enabled/disabled

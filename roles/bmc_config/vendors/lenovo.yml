@@ -6,3 +6,35 @@ redfish_urls:
 bmc_capabilities:
   supports_standard_redfish_network: true
   requires_ssh_for_bios: false
+
+# Network Configuration Parameters
+bmc_network:
+  connection_type: "static"             # IPv6 address (-i6)
+  ipv6_address: "ula"                   # IPv6 address (or "ula" for link-local)
+  ipv6static: "enabled"                 # IPv6 static addressing
+  ipv6_prefix:  "64"                    # IPv6 prefix length
+  ipv6_gateway:  "0::0"                 # IPv6 gateway
+  dhcp6_enabled: false                  # DHCPv6 enabled/disabled
+  stateless_autoconfig_enabled: false   # Stateless autoconfig enabled/disabled
+  failover_mode: "Shared"               # Failover mode
+  name_server_sync_enabled: true        # Name server sync enabled/disabled
+  bmc_network_interface: eth0           # bmc network interface
+
+# Port Configuration
+ports:
+  httpp: "80"           # HTTP port
+  httpsp: "443"         # HTTPS port
+  sshp: "22"            # SSH port
+  snmpap: "161"         # SNMP port
+  snmptp: "162"         # SNMP trap port
+  cimhsp: "5989"        # CIM port HTTPS
+
+# Power Restore Policy
+powerrp: "restore"      # Options: restore, off, on
+
+# BMC Connection Settings
+bmc_username: "USERID"
+bmc_password: "PASSW0RD"
+
+# BMC Operating Mode
+bmc_operating_mode: "Maximum Performance"

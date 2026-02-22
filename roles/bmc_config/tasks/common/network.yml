@@ -1,7 +1,7 @@
 - name: Retrieve details of network configuration 
   uri:
     #url: "https://[{{ bmc_lla_ip }}%{{ bmc_lla_interface }}]{{ redfish_urls.ethernet }}
-    url: "https://{{ ipv4 }}{{ redfish_urls.ethernet }}
+    url: "https://{{ ipv4 }}{{ redfish_urls.ethernet }}"
     method: GET
     user: "{{ bmc_user }}"
     password: "{{ bmc_password }}"

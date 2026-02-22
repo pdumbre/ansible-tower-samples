@@ -2,7 +2,7 @@
 
 - name: Clean IPs and Configure BMC base URL
   set_fact:
-    bmc_base_url: >-
+    base_url: >-
       {%- set v4 = ipv4 | default('') | trim | replace('\n','') -%}
       {%- set v6 = ipv6ULA | default('') | trim | replace('\n','') -%}
       {%- if v4 | length > 0 -%}
@@ -12,7 +12,13 @@
       {%- else -%}
         ''
       {%- endif -%}
-              
+
+
+- name: Clean IPs and Configure BMC base URL
+  set_fact:
+    bmc_base_url: "{{ base_url | trim | replace('\n', '') | replace('\r', '') }}"
+
+    
 - name: Debug url
   debug:
     msg: "redfish_base_url: {{ bmc_base_url }}"

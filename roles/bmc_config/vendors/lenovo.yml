@@ -48,6 +48,11 @@ port_config:
 
       
 # Power Restore Policy
+power_policy:
+  url: "/redfish/v1/Systems/1"
+  attribute_key: "PowerRestorePolicy"
+  requires_reboot: false
+  desired_power_policy: "LastState"
 powerrp: "restore"      # Options: restore, off, on
 
 # BMC Connection Settings

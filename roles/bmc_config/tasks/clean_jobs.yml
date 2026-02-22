@@ -14,6 +14,9 @@
     status_code: [200, 201]
   register: idrac_jobs
   delegate_to: localhost
+  when:
+    - bmc_capabilities.requires_delete_jobs is defined
+    - bmc_capabilities.requires_delete_jobs | bool
 
 - name: Display current jobs
   debug:

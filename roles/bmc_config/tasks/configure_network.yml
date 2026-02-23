@@ -11,7 +11,7 @@
     return_content: yes
     status_code: [200]
   register: current_network
-  delegate_to: "{{ bmc_delegate_host }}"
+  delegate_to: jump-host
     
 - name: Retrieve network interface from discovery response
   set_fact:
@@ -29,7 +29,7 @@
     validate_certs: no
     return_content: yes
   register: network_interface_detail
-  delegate_to: "{{ bmc_delegate_host }}"
+  delegate_to: jump-host
   when: network_interface_uri is defined
 
 - name: Retrieve existing network configuration
@@ -53,7 +53,7 @@
   register: ssh_result
   failed_when: ssh_result.rc != 0
   when: bmc_capabilities.requires_ssh_for_network is defined
-  delegate_to: "{{ bmc_delegate_host }}"  
+  delegate_to: jump-host
 
 - name: Configure IPv6 and IPv4 Network Settings
   uri:
@@ -76,7 +76,7 @@
           Gateway: "{{ bmc_network.ipv6_gateway }}"
           AddressOrigin: "Static"
     status_code: [200, 204]
-  delegate_to: "{{ bmc_delegate_host }}"  
+  delegate_to: jump-host
   register: ipv6_config
   when:
     - ipv6ULA is defined
@@ -101,7 +101,7 @@
         Lenovo:
           NetworkSettingSync: "{{ bmc_network.name_server_sync_enabled | bool }}"
     status_code: [200, 204]
-  delegate_to: "{{ bmc_delegate_host }}"  
+  delegate_to: jump-host  
   register: oem_config
   when:
     - bmc_network is defined

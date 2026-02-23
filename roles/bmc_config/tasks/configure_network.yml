@@ -49,7 +49,7 @@
     ssh -6
     {{ bmc_ssh_options | join(' ') }}
     {{ hostvars[inventory_hostname].bmc_user }}@{{ hostvars[inventory_hostname].ipv6LLA }}%{{ hostvars[inventory_hostname].bmc_lla_interface }}
-    "ifconfig {{ bmc_network.bmc_network_interface }} -ipv6static enabled -failover shared"
+    "ifconfig {{ bmc_network.bmc_network_interface }} -ipv6static enabled -failover shared && usbeth -en enabled"
   register: ssh_result
   failed_when: ssh_result.rc != 0
   when: bmc_capabilities.require_ssh_for_network is defined
@@ -57,8 +57,8 @@
 
 - name: Configure IPv6 and IPv4 Network Settings
   uri:
-    #url: "https://[{{ bmc_lla_ip }}%{{ bmc_lla_interface }}]{{ network_interface_uri }}"
-    url: "{{ bmc_base_url }}{{ network_interface_uri }}"
+    url: "https://[{{ ipv6LLA }}%{{ bmc_lla_interface }}]{{ network_interface_uri }}"
+    #url: "{{ bmc_base_url }}{{ network_interface_uri }}"
     method: PATCH
     user: "{{ bmc_user }}"
     password: "{{ bmc_password }}"
@@ -84,8 +84,8 @@
 
 - name: Configure Network Settings
   uri:
-    #url: "https://[{{ bmc_lla_ip }}%{{ bmc_lla_interface }}]{{ network_interface_uri }}"
-    url: "{{ bmc_base_url }}{{ network_interface_uri }}"
+    url: "https://[{{ ipv6LLA }}%{{ bmc_lla_interface }}]{{ network_interface_uri }}"
+    #url: "{{ bmc_base_url }}{{ network_interface_uri }}"
     method: PATCH
     user: "{{ bmc_user }}"
     password: "{{ bmc_password }}"

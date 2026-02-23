@@ -15,11 +15,14 @@
 #- name: Configure Ports
  # include_tasks: configure_ports.yml
 
-- name: Configure Logging
-  include_tasks: configure_logging.yml
+#- name: Configure Logging
+ # include_tasks: configure_logging.yml
 
-- name: Configure Power Policy
-  include_tasks: configure_power_policy.yml
+#- name: Configure Power Policy
+ # include_tasks: configure_power_policy.yml
+
+- name: Configure IPMI
+  include_tasks: configure_impi.yml
 
 #- name: Run vendor Redfish extensions
  # include_tasks: "vendors/{{ detected_vendor }}/redfish.yml"

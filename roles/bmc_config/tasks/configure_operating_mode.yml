@@ -36,27 +36,22 @@
 - name: Extract current performance settings
   set_fact:
     current_operating_mode: "{{ current_bios.json.Attributes.{{ operating_mode.attribute_key }} | default('') }}"
-    current_sys_profile: "{{ current_bios.json.Attributes.SysProfile | default('') }}"
-    current_operating_mode: "{{ current_bios.json.Attributes.OperatingModes_ChooseOperatingMode | default('') }}"
+
+- name: Debug current performance settings
+  debug:
+    msg: "{{ current_operating_mode }}"
+  
 
 - name: Check if performance settings need update
   set_fact:
     performance_needs_update: >-
       {{
-        current_sys_profile != 'PerfOptimized' or
-        current_operating_mode != 'MaximumPerformance'
+        current_operating_mode != operating_mode.desired_operating_mode
       }}
 
-- name: Set current BIOS info as a global fact
-  set_stats:
-    data:
-      current_bios_data: "{{ current_bios.json }}"
-    
 - name: Display current performance configuration
   debug:
     msg:
-      - "Current System Profile: {{ current_sys_profile }}"
-      - "Operating mode: {{ current_bios.json.Attributes.OperatingModes_ChooseOperatingMode }}"
       - "Performance update needed: {{ performance_needs_update }}"
 
 - name: Set System Profile to Performance
@@ -70,8 +65,7 @@
     body_format: json
     body:
       Attributes:
-        OperatingModes_ChooseOperatingMode: "MaximumPerformance"
-        SysProfile: "PerfOptimized"
+        operating_mode.attribute_key: operating_mode.desired_operating_mode
     status_code: [200, 202]
   register: performance_config
   delegate_to: "{{ bmc_delegate_host }}"

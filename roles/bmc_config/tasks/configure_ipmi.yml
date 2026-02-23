@@ -12,9 +12,16 @@
   register: manager_info
   delegate_to: "{{ bmc_delegate_host }}"
 
+- debug:
+    msg: "{{ manager_info.redfish_facts}}"
+
+- set_stats:
+    manager_id: "{{ manager_info.redfish_facts}}"
+  
+
 - set_fact:
     manager_id: "{{ manager_info.redfish_facts.manager.entries[0].Id }}"
-  
+
 - name: Get current network protocol configuration
   community.general.redfish_info:
     category: Manager

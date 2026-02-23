@@ -4,11 +4,11 @@
   community.general.redfish_info:
     category: Accounts
     command: ListUsers
-    baseuri: "[{{ ipv6_address }}]"
-    username: "{{ redfish_user }}"
-    password: "{{ redfish_password }}"
+    baseuri: "{{ ipv6_address }}"
+    username: "{{ bmc_user }}"
+    password: "{{ bmc_password }}"
     validate_certs: false
-  delegate_to: mgen
+  delegate_to: "{{ bmc_delegate_host }}"
   register: existing_users
 
 - name: Ensure BMC users from inventory exist
@@ -16,13 +16,13 @@
     category: Accounts
     command: AddUser
     baseuri: "[{{ ipv6_address }}]"
-    username: "{{ redfish_user }}"
-    password: "{{ redfish_password }}"
+    username: "{{ bmc_user }}"
+    password: "{{ bmc_password }}"
     validate_certs: false
     account_username: "{{ item.username }}"
     account_password: "{{ item.password }}"
     account_roleid: "{{ item.roleid }}"
-  delegate_to: mgen
+  delegate_to: "{{ bmc_delegate_host }}"
   loop: "{{ bmc_users }}"
   loop_control:
     label: "{{ item.username }}"
@@ -37,11 +37,11 @@
     category: Accounts
     command: EnableUser
     baseuri: "[{{ ipv6_address }}]"
-    username: "{{ redfish_user }}"
-    password: "{{ redfish_password }}"
+    username: "{{ bmc_user }}"
+    password: "{{ bmc_password }}"
     validate_certs: false
     account_username: "{{ item.username }}"
-  delegate_to: mgen
+  delegate_to: "{{ bmc_delegate_host }}"
   loop: "{{ bmc_users }}"
   loop_control:
     label: "{{ item.username }}"

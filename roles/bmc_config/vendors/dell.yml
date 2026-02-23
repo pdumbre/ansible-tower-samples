@@ -19,6 +19,7 @@ bmc_capabilities:
   requires_lockdown_check: true
   requires_logging_and_supportAssist: true
   requires_power_recovery: true
+  requires_bios_configuration_job: true
 
 # Network Configuration Parameters
 bmc_network:

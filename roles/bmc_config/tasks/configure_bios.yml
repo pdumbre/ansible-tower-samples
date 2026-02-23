@@ -56,3 +56,4 @@
   when: 
     - bmc_capabilities.requires_bios_configuration_job is defined
     - bmc_capabilities.requires_bios_configuration_job | bool
+    - performance_needs_update | bool

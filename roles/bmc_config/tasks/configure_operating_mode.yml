@@ -54,6 +54,10 @@
     msg:
       - "Performance update needed: {{ performance_needs_update }}"
 
+- name: Debug current performance settings
+  debug:
+    msg: "{{ bios_url }}/Settings"
+  
 - name: Set System Profile to Performance
   uri:
     url: "{{ bios_url }}/Settings"

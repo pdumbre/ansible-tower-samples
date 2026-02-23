@@ -57,7 +57,11 @@
       when: 
         - lc_service_check is defined
         - lc_service_check.status == 200
-
+        
+    - name: Check SupportAssist EULA status
+      debug:
+        msg: "{{ eula_status.json }}"
+     
     - name: Accept SupportAssist EULA
       uri:
         url: "{{ bmc_base_url }}{{ bmc_urls.supportAssistAcceptEula }}"

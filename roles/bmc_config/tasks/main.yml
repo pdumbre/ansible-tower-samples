@@ -24,8 +24,11 @@
 #- name: Configure IPMI
  # include_tasks: configure_ipmi.yml
 
-- name: Configure Operating Mode
-  include_tasks: configure_operating_mode.yml
+#- name: Configure Operating Mode
+ # include_tasks: configure_operating_mode.yml
+  
+- name: Configure Account Security
+  include_tasks: configure_account_security.yml
 
 #- name: Run vendor Redfish extensions
  # include_tasks: "vendors/{{ detected_vendor }}/redfish.yml"

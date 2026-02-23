@@ -1,8 +1,8 @@
     
 - name: Retrieve details of network configuration 
   uri:
-    #url: "https://[{{ bmc_lla_ip }}%{{ bmc_lla_interface }}]{{ redfish_urls.ethernet }}
-    url: "{{ bmc_base_url }}{{ bmc_urls.ethernet }}"
+    url: "https://[{{ ipv6LLA }}%{{ bmc_lla_interface }}]{{ bmc_urls.ethernet }}
+    #url: "{{ bmc_base_url }}{{ bmc_urls.ethernet }}"
     method: GET
     user: "{{ bmc_user }}"
     password: "{{ bmc_password }}"
@@ -20,8 +20,8 @@
     
 - name: Retrieve network interface details
   uri:
-    #url: "https://[{{ bmc_lla_ip }}%{{ bmc_lla_interface }}]{{ network_interface_uri }}"
-    url: "{{ bmc_base_url }}{{ network_interface_uri }}"
+    url: "https://[{{ ipv6LLA }}%{{ bmc_lla_interface }}]{{ network_interface_uri }}"
+    #url: "{{ bmc_base_url }}{{ network_interface_uri }}"
     method: GET
     user: "{{ bmc_user }}"
     password: "{{ bmc_password }}"

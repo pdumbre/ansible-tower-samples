@@ -6,13 +6,13 @@
 - name: Get current network protocol configuration
   community.general.redfish_info:
     category: Manager
-    command: GetManagerNetworkProtocol
+    command: GetNetworkProtocol
     baseuri: "{{ bmc_ip }}"
     username: "{{ bmc_user }}"
     password: "{{ bmc_password }}"
     timeout: 30
   register: current_protocols
-  delegate_to: localhost
+  delegate_to: "{{ bmc_delegate_host }}"
 
 - name: Extract current IPMI status
   set_fact:
@@ -44,7 +44,7 @@
           ProtocolEnabled: true
           Port: 623
   register: ipmi_config
-  delegate_to: localhost
+  delegate_to: "{{ bmc_delegate_host }}"
   when: ipmi_needs_update | bool
 
 - name: IPMI already enabled

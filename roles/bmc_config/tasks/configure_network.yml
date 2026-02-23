@@ -43,6 +43,18 @@
   set_fact:
     ipv6_needs_update: "{{ ipv6ULA is defined and current_ipv6_addr != ipv6ULA }}"
 
+- name: Configure network settings
+  shell: >
+    sshpass -p '{{ hostvars[inventory_hostname].bmc_password }}'
+    ssh -6
+    {{ bmc_ssh_options | join(' ') }}
+    {{ hostvars[inventory_hostname].bmc_user }}@{{ hostvars[inventory_hostname].bmc_lla_ip }}%{{ hostvars[inventory_hostname].bmc_lla_interface }}
+    "ifconfig {{ bmc_network.bmc_network_interface }} -ipv6static enabled -failover shared"
+  register: ssh_result
+  failed_when: ssh_result.rc != 0
+  when: bmc_capabilities.require_ssh_for_network is defined
+  delegate_to: "{{ bmc_delegate_host }}"  
+
 - name: Configure IPv6 and IPv4 Network Settings
   uri:
     #url: "https://[{{ bmc_lla_ip }}%{{ bmc_lla_interface }}]{{ network_interface_uri }}"

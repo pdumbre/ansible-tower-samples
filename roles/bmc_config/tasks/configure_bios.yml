@@ -53,3 +53,59 @@
   when: 
     - bmc_capabilities.requires_performance_settings is defined
     - bmc_capabilities.requires_performance_settings | bool
+
+- name: Apply BIOS configuration changes
+  block:
+    - name: Create BIOS configuration job
+      uri:
+        url: "{{ bmc_base_url }}/redfish/v1/Managers/iDRAC.Embedded.1/Jobs"
+        method: POST
+        user: "{{ bmc_user }}"
+        password: "{{ bmc_password }}"
+        validate_certs: no
+        force_basic_auth: yes
+        body_format: json
+        body:
+          TargetSettingsURI: "/redfish/v1/Systems/System.Embedded.1/Bios/Settings"
+          RebootJobType: "PowerCycle"
+        status_code: [200, 201, 202]
+      register: bios_job
+      delegate_to: "{{ bmc_delegate_host}}"
+
+    - name: Display BIOS job creation status
+      debug:
+        msg: "BIOS configuration job created: {{ bios_job.json.Id | default('Job created') }}"
+      when: bios_job.json is defined
+
+    - name: Wait for BIOS configuration job to complete (this may take several minutes)
+      uri:
+        url: "{{ bmc_base_url }}{{ bios_job.json['@odata.id'] }}"
+        method: GET
+        user: "{{ bmc_user }}"
+        password: "{{ bmc_password }}"
+        validate_certs: no
+        force_basic_auth: yes
+        return_content: yes
+        status_code: [200]
+      register: job_status
+      until: job_status.json.JobState in ['Completed', 'Failed', 'CompletedWithErrors']
+      retries: 60
+      delay: 30
+      delegate_to: "{{ bmc_delegate_host}}
+      when: bios_job.json is defined and bios_job.json['@odata.id'] is defined
+
+    - name: Display final job status
+      debug:
+        msg: "BIOS configuration job status: {{ job_status.json.JobState | default('Unknown') }}"
+      when: job_status.json is defined
+
+    - name: Fail if BIOS job failed
+      fail:
+        msg: "BIOS configuration job failed: {{ job_status.json.Message | default('Unknown error') }}"
+      when: 
+        - job_status.json is defined
+        - job_status.json.JobState == 'Failed'
+
+  when: 
+    - bmc_capabilities.requires_bios_configuration_job is defined
+    - bmc_capabilities.requires_bios_configuration_job | bool

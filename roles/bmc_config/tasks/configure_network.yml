@@ -52,7 +52,7 @@
     "ifconfig {{ bmc_network.bmc_network_interface }} -ipv6static enabled -failover shared && usbeth -en enabled"
   register: ssh_result
   failed_when: ssh_result.rc != 0
-  when: bmc_capabilities.require_ssh_for_network is defined
+  when: bmc_capabilities.requires_ssh_for_network is defined
   delegate_to: "{{ bmc_delegate_host }}"  
 
 - name: Configure IPv6 and IPv4 Network Settings

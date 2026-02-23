@@ -25,10 +25,10 @@
     # Apply BIOS settings 
     - name: Apply performance BIOS settings
       ansible.builtin.uri:
-        url: "https://{{ ansible_host }}/redfish/v1/Systems/1/Bios/Settings"
+        url: "{{ bmc_base_url }}/redfish/v1/Systems/1/Bios/Settings"
         method: PATCH
-        user: "{{ imm_username }}"
-        password: "{{ imm_password }}"
+        user: "{{ bmc_user }}"
+        password: "{{ bmc_password }}"
         body_format: json
         body:
           Attributes: "{{ settings_to_apply | default(applicable_settings) }}"
@@ -40,7 +40,7 @@
         - has_performance_settings | bool
         - (settings_to_apply | default(applicable_settings) | length > 0)
       failed_when: false
-      delegate_to: localhost
+      delegate_to: "{{ bmc_delegate_host }}"
 
 
     - name: Log performance settings applied
@@ -50,4 +50,6 @@
         - has_performance_settings | bool
         - (bios_patch_result is succeeded)
 
-  when: requires_performance_settings | default(false) | bool
+  when: 
+    - bmc_capabilities.requires_performance_settings is defined
+    - bmc_capabilities.requires_performance_settings | bool

@@ -3,12 +3,7 @@
 
 - name: Configure account security settings
   block:
-    # Retrieves system mtm 
-    
-    - name: Get Redfish system info
-      debug:
-        msg: "{{ bmc_system_details.json }}"
-      
+    # Retrieves system mtm     
     - name: Get Redfish system info
       community.general.redfish_info:
         category: Systems

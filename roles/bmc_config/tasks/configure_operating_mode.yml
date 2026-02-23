@@ -64,8 +64,7 @@
   
 - name: Set System Profile to Performance
   uri:
-    #url: "{{ bios_url }}/Pending"
-    url: "{{ bios_url }}/Settings"
+    url: "{{ bios_url }}{{ bmc_urls.bios_uri_suffix }}"
     method: PATCH
     user: "{{ bmc_user }}"
     password: "{{ bmc_password }}"

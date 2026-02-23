@@ -3,104 +3,56 @@
 # Equivalent to: idrac.command("racadm set iDRAC.IPMILan.Enable 1")
 # IDEMPOTENT: Checks current IPMI state before enabling
 
-- name: Get current IPMI configuration
-  uri:
-    url: "https://{{ ansible_host }}/redfish/v1/Managers/iDRAC.Embedded.1/Attributes"
-    method: GET
-    user: "{{ ansible_user }}"
-    password: "{{ ansible_password }}"
-    validate_certs: no
-    force_basic_auth: yes
-    return_content: yes
-    status_code: [200]
-  register: current_attributes
+- name: Get current network protocol configuration
+  community.general.redfish_info:
+    category: Manager
+    command: GetManagerNetworkProtocol
+    baseuri: "{{ bmc_ip }}"
+    username: "{{ bmc_user }}"
+    password: "{{ bmc_password }}"
+    timeout: 30
+  register: current_protocols
   delegate_to: localhost
 
 - name: Extract current IPMI status
   set_fact:
-    current_ipmi_enabled: "{{ current_attributes.json.Attributes['IPMILan.1.Enable'] | default('Disabled') }}"
-
-- name: Check if IPMI needs to be enabled
-  set_fact:
-    ipmi_needs_update: "{{ current_ipmi_enabled != 'Enabled' }}"
-
-- name: Display current IPMI status
-  debug:
-    msg: "IPMI over LAN current status: {{ current_ipmi_enabled }}"
-
-- name: Enable IPMI over LAN
-  uri:
-    url: "https://{{ ansible_host }}/redfish/v1/Managers/iDRAC.Embedded.1/Attributes"
-    method: PATCH
-    user: "{{ ansible_user }}"
-    password: "{{ ansible_password }}"
-    validate_certs: no
-    force_basic_auth: yes
-    body_format: json
-    body:
-      Attributes:
-        IPMILan.1.Enable: "Enabled"
-        IPMILan.1.PrivLimit: "Administrator"
-        IPMILan.1.EncryptionKey: "{{ ipmi_encryption_key | default('0000000000000000000000000000000000000000') }}"
-    status_code: [200, 202]
-  register: ipmi_config
-  delegate_to: localhost
-  when: ipmi_needs_update | bool
-  changed_when: ipmi_config.status in [200, 202]
-
-- name: IPMI already enabled
-  debug:
-    msg: "IPMI over LAN already enabled - no change needed"
-  when: not (ipmi_needs_update | bool)
-
-- name: Display IPMI configuration status
-  debug:
-    msg: "IPMI over LAN enabled successfully"
-  when: ipmi_config is changed
-
-- name: Retrieve network protocol configuration
-  community.general.redfish_info:
-    category: Manager
-    command: GetManagerInventory
-    baseuri: "[{{ ipv6_address }}]"
-    username: "{{ redfish_user }}"
-    password: "{{ new_redfish_password }}"
-    timeout: 30
-  register: current_protocols
-  delegate_to: mgen
-
-- name: Retrieve existing IPMI status
-  set_fact:
-    current_ipmi_enabled: "{{ current_protocols.redfish_facts.manager.entries[0].NetworkProtocol.IPMI.ProtocolEnabled | default(false) }}"
-    current_ipmi_port: "{{ current_protocols.redfish_facts.manager.entries[0].NetworkProtocol.IPMI.Port | default(623) }}"
+    current_ipmi_enabled: "{{ current_protocols.redfish_facts.network_protocols.IPMI.ProtocolEnabled | default(false) }}"
+    current_ipmi_port: "{{ current_protocols.redfish_facts.network_protocols.IPMI.Port | default(623) }}"
 
 - name: Check if IPMI needs to be enabled
   set_fact:
     ipmi_needs_update: "{{ not current_ipmi_enabled or current_ipmi_port != 623 }}"
 
-- name: Enable IPMI over LAN
-  ansible.builtin.uri:
-    url: "https://[{{ ipv6_address }}]/redfish/v1/Managers/1/NetworkProtocol"
-    method: PATCH
-    user: "{{ redfish_user }}"
-    password: "{{ new_redfish_password }}"
-    force_basic_auth: yes
-    validate_certs: false
-    headers:
-      Content-Type: application/json
-    body_format: json
-    body:
-      IPMI:
-        ProtocolEnabled: true
-        Port: 623
-    status_code:
-      - 200
-      - 204
-  delegate_to: mgen
+- name: Display current IPMI status
+  debug:
+    msg: 
+      - "IPMI over LAN current status: {{ 'Enabled' if current_ipmi_enabled else 'Disabled' }}"
+      - "IPMI Port: {{ current_ipmi_port }}"
+      - "Update needed: {{ ipmi_needs_update }}"
+
+- name: Enable IPMI over LAN using Redfish command
+  community.general.redfish_command:
+    category: Manager
+    command: SetManagerAttributes
+    baseuri: "{{ bmc_ip }}"
+    username: "{{ bmc_user }}"
+    password: "{{ bmc_password }}"
+    timeout: 30
+    manager_attributes:
+      NetworkProtocol:
+        IPMI:
+          ProtocolEnabled: true
+          Port: 623
   register: ipmi_config
+  delegate_to: localhost
   when: ipmi_needs_update | bool
 
 - name: IPMI already enabled
   debug:
     msg: "IPMI over LAN already enabled on port 623 - no change needed"
   when: not (ipmi_needs_update | bool)
+
+- name: Display IPMI configuration status
+  debug:
+    msg: "IPMI over LAN enabled on port 623"
+  when: ipmi_config is changed

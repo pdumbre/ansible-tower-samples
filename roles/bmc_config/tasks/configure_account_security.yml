@@ -45,7 +45,7 @@
         
     - name: Configure account security of M6 Server
       uri:
-        url: "{{ bmc_base_url }}/AccountService"
+        url: "{{ bmc_base_url }}/redfish/v1/AccountService"
         method: PATCH
         user: "{{ bmc_user }}"
         password: "{{ bmc_password }}"

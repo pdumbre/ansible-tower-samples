@@ -21,8 +21,8 @@
 - name: Get current network protocol configuration
   community.general.redfish_info:
     category: Manager
-    resource_id: "{{ manager_id }}"
-    subresource: NetworkProtocol
+    command: GetNetworkProtocol
+    manager: "{{ manager_id }}"
     baseuri: "{{ bmc_ip }}"
     username: "{{ bmc_user }}"
     password: "{{ bmc_password }}"

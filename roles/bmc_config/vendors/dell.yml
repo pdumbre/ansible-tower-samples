@@ -49,3 +49,12 @@ power_policy:
   attribute_key: "SysProfileSettings.PowerRestorePolicy"
   requires_reboot: true
   desired_power_policy: "LastState"
+
+#Operating mode
+operating_mode:
+  attribute_key: "SysProfile"
+  desired_operating_mode: "PerfOptimized"
+   body:
+     Attributes:
+       SysProfile: "PerfOptimized"
+

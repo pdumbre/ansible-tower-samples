@@ -56,10 +56,10 @@
 
 - name: Set System Profile to Performance
   uri:
-    url: "{{ systems_url }}/Settings"
+    url: "{{ bios_url }}/Settings"
     method: PATCH
-    user: "{{ ansible_user }}"
-    password: "{{ ansible_password }}"
+    user: "{{ bmc_user }}"
+    password: "{{ bmc_password }}"
     validate_certs: no
     force_basic_auth: yes
     body_format: json
@@ -69,7 +69,7 @@
     status_code: [200, 202]
   register: performance_config
   delegate_to: "{{ bmc_delegate_host }}"
-  when: performance_needs_update | bool
+  #when: performance_needs_update | bool
   changed_when: performance_config.status in [200, 202]
 
 - name: Performance settings already optimal

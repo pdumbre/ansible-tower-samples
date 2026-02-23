@@ -1,4 +1,16 @@
     
+- name: Call Redfish via curl for IPv6 LLA
+  command: >
+    curl -s -k
+    -u {{ bmc_user }}:{{ bmc_password }}
+    -H "Content-Type: application/json"
+    -w "HTTPSTATUS:%{http_code}"
+    https://[{{ ipv6LLA }}%{{ bmc_lla_interface }}]{{ bmc_urls.ethernet }}
+  register: redfish_raw
+  changed_when: false
+  delegate_to: jump-host
+
+
 - name: Retrieve details of network configuration 
   uri:
     url: "https://[{{ ipv6LLA }}%{{ bmc_lla_interface | string }}]{{ bmc_urls.ethernet }}"

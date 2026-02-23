@@ -33,7 +33,7 @@
         password: "{{ redfish_password }}"
         timeout: 30
       register: current_accounts
-      delegate_to: localhost
+      delegate_to: "{{ bmc_delegate_host }}"
       ignore_errors: yes
 
     # M6 Server Configuration (7X02, 7D2X, 7D2V, 7D76, 7D9R, 7D73)
@@ -56,7 +56,7 @@
               PasswordComplexityCheck: true
         status_code: [200, 202, 204]
       register: m6_account_config_api
-      delegate_to: localhost
+      delegate_to: "{{ bmc_delegate_host }}"
       when:
         - is_m6_server | bool
       changed_when: m6_account_config_api.status in [200, 202, 204]
@@ -81,7 +81,7 @@
         account_properties:
           MinPasswordLength: 8        # -pl 8: password length
       register: sn550_account_config
-      delegate_to: localhost
+      delegate_to: "{{ bmc_delegate_host }}"
       when: is_sn550 | bool
       ignore_errors: yes
 
@@ -104,7 +104,7 @@
               PasswordComplexityCheck: false
         status_code: [200, 202, 204]
       register: sn550_account_config_api
-      delegate_to: localhost
+      delegate_to: "{{ bmc_delegate_host }}"
       when:
         - is_sn550 | bool
         - sn550_account_config is failed

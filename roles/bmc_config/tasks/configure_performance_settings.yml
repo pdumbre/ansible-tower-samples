@@ -1,1 +1,54 @@
+# Task: Configure Lenovo IMM BIOS Settings
+# Uses Redfish API to set BIOS configuration parameters
+# All tasks are conditional on requires_performance_settings
 
+- name: Configure BIOS settings
+  block:
+    - name: Load performance settings configuration
+      ansible.builtin.set_fact:
+        perf_config: "{{ performance_asu_settings | default({}) }}"
+
+    - name: Filter applicable performance settings based on conditions
+      ansible.builtin.set_fact:
+        applicable_settings: "{{ perf_config | select_applicable_settings(selection_properties) }}"
+
+    - name: Debug applicable performance settings
+      ansible.builtin.debug:
+        msg: "Configuring Performance Settings: {{ applicable_settings }}"
+      when: applicable_settings | length > 0
+
+    - name: Check if performance settings need to be applied
+      ansible.builtin.set_fact:
+        has_performance_settings: "{{ applicable_settings | length > 0 }}"
+
+    # Apply BIOS settings 
+    - name: Apply performance BIOS settings
+      ansible.builtin.uri:
+        url: "{{ bmc_base_url }}/redfish/v1/Systems/1/Bios/Settings"
+        method: PATCH
+        user: "{{ bmc_user }}"
+        password: "{{ bmc_password }}"
+        body_format: json
+        body:
+          Attributes: "{{ settings_to_apply | default(applicable_settings) }}"
+        validate_certs: false
+        force_basic_auth: true
+        status_code: [200, 204]
+      register: bios_patch_result
+      when:
+        - has_performance_settings | bool
+        - (settings_to_apply | default(applicable_settings) | length > 0)
+      failed_when: false
+      delegate_to: "{{ bmc_delegate_host }}"
+
+
+    - name: Log performance settings applied
+      ansible.builtin.debug:
+        msg: "Applied BIOS settings via Redfish: {{ settings_to_apply | default(applicable_settings) | list }}"
+      when:
+        - has_performance_settings | bool
+        - (bios_patch_result is succeeded)
+
+  when: 
+    - bmc_capabilities.requires_performance_settings is defined
+    - bmc_capabilities.requires_performance_settings | bool

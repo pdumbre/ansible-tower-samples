@@ -50,6 +50,11 @@
         current_turbo_mode != 'Enabled'
       }}
 
+- name: Set current BIOS info as a global fact
+  set_stats:
+    data:
+      current_bios_data: "{{ current_bios.json }}"
+    
 - name: Display current performance configuration
   debug:
     msg:

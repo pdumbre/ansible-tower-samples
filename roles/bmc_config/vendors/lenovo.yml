@@ -57,6 +57,10 @@ power_policy:
   desired_power_policy: "LastState"
 powerrp: "restore"      # Options: restore, off, on
 
+operating_mode:
+  attribute_key: "OperatingModes_ChooseOperatingMode"
+  desired_operating_mode: "MaximumPerformance"
+
 # BMC Connection Settings
 default_bmc_username: "USERID"
 default_bmc_password: "PASSW0RD"

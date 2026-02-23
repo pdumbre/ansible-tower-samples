@@ -27,40 +27,6 @@
          if (ipv4 is defined and ipv4 | length > 0)
          else '[' ~ ipv6_clean ~ ']'}}
 
-- name: Debug BMC Base Endpoint
-  debug:
-    msg: "'{{ bmc_ip }}'"
-    
-- name: Retrieve Systems information
-  uri:
-    url: "{{ bmc_base_url }}/redfish/v1/Systems"
-    method: GET
-    user: "{{ bmc_user }}"
-    password: "{{ bmc_password }}"
-    validate_certs: false
-  delegate_to: mgen
-  register: systems
-  
-- set_fact:
-    bmc_systems_url: "{{ bmc_base_url }}{{ systems.json.Members[0]['@odata.id'] }}"
-
-- name: Debug BMC system url
-  debug:
-    msg: "'{{ bmc_systems_url }}'" 
-    
-- name: Retrieve System details
-  uri:
-    url: "{{ bmc_systems_url }}"
-    method: GET
-    user: "{{ bmc_user }}"
-    password: "{{ bmc_password }}"
-    validate_certs: false
-  delegate_to: mgen
-  register: system_details
-
-- set_fact:
-    bmc_systems_details: "{{ system_details }}"
-
 - name: Configure delegate host
   set_fact:
     bmc_delegate_host: >-
@@ -72,10 +38,51 @@
   set_fact:
     bmc_delegate_host: "{{ bmc_delegate_host | trim }}"
          
-- name: Debug delegate
-  debug:
-    msg: "{{ bmc_delegate_host }}"
-        
+- name: Retrieve Systems information
+  uri:
+    url: "{{ bmc_base_url }}/redfish/v1/Systems"
+    method: GET
+    user: "{{ bmc_user }}"
+    password: "{{ bmc_password }}"
+    validate_certs: false
+  delegate_to: "{{ bmc_delegate_host }}"
+  register: systems
+  
+- set_fact:
+    bmc_systems_url: "{{ bmc_base_url }}{{ systems.json.Members[0]['@odata.id'] }}"
+    
+- name: Retrieve System details
+  uri:
+    url: "{{ bmc_systems_url }}"
+    method: GET
+    user: "{{ bmc_user }}"
+    password: "{{ bmc_password }}"
+    validate_certs: false
+  delegate_to: "{{ bmc_delegate_host }}"
+  register: system_details
+
+- set_fact:
+    bmc_systems_details: "{{ system_details }}"
+
+- name: Retrieve Manager information
+  uri:
+    url: "{{ bmc_base_url }}/redfish/v1/Managers"
+    method: GET
+    user: "{{ bmc_user }}"
+    password: "{{ bmc_password }}"
+    validate_certs: false
+  delegate_to: "{{ bmc_delegate_host }}"
+  register: managers
+  
+- set_fact:
+    bmc_manager_url: "{{ bmc_base_url }}{{ managers.json.Members[0]['@odata.id'] }}"
+
+- name: Initialize derived URLs
+  set_fact:
+    bmc_bios_url: "{{ bmc_system_url }}/Bios"
+    bmc_reset_action_url: "{{ bmc_system_url }}/Actions/ComputerSystem.Reset"
+    bmc_manager_ethernet_url: "{{ bmc_manager_url }}/EthernetInterfaces"
+
 - name: Configure vendor
   set_fact:
     bmc_vendor: "{{ system_details.json.Oem.keys() | list | first | lower }}"

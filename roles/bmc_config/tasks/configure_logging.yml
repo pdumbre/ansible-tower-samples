@@ -59,8 +59,9 @@
         - lc_service_check.status == 200
         
     - name: Check SupportAssist EULA status
-      debug:
-        msg: "{{ eula_status.json }}"
+      set_stats:
+        data:
+          eula: "{{ eula_status.json }}"
      
     - name: Accept SupportAssist EULA
       uri:

@@ -41,6 +41,10 @@
   debug:
     msg: "IPMI Enabled = {{ network_protocol.json.IPMI.ProtocolEnabled }}"
 
+- name: Display url
+  debug:
+    msg: "network url: {{ network_protocol_url }}"
+
 ############################################
 # Enable IPMI Over LAN 
 ############################################
@@ -48,7 +52,7 @@
 - name: Enable IPMI over LAN (Dell)
   uri:
     url: "{{ network_protocol_url }}"
-    method: PATCH
+    method: POST
     user: "{{ bmc_user }}"
     password: "{{ bmc_password }}"
     force_basic_auth: yes

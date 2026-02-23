@@ -28,7 +28,7 @@
 
 - name: Get Network Protocol settings
   uri:
-    url: "https://{{ bmc_ip }}/redfish/v1/Managers/{{ manager_id }}/NetworkProtocol"
+    url: "{{ network_protocol_url }}"
     method: GET
     user: "{{ bmc_user }}"
     password: "{{ bmc_password }}"

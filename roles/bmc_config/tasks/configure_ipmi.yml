@@ -20,7 +20,7 @@
     manager_id: "{{ managers_response.json.Members[0]['@odata.id'].split('/')[-1] }}"
 
 - set_fact:
-    network_protocol_url: "{{ bmc_base_url }}{{ bmc_urls.managers }}{{ manager_id }}/NetworkProtocol"
+    network_protocol_url: "{{ bmc_base_url }}{{ bmc_urls.managers }}/{{ manager_id }}/NetworkProtocol"
 
 ############################################
 # Check existing IPMI status 

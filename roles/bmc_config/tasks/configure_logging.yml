@@ -75,6 +75,7 @@
         - eula_status is defined
         - eula_status.status is defined
         - eula_status.status in [200, 202]
+        - eula_status.json.EULAStatus != "Accepted"
 
     - name: Display EULA acceptance status
       debug:

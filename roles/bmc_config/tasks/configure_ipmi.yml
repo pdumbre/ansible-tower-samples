@@ -16,9 +16,9 @@
     msg: "{{ manager_info.redfish_facts}}"
 
 - set_stats:
-    manager_id: "{{ manager_info.redfish_facts}}"
+    data:
+      manager_id: "{{ manager_info.redfish_facts}}"
   
-
 - set_fact:
     manager_id: "{{ manager_info.redfish_facts.manager.entries[0].Id }}"
 

@@ -15,9 +15,10 @@
   register: systems_list
   delegate_to: "{{ bmc_delegate_host }}"
 
-- name: Get first system ID
-  set_fact:
+- set_fact:
     system_id: "{{ systems_list.json.Members[0]['@odata.id'].split('/')[-1] }}"
+    
+- set_fact:
     systems_url: "{{ bmc_base_url }}{{ bmc_urls.systems }}/{{ system_id }}/Bios"
 
 - name: Get current BIOS attributes

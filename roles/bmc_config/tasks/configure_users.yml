@@ -1,0 +1,47 @@
+# User management 
+
+- name: Validate existing BMC users
+  community.general.redfish_info:
+    category: Accounts
+    command: ListUsers
+    baseuri: "[{{ ipv6_address }}]"
+    username: "{{ redfish_user }}"
+    password: "{{ redfish_password }}"
+    validate_certs: false
+  delegate_to: mgen
+  register: existing_users
+
+- name: Ensure BMC users from inventory exist
+  community.general.redfish_command:
+    category: Accounts
+    command: AddUser
+    baseuri: "[{{ ipv6_address }}]"
+    username: "{{ redfish_user }}"
+    password: "{{ redfish_password }}"
+    validate_certs: false
+    account_username: "{{ item.username }}"
+    account_password: "{{ item.password }}"
+    account_roleid: "{{ item.roleid }}"
+  delegate_to: mgen
+  loop: "{{ bmc_users }}"
+  loop_control:
+    label: "{{ item.username }}"
+  when: >
+    existing_users.redfish_facts.user.entries
+    | selectattr('UserName', 'equalto', item.username)
+    | list
+    | length == 0
+
+- name: Enable BMC users
+  community.general.redfish_command:
+    category: Accounts
+    command: EnableUser
+    baseuri: "[{{ ipv6_address }}]"
+    username: "{{ redfish_user }}"
+    password: "{{ redfish_password }}"
+    validate_certs: false
+    account_username: "{{ item.username }}"
+  delegate_to: mgen
+  loop: "{{ bmc_users }}"
+  loop_control:
+    label: "{{ item.username }}"

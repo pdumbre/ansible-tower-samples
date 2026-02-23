@@ -42,11 +42,11 @@
   register: systems
   
 - set_fact:
-    bmc_system_url: "{{ bmc_base_url }}{{ systems.json.Members[0]['@odata.id'] }}"
+    bmc_systems_url: "{{ bmc_base_url }}{{ systems.json.Members[0]['@odata.id'] }}"
     
 - name: Retrieve System details
   uri:
-    url: "{{ bmc_system_url }}"
+    url: "{{ bmc_systems_url }}"
     method: GET
     user: "{{ bmc_user }}"
     password: "{{ bmc_password }}"
@@ -55,7 +55,7 @@
   register: system_details
 
 - set_fact:
-    bmc_system_details: "{{ system_details }}"
+    bmc_systems_details: "{{ system_details }}"
 
 - name: Configure delegate host
   set_fact:

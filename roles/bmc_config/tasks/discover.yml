@@ -25,7 +25,7 @@
     bmc_ip: >-
       {{ ipv4_clean
          if (ipv4 is defined and ipv4 | length > 0)
-         else ipv6_clean }}
+         else [ipv6_clean] }}
 
 - name: Debug BMC Base Endpoint
   debug:

@@ -3,6 +3,7 @@ bmc_urls:
   managers: "/redfish/v1/Managers"
   ethernet: "/redfish/v1/Managers/1/EthernetInterfaces"
   network: "/redfish/v1/Managers/1/EthernetInterfaces/1"
+  systems: "/redfish/v1/Systems"
 
 bmc_capabilities:
   supports_standard_redfish_network: true

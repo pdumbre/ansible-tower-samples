@@ -8,6 +8,7 @@ bmc_urls:
 bmc_capabilities:
   supports_standard_redfish_network: true
   requires_ssh_for_bios: false
+  requires_performance_settings: true
 
 # Network Configuration Parameters
 bmc_network:

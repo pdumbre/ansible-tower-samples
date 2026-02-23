@@ -1,0 +1,93 @@
+---
+# Configure Operating mode (Performance settings) on iDRAC using Redfish API
+# Equivalent to: idrac.setOperatingmode()
+# IDEMPOTENT: Checks current BIOS settings before applying changes
+
+- name: Get current BIOS attributes
+  uri:
+    url: "https://{{ ansible_host }}/redfish/v1/Systems/System.Embedded.1/Bios"
+    method: GET
+    user: "{{ ansible_user }}"
+    password: "{{ ansible_password }}"
+    validate_certs: no
+    force_basic_auth: yes
+    return_content: yes
+    status_code: [200]
+  register: current_bios
+  delegate_to: localhost
+
+- name: Extract current performance settings
+  set_fact:
+    current_sys_profile: "{{ current_bios.json.Attributes.SysProfile | default('') }}"
+    current_proc_c1e: "{{ current_bios.json.Attributes.ProcC1E | default('') }}"
+    current_proc_cstates: "{{ current_bios.json.Attributes.ProcCStates | default('') }}"
+    current_turbo_mode: "{{ current_bios.json.Attributes.ProcTurboMode | default('') }}"
+
+- name: Check if performance settings need update
+  set_fact:
+    performance_needs_update: >-
+      {{
+        current_sys_profile != 'PerfOptimized' or
+        current_proc_c1e != 'Disabled' or
+        current_proc_cstates != 'Disabled' or
+        current_turbo_mode != 'Enabled'
+      }}
+
+- name: Display current performance configuration
+  debug:
+    msg:
+      - "Current System Profile: {{ current_sys_profile }}"
+      - "Performance update needed: {{ performance_needs_update }}"
+
+- name: Set System Profile to Performance
+  uri:
+    url: "https://{{ ansible_host }}/redfish/v1/Systems/System.Embedded.1/Bios/Settings"
+    method: PATCH
+    user: "{{ ansible_user }}"
+    password: "{{ ansible_password }}"
+    validate_certs: no
+    force_basic_auth: yes
+    body_format: json
+    body:
+      Attributes:
+        SysProfile: "PerfOptimized"
+        ProcC1E: "Disabled"
+        ProcCStates: "Disabled"
+        MemFrequency: "MaxPerf"
+        ProcTurboMode: "Enabled"
+        ProcPwrPerf: "MaxPerf"
+    status_code: [200, 202]
+  register: performance_config
+  delegate_to: localhost
+  when: performance_needs_update | bool
+  changed_when: performance_config.status in [200, 202]
+
+- name: Performance settings already optimal
+  debug:
+    msg: "System already configured for maximum performance - no change needed"
+  when: not (performance_needs_update | bool)
+
+- name: Set additional performance settings
+  uri:
+    url: "https://{{ ansible_host }}/redfish/v1/Systems/System.Embedded.1/Bios/Settings"
+    method: PATCH
+    user: "{{ ansible_user }}"
+    password: "{{ ansible_password }}"
+    validate_certs: no
+    force_basic_auth: yes
+    body_format: json
+    body:
+      Attributes:
+        MemTest: "Disabled"
+        MemOpMode: "OptimizerMode"
+        NodeInterleave: "Disabled"
+    status_code: [200, 202]
+  register: memory_config
+  delegate_to: localhost
+  when: performance_needs_update | bool
+  changed_when: memory_config.status in [200, 202]
+
+- name: Display operating mode configuration status
+  debug:
+    msg: "System configured for Maximum Performance mode"
+  when: performance_config is changed or memory_config is changed

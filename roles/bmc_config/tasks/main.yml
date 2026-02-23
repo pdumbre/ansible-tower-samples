@@ -36,6 +36,9 @@
 - name: Configure BIOS Settings
   include_tasks: configure_bios.yml
 
+- name: Configure Mellanox Adapter
+  include_tasks: configure_mellanox_adapter.yml
+
 #- name: Run vendor Redfish extensions
  # include_tasks: "vendors/{{ detected_vendor }}/redfish.yml"
 

@@ -19,11 +19,26 @@
     system_id: "{{ systems_list.json.Members[0]['@odata.id'].split('/')[-1] }}"
     
 - set_fact:
-    systems_url: "{{ bmc_base_url }}{{ bmc_urls.systems }}/{{ system_id }}/Bios"
+    bios_url: "{{ bmc_systems_url }}/Bios"
+
+- name: Extract system identifiers
+  ansible.builtin.set_fact:
+    system_sku: "{{ bmc_systems_details.json.SKU }}"
+    system_mtm: "{{ bmc_systems_details.json.SKU[0:4] | upper }}"
+    system_uuid: "{{ bmc_systems_details.json.UUID }}"
+    system_serial: "{{ bmc_systems_details.json.SerialNumber }}"
+
+- name: Display extracted values
+  debug:
+    msg:
+      - "SKU: {{ system_sku }}"
+      - "MTM: {{ system_mtm }}"
+      - "UUID: {{ system_uuid }}"
+      - "Serial: {{ system_serial }}"
 
 - name: Get current BIOS attributes
   uri:
-    url: "{{ systems_url }}"
+    url: "{{ bios_url }}"
     method: GET
     user: "{{ bmc_user }}"
     password: "{{ bmc_password }}"

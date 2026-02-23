@@ -1,74 +1,62 @@
 
-# Enable IPMI over LAN on iDRAC using Redfish API
-# Equivalent to: idrac.command("racadm set iDRAC.IPMILan.Enable 1")
-# IDEMPOTENT: Checks current IPMI state before enabling
+# Enable IPMI over LAN using Redfish API
 
-- name: Get Manager info
-  community.general.redfish_info:
-    category: Manager
-    baseuri: "{{ bmc_ip }}"
-    username: "{{ bmc_user }}"
+############################################
+# Get Manager ID (Works for all vendors)
+############################################
+
+- name: Get Managers collection
+  uri:
+    url: "{{ bmc_base_url }}{{ bmc_urls.managers }}"
+    method: GET
+    user: "{{ bmc_user }}"
     password: "{{ bmc_password }}"
-  register: manager_info
+    force_basic_auth: yes
+    validate_certs: no
+  register: managers_response
   delegate_to: "{{ bmc_delegate_host }}"
 
 - set_fact:
-    manager_id: "{{ manager_info.redfish_facts.manager_nics.entries[0][0].resource_uri.split('/')[-1] }}"
+    manager_id: "{{ managers_response.json.Members[0]['@odata.id'].split('/')[-1] }}"
 
-- debug:
-    msg: "{{ manager_id }}"
+- set_fact:
+    network_protocol_url: "{{ bmc_base_url }}{{ bmc_urls.managers }}{{ manager_id }}/NetworkProtocol"
 
-- name: Get current network protocol configuration
-  community.general.redfish_info:
-    category: Manager
-    command: GetNetworkProtocol
-    manager: "{{ manager_id }}"
-    baseuri: "{{ bmc_ip }}"
-    username: "{{ bmc_user }}"
+############################################
+# Check existing IPMI status 
+############################################
+
+- name: Get Network Protocol settings
+  uri:
+    url: "https://{{ bmc_ip }}/redfish/v1/Managers/{{ manager_id }}/NetworkProtocol"
+    method: GET
+    user: "{{ bmc_user }}"
     password: "{{ bmc_password }}"
-    timeout: 30
-  register: current_protocols
+    force_basic_auth: yes
+    validate_certs: no
+  register: network_protocol
   delegate_to: "{{ bmc_delegate_host }}"
 
-- name: Extract current IPMI status
-  set_fact:
-    current_ipmi_enabled: "{{ current_protocols.redfish_facts.network_protocols.IPMI.ProtocolEnabled | default(false) }}"
-    current_ipmi_port: "{{ current_protocols.redfish_facts.network_protocols.IPMI.Port | default(623) }}"
-
-- name: Check if IPMI needs to be enabled
-  set_fact:
-    ipmi_needs_update: "{{ not current_ipmi_enabled or current_ipmi_port != 623 }}"
-
-- name: Display current IPMI status
+- name: Display IPMI status
   debug:
-    msg: 
-      - "IPMI over LAN current status: {{ 'Enabled' if current_ipmi_enabled else 'Disabled' }}"
-      - "IPMI Port: {{ current_ipmi_port }}"
-      - "Update needed: {{ ipmi_needs_update }}"
+    msg: "IPMI Enabled = {{ network_protocol.json.IPMI.ProtocolEnabled }}"
 
-- name: Enable IPMI over LAN using Redfish command
-  community.general.redfish_command:
-    category: Manager
-    command: SetManagerAttributes
-    baseuri: "{{ bmc_ip }}"
-    username: "{{ bmc_user }}"
+############################################
+# Enable IPMI Over LAN 
+############################################
+
+- name: Enable IPMI over LAN (Dell)
+  uri:
+    url: "{{ network_protocol_url }}"
+    method: PATCH
+    user: "{{ bmc_user }}"
     password: "{{ bmc_password }}"
-    timeout: 30
-    manager_attributes:
-      NetworkProtocol:
-        IPMI:
-          ProtocolEnabled: true
-          Port: 623
-  register: ipmi_config
+    force_basic_auth: yes
+    validate_certs: no
+    body_format: json
+    body:
+      IPMI:
+        ProtocolEnabled: true
+    status_code: 200,204
+  when: not network_protocol.json.IPMI.ProtocolEnabled
   delegate_to: "{{ bmc_delegate_host }}"
-  when: ipmi_needs_update | bool
-
-- name: IPMI already enabled
-  debug:
-    msg: "IPMI over LAN already enabled on port 623 - no change needed"
-  when: not (ipmi_needs_update | bool)
-
-- name: Display IPMI configuration status
-  debug:
-    msg: "IPMI over LAN enabled on port 623"
-  when: ipmi_config is changed

@@ -52,7 +52,7 @@
 - name: Enable IPMI over LAN (Dell)
   uri:
     url: "{{ network_protocol_url }}"
-    method: POST
+    method: PATCH
     user: "{{ bmc_user }}"
     password: "{{ bmc_password }}"
     force_basic_auth: yes

@@ -91,7 +91,7 @@
       until: job_status.json.JobState in ['Completed', 'Failed', 'CompletedWithErrors']
       retries: 60
       delay: 30
-      delegate_to: "{{ bmc_delegate_host}}
+      delegate_to: "{{ bmc_delegate_host}}"
       when: bios_job.json is defined and bios_job.json['@odata.id'] is defined
 
     - name: Display final job status

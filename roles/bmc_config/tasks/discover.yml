@@ -93,7 +93,7 @@
 - name: Discover interface for BMC link local address
   shell: |
     for iface in $(ls /sys/class/net); do
-      ping -6 -c1 -I $iface {{ bmc_lla_ip }} >/dev/null 2>&1 && echo $iface
+      ping -6 -c1 -I $iface {{ ipv6ULA }} >/dev/null 2>&1 && echo $iface
     done
   register: detected_iface
   delegate_to: "{{ bmc_delegate_host }}"

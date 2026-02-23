@@ -1,6 +1,7 @@
 bmc_urls:
   manager: "/redfish/v1/Managers/iDRAC.Embedded.1"
   managers: "/redfish/v1/Managers"
+  systems: "/redfish/v1/Systems"
   ethernet: "/redfish/v1/Managers/iDRAC.Embedded.1/EthernetInterfaces"
   network: "/redfish/v1/Managers/iDRAC.Embedded.1/Oem/Dell/Network"
   jobs: "/redfish/v1/Managers/iDRAC.Embedded.1/Jobs"

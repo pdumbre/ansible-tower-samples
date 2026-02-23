@@ -1,7 +1,7 @@
     
 - name: Retrieve details of network configuration 
   uri:
-    url: "https://[{{ ipv6LLA }}%{{ bmc_lla_interface }}]{{ bmc_urls.ethernet }}
+    url: "https://[{{ ipv6LLA }}%{{ bmc_lla_interface }}]{{ bmc_urls.ethernet }}"
     #url: "{{ bmc_base_url }}{{ bmc_urls.ethernet }}"
     method: GET
     user: "{{ bmc_user }}"

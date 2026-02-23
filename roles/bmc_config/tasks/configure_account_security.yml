@@ -3,86 +3,28 @@
 
 - name: Configure account security settings
   block:
-    # Retrieves system mtm     
-    - name: Get Redfish system info
-      community.general.redfish_info:
-        category: Systems
-        command: GetSystemInventory
-        baseuri: "{{ bmc_ip }}"
-        username: "{{ bmc_user }}"
-        password: "{{ bmc_password }}"
-        validate_certs: false
-      register: rf_info
-        
-    - set_fact:
-        system_mtm: >-
-          {{
-            (
-              rf_info.redfish_facts.system.entries
-              | json_query('[].SKU')
-              | select('defined')
-              | list
-              | first
-              | default(
-                  rf_info.redfish_facts.system.entries
-                  | json_query('[].SubModel')
-                  | select('defined')
-                  | list
-                  | first
-                )
-            )[0:4] | upper
-          }}
-          
-    - set_fact:
-        system_serial: >-
-          {{
-            (
-              rf_info.redfish_facts.system.entries
-              | json_query('[][1].SerialNumber')
-              | default([])
-              | first
-              | default('UNKNOWN')
-            )[0:4] | upper
-          }}
-
-     - set_fact:
-        system_uuid: >-
-          {{
-            (
-              rf_info.redfish_facts.system.entries
-              | json_query('[][1].SerialNumber')
-              | default([])
-              | first
-              | default('UNKNOWN')
-            )[0:4] | upper
-          }}
-
-
-    - debug:
-        msg: "Detected system_mtm: {{ system_mtm }}"
+  
+    # Retrieves system identifies including mtm, uuild and serial number  
+    - name: Extract system identifiers
+      set_fact:
+        system_sku: "{{ bmc_systems_details.json.SKU }}"
+        system_mtm: "{{ bmc_systems_details.json.SKU[0:4] | upper }}"
+        system_uuid: "{{ bmc_systems_details.json.UUID }}"
+        system_serial: "{{ bmc_systems_details.json.SerialNumber }}"
 
     - name: Configure selection_properties map for conditional settings
       set_fact:
         selection_properties:
           mtm: "{{ system_mtm }}"
           serial: "{{ system_serial }}"
-          uuid: "59a49098-441b-11ef-a549-765d22e41ce6"
+          uuid: "{{ system_uuid }}"
 
-    - name: Determine if system is M6 compatible
+    - name: Determine server type
       set_fact:
-        is_m6_7x02: "{{ system_mtm.startswith('7X02') }}"
-        is_m6_7d2x: "{{ system_mtm.startswith('7D2X') }}"
-        is_m6_7d2v: "{{ system_mtm.startswith('7D2V') }}"
-        is_m6_7d76: "{{ system_mtm.startswith('7D76') }}"
-        is_m6_7d9r: "{{ system_mtm.startswith('7D9R') }}"
-        is_m6_7d73: "{{ system_mtm.startswith('7D73') }}"
-        is_sn550: "{{ system_mtm.startswith('7X16') }}"
+        is_m6_server: "{{ system_mtm is match('^(7X02|7D2X|7D2V|7D76|7D9R|7D73)') }}"
+        is_sn550: "{{ system_mtm is match('^7X16') }}"
 
-    - name: Set M6 configuration flag
-      set_fact:
-        is_m6_server: "{{ is_m6_7x02 or is_m6_7d2x or is_m6_7d2v or is_m6_7d76 or is_m6_7d9r or is_m6_7d73 }}"
-
-    - name: Retrieve current account service configuration using Redfish module
+    - name: Retrieve current account service configuration
       community.general.redfish_info:
         category: Accounts
         command: ListUsers
@@ -94,19 +36,14 @@
       delegate_to: localhost
       ignore_errors: yes
 
-    - name: Display current account information
-      debug:
-        msg: "Current account service queried successfully"
-      when: current_accounts is succeeded
-
     # M6 Server Configuration (7X02, 7D2X, 7D2V, 7D76, 7D9R, 7D73)
     # accseccfg -am local -lp 0 -pe 0 -pew 0 -pc on -pl 10 -ci 0 -lf 0 -chgnew off -rc 0
     - name: Configure account security of M6 Server
       uri:
-        url: "https://{{ bmc_ip }}/redfish/v1/AccountService"
+        url: "{{ bmc_base_url }}/AccountService"
         method: PATCH
-        user: "{{ redfish_user }}"
-        password: "{{ redfish_password }}"
+        user: "{{ bmc_user }}"
+        password: "{{ bmc_password }}"
         validate_certs: no
         force_basic_auth: yes
         body_format: json

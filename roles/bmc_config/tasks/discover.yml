@@ -96,7 +96,7 @@
       ping -6 -c1 -I $iface {{ ipv6ULA }} >/dev/null 2>&1 && echo $iface
     done
   register: detected_iface
-  delegate_to: "{{ bmc_delegate_host }}"
+  delegate_to: jump-host
   failed_when: detected_iface.stdout_lines|length == 0
   changed_when: false
 

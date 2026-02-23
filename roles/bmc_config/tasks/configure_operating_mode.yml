@@ -35,6 +35,7 @@
   
 - name: Extract current performance settings
   set_fact:
+    current_operating_mode: "{{ current_bios.json.Attributes.{{ operating_mode.attribute_key }} | default('') }}"
     current_sys_profile: "{{ current_bios.json.Attributes.SysProfile | default('') }}"
     current_operating_mode: "{{ current_bios.json.Attributes.OperatingModes_ChooseOperatingMode | default('') }}"
 

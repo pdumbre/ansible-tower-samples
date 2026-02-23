@@ -4,7 +4,7 @@
   community.general.redfish_info:
     category: Accounts
     command: ListUsers
-    baseuri: "{{ ipv6_address }}"
+    baseuri: "{{ ipv6ULA }}"
     username: "{{ bmc_user }}"
     password: "{{ bmc_password }}"
     validate_certs: false
@@ -15,7 +15,7 @@
   community.general.redfish_command:
     category: Accounts
     command: AddUser
-    baseuri: "[{{ ipv6_address }}]"
+    baseuri: "[{{ ipv6ULA }}]"
     username: "{{ bmc_user }}"
     password: "{{ bmc_password }}"
     validate_certs: false
@@ -36,7 +36,7 @@
   community.general.redfish_command:
     category: Accounts
     command: EnableUser
-    baseuri: "[{{ ipv6_address }}]"
+    baseuri: "ipv6ULA"
     username: "{{ bmc_user }}"
     password: "{{ bmc_password }}"
     validate_certs: false

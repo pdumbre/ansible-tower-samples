@@ -43,6 +43,10 @@
   
 - set_fact:
     bmc_systems_url: "{{ bmc_base_url }}{{ systems.json.Members[0]['@odata.id'] }}"
+
+- name: Debug BMC system url
+  debug:
+    msg: "'{{ bmc_systems_url }}'" 
     
 - name: Retrieve System details
   uri:

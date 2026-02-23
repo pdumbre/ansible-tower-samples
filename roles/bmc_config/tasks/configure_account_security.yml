@@ -5,7 +5,7 @@
   block:
   
     # Retrieves system identifies including mtm, uuild and serial number  
-    - name: Extract system identifiers
+    - name: Configure system identifiers
       set_fact:
         system_sku: "{{ bmc_systems_details.json.SKU }}"
         system_mtm: "{{ bmc_systems_details.json.SKU[0:4] | upper }}"

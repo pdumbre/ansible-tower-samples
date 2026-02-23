@@ -88,7 +88,7 @@
 
     - name: Configure SN550 account security
       uri:
-        url: "{{ bmc_base_url }}/AccountService"
+        url: "{{ bmc_base_url }}/redfish/v1/AccountService"
         method: PATCH
         user: "{{ bmc_user }}"
         password: "{{ bmc_password }}"

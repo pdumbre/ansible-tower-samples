@@ -22,7 +22,7 @@
  # include_tasks: configure_power_policy.yml
 
 - name: Configure IPMI
-  include_tasks: configure_impi.yml
+  include_tasks: configure_ipmi.yml
 
 #- name: Run vendor Redfish extensions
  # include_tasks: "vendors/{{ detected_vendor }}/redfish.yml"

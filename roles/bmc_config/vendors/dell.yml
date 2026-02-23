@@ -54,7 +54,3 @@ power_policy:
 operating_mode:
   attribute_key: "SysProfile"
   desired_operating_mode: "PerfOptimized"
-   body:
-     Attributes:
-       SysProfile: "PerfOptimized"
-

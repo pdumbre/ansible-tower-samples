@@ -59,22 +59,22 @@
         - lc_service_check.status == 200
         
      - name: Check if EULA is already accepted
-      set_fact:
-        eula_already_accepted: >-
+       set_fact:
+         eula_already_accepted: >-
           {{
             eula_status.json is defined and
             eula_status.json['@Message.ExtendedInfo'] is defined and
             (eula_status.json['@Message.ExtendedInfo'] | selectattr('MessageId', 'defined') | selectattr('MessageId', 'match', '.*SRV074') | list | length > 0)
           }}
-      when:
+       when:
         - eula_status is defined
         - eula_status.status is defined
         - eula_status.status in [200, 202]
 
      - name: Display EULA already accepted message
-      debug:
-        msg: "SupportAssist EULA is already accepted - skipping acceptance"
-      when:
+       debug:
+         msg: "SupportAssist EULA is already accepted - skipping acceptance"
+       when:
         - eula_already_accepted is defined
         - eula_already_accepted | bool
     

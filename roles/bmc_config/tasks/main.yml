@@ -24,11 +24,11 @@
 #- name: Configure IPMI
  # include_tasks: configure_ipmi.yml
 
-#- name: Configure Operating Mode
- # include_tasks: configure_operating_mode.yml
-  
 #- name: Configure Account Security
  # include_tasks: configure_account_security.yml
+
+- name: Configure Operating Mode
+  include_tasks: configure_operating_mode.yml
 
 - name: Configure Performance Settings
   include_tasks: configure_performance_settings.yml

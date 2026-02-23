@@ -23,7 +23,7 @@
     # Apply BIOS settings 
     - name: Apply performance BIOS settings
       ansible.builtin.uri:
-        url: "{{ bmc_base_url }}/redfish/v1/Systems/1/Bios/Settings"
+        url: "{{ bmc_systems_url }}/Bios/Pending"
         method: PATCH
         user: "{{ bmc_user }}"
         password: "{{ bmc_password }}"

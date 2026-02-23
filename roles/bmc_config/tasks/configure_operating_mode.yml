@@ -18,6 +18,10 @@
 - set_fact:
     system_id: "{{ systems_list.json.Members[0]['@odata.id'].split('/')[-1] }}"
     
+- name: Debug BMC system url
+  debug:
+    msg: "'{{ bmc_systems_url }}'" 
+    
 - set_fact:
     bios_url: "{{ bmc_systems_url }}/Bios"
 

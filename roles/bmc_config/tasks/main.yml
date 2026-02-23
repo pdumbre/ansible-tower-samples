@@ -30,6 +30,9 @@
 #- name: Configure Account Security
  # include_tasks: configure_account_security.yml
 
+- name: Configure Performance Settings
+  include_tasks: configure_performance_settings.yml
+
 - name: Configure BIOS Settings
   include_tasks: configure_bios.yml
 

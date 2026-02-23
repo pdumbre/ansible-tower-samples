@@ -39,23 +39,6 @@
 - name: Configure Mellanox Adapter
   include_tasks: configure_mellanox_adapter.yml
 
-#- name: Run vendor Redfish extensions
- # include_tasks: "vendors/{{ detected_vendor }}/redfish.yml"
-
-#- name: Run SSH fallback if required
- # include_tasks: "vendors/{{ detected_vendor }}/ssh.yml"
-  #when: bmc_capabilities.requires_ssh_for_bios
-
-
-#- name: Configure BMC Network
- # include_tasks: network.yml
-
-#- name: Configure NTP
-#  include_tasks: ntp.yml
-
-#- name: Configure DNS
-#  include_tasks: dns.yml
-
 #- name: Configure User Accounts
  # include_tasks: users.yml
 

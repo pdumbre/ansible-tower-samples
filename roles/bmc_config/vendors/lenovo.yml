@@ -24,15 +24,6 @@ bmc_network:
   bmc_network_interface: eth0           # bmc network interface
 
 # Port Configuration
-ports:
-  httpp: "80"           # HTTP port
-  httpsp: "443"         # HTTPS port
-  sshp: "22"            # SSH port
-  snmpap: "161"         # SNMP port
-  snmptp: "162"         # SNMP trap port
-  cimhsp: "5989"        # CIM port HTTPS
-
-# Port Configuration Parameters
 port_config:
   url: "/redfish/v1/Managers/1/NetworkProtocol"
   body:
@@ -68,3 +59,26 @@ default_bmc_password: "PASSW0RD"
 
 # BMC Operating Mode
 bmc_operating_mode: "Maximum Performance"
+
+# Performance Settings Configuration
+# Conditional settings based on VPD system properties (MTM, model, etc.)
+
+performance_settings:
+  # SR645 Performance Settings
+  perf_sr645:
+    settings:
+      "Processors.PreferredIOBus": "Preferred"
+      "Processors.PreferredIOBusNumber": "81"
+    conditionOperator: "or"
+    conditions:
+      - mtm: "7D2XCTO1WW"
+  
+  # SR665 Performance Settings
+  perf_sr665:
+    settings:
+      "Processors.PreferredIOBus": "Preferred"
+      "Processors.PreferredIOBusNumber": "1"
+    conditionOperator: "or"
+    conditions:
+      - mtm: "7D2VCTO1WW"
+

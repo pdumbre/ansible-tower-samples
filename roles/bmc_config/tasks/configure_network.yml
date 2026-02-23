@@ -1,7 +1,8 @@
     
 - name: Retrieve details of network configuration 
   uri:
-    url: "https://[{{ ipv6LLA }}%25{{ bmc_lla_interface }}]{{ bmc_urls.ethernet }}"
+    url: "https://[{{ ipv6LLA }}%{{ bmc_lla_interface | string }}]{{ bmc_urls.ethernet }}"
+    #url: "https://[{{ ipv6LLA }}%25{{ bmc_lla_interface }}]{{ bmc_urls.ethernet }}"
     #url: "{{ bmc_base_url }}{{ bmc_urls.ethernet }}"
     method: GET
     user: "{{ bmc_user }}"
@@ -12,7 +13,18 @@
     status_code: [200]
   register: current_network
   delegate_to: jump-host
-    
+
+- name: Call Redfish via curl for IPv6 LLA
+  command: >
+    curl -s -k
+    -u {{ bmc_user }}:{{ bmc_password }}
+    -H "Content-Type: application/json"
+    -w "HTTPSTATUS:%{http_code}"
+    https://[{{ ipv6LLA }}%{{ bmc_lla_interface }}]{{ bmc_urls.ethernet }}
+  register: redfish_raw
+  changed_when: false
+  delegate_to: jump-host
+
 - name: Retrieve network interface from discovery response
   set_fact:
     network_interface_uri: "{{ current_network.json.Members[0]['@odata.id'] }}"

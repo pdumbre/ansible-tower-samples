@@ -73,7 +73,7 @@
     body_format: json
     body:
       Attributes:
-        operating_mode.attribute_key: operating_mode.desired_operating_mode
+        "{{ { operating_mode.attribute_key: operating_mode.desired_operating_mode } }}"
     status_code: [200, 202]
   register: performance_config
   delegate_to: "{{ bmc_delegate_host }}"

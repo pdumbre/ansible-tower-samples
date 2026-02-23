@@ -3,10 +3,23 @@
 # Equivalent to: idrac.command("racadm set iDRAC.IPMILan.Enable 1")
 # IDEMPOTENT: Checks current IPMI state before enabling
 
+- name: Get Manager info
+  community.general.redfish_info:
+    category: Manager
+    baseuri: "{{ bmc_ip }}"
+    username: "{{ bmc_user }}"
+    password: "{{ bmc_password }}"
+  register: manager_info
+  delegate_to: "{{ bmc_delegate_host }}"
+
+- set_fact:
+    manager_id: "{{ manager_info.redfish_facts.manager.entries[0].Id }}"
+  
 - name: Get current network protocol configuration
   community.general.redfish_info:
     category: Manager
-    command: GetNetworkProtocol
+    resource_id: "{{ manager_id }}"
+    subresource: NetworkProtocol
     baseuri: "{{ bmc_ip }}"
     username: "{{ bmc_user }}"
     password: "{{ bmc_password }}"

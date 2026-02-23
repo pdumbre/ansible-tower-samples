@@ -38,6 +38,11 @@
 
     # M6 Server Configuration (7X02, 7D2X, 7D2V, 7D76, 7D9R, 7D73)
     # accseccfg -am local -lp 0 -pe 0 -pew 0 -pc on -pl 10 -ci 0 -lf 0 -chgnew off -rc 0
+    
+    - name: Debug account security of M6 Server
+      debug:
+        msg: "{{ bmc_base_url }}/AccountService"
+        
     - name: Configure account security of M6 Server
       uri:
         url: "{{ bmc_base_url }}/AccountService"

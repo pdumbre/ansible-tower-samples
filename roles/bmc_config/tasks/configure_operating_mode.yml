@@ -55,7 +55,7 @@
   debug:
     msg:
       - "Current System Profile: {{ current_sys_profile }}"
-      - "Operating mode: {{ current_bios.json.Attributes.OperatingModes }}"
+      - "Operating mode: {{ current_bios.json.Attributes.OperatingModes_ChooseOperatingMode }}"
       - "Performance update needed: {{ performance_needs_update }}"
 
 - name: Set System Profile to Performance
@@ -69,7 +69,7 @@
     body_format: json
     body:
       Attributes:
-        OperatingModes: "MaximumPerformance"
+        OperatingModes_ChooseOperatingMode: "MaximumPerformance"
         SysProfile: "PerfOptimized"
     status_code: [200, 202]
   register: performance_config

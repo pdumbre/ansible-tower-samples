@@ -1,5 +1,4 @@
-# Task: Configure Lenovo IMM BIOS Settings
-# Uses Redfish API to set BIOS configuration parameters
+# Task: Configure Performance settings
 # All tasks are conditional on requires_performance_settings
 
 - name: Configure BIOS settings

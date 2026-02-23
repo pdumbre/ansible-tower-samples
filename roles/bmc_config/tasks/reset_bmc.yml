@@ -1,0 +1,123 @@
+
+- name: Retrieve current BMC information before reset
+  uri:
+    url: "{{ bmc_managers_url }}"
+    method: GET
+    user: "{{ bmc_user }}"
+    password: "{{ bmc_password }}"
+    validate_certs: no
+    force_basic_auth: yes
+    return_content: yes
+    status_code: [200]
+  register: pre_reset_bmc_info
+  delegate_to: "{{ bmc_delegate_host }}"
+
+- name: Display current BMC information
+  debug:
+    msg:
+      - "Current BMC Firmware: {{ pre_reset_bmc_info.json.FirmwareVersion | default('Unknown') }}"
+      - "Current BMC Model: {{ pre_reset_bmc_info.json.Model | default('Unknown') }}"
+      - "Current BMC Status: {{ pre_reset_bmc_info.json.Status.State | default('Unknown') }}"
+  when: pre_reset_bmc_info is succeeded
+
+- name: Perform factory reset using Redfish ResetToDefaults action
+  uri:
+    url: "{{ bmc_reset_url }}"
+    method: POST
+    user: "{{ bmc_user }}"
+    password: "{{ bmc_password }}"
+    validate_certs: no
+    force_basic_auth: yes
+    body_format: json
+    body:
+      ResetType: "{{ bmc_reset_type | default('ResetAll') }}"
+    status_code: [200, 202, 204]
+    timeout: 60
+  register: factory_reset_result
+  delegate_to: "{{ bmc_delegate_host }}"
+  when: not ansible_check_mode
+
+- name: Check if reset was accepted
+  debug:
+    msg:
+      - "Factory reset initiated successfully"
+      - "Status Code: {{ factory_reset_result.status }}"
+      - "BMC will reboot and reset to defaults"
+  when:
+    - not ansible_check_mode
+    - factory_reset_result is succeeded
+
+- name: Handle reset failure
+  debug:
+    msg:
+      - "Factory reset failed or not supported"
+      - "Error: {{ factory_reset_result.msg | default('Unknown error') }}"
+  when:
+    - not ansible_check_mode
+    - factory_reset_result is failed
+    
+- name: Wait for BMC to begin reboot
+  pause:
+    seconds: 60
+  when:
+    - not ansible_check_mode
+    - factory_reset_result is succeeded
+
+- name: Display reboot status
+  debug:
+    msg: "BMC is rebooting... This may take 5-10 minutes"
+  when:
+    - not ansible_check_mode
+    - factory_reset_result is succeeded
+
+- name: Wait until BMC is available
+  vars:
+    bmc_url: "https://[{{ ipv6ULA }}%{{ bmc_lla_interface }}]/redfish/v1"
+  shell: curl -k -L -s {{ redfish_url }}
+  register: bmc_status
+  failed_when: false
+  retries: 30
+  delay: 10
+  until:
+    - bmc_status.rc == 0
+    - bmc_status.stdout is search('RedfishVersion')
+  loop_control:
+    label: "Checking BMC status..." 
+  delegate_to: jump-host
+
+- name: Inform that BMC is available
+  debug:
+    msg:
+      - "BMC reboot completed successfully."
+
+- name: Wait for BMC SSH to become reachable
+  shell: |
+    nc -z -6 {{ bmc_lla_ip }}%{{ bmc_lla_interface }} 22
+  register: ssh_check
+  retries: 60
+  delay: 10
+  until: ssh_check.rc == 0
+  delegate_to: jump-host
+
+- name: Generate BMC secret
+  set_fact:
+    updated_bmc_password: >-
+      {{
+        lookup('password', '/dev/null length=20 chars=ascii_letters,digits') +
+        '!'
+      }}
+
+  
+- name: Configure BMC Account
+  uri:
+    url: "https://[{{ ipv6ULA }}%{{ bmc_lla_interface }}]/redfish/v1/AccountService/Accounts/1"
+    method: PATCH
+    user: "{{ bmc_username }}"
+    password: "{{ bmc_password }}"
+    force_basic_auth: yes
+    validate_certs: no
+    body_format: json
+    body:
+      Password: "{{ latest_redfish_password }}"
+    status_code: 200
+  delegate_to: mgen

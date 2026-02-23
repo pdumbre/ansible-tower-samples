@@ -7,6 +7,7 @@ bmc_urls:
   jobs: "/redfish/v1/Managers/iDRAC.Embedded.1/Jobs"
   attributes: "/redfish/v1/Managers/iDRAC.Embedded.1/Attributes"
   bios: "/redfish/v1/Systems/System.Embedded.1/Bios/Settings"
+  bios_uri_suffix: "/Settings"
   dellService: "/redfish/v1/Dell/Managers/iDRAC.Embedded.1/DellLCService"
   supportAssistEulaStatus: "/redfish/v1/Dell/Managers/iDRAC.Embedded.1/DellLCService/Actions/DellLCService.SupportAssistGetEULAStatus"
   supportAssistAcceptEula: "/redfish/v1/Dell/Managers/iDRAC.Embedded.1/DellLCService/Actions/DellLCService.SupportAssistAcceptEULA"

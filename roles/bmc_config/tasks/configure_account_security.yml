@@ -1,0 +1,188 @@
+
+# Retrieves system mtm 
+
+- name: Get Redfish system info
+  community.general.redfish_info:
+    category: Systems
+    command: GetSystemInventory
+    baseuri: "{{ bmc_ip }}"
+    username: "{{ redfish_user }}"
+    password: "{{ redfish_password }}"
+    validate_certs: false
+  register: rf_info
+    
+- name: Extract system identifiers
+  ansible.builtin.set_fact:
+    system_mtm: >-
+      {{
+        (
+          rf_info.redfish_facts.system.entries
+          | json_query('[].SKU')
+          | select('defined')
+          | list
+          | first
+          | default(
+              rf_info.redfish_facts.system.entries
+              | json_query('[].SubModel')
+              | select('defined')
+              | list
+              | first
+            )
+        )[0:4] | upper
+      }}
+      
+- name: Extract SerialNumber safely
+  ansible.builtin.set_fact:
+    system_serial: >-
+      {{
+        (
+          rf_info.redfish_facts.system.entries
+          | json_query('[][1].SerialNumber')
+          | default([])
+          | first
+          | default('UNKNOWN')
+        )[0:4] | upper
+      }}
+
+
+- debug:
+    msg: "Detected system_mtm: {{ system_mtm }}"
+
+- name: Create selection_properties map for conditional settings
+  set_fact:
+    selection_properties:
+      mtm: "{{ system_mtm }}"
+      serial: "JZ004CRA"
+      uuid: "59a49098-441b-11ef-a549-765d22e41ce6"
+
+- name: Determine if system is M6 compatible
+  set_fact:
+    is_m6_7x02: "{{ system_mtm.startswith('7X02') }}"
+    is_m6_7d2x: "{{ system_mtm.startswith('7D2X') }}"
+    is_m6_7d2v: "{{ system_mtm.startswith('7D2V') }}"
+    is_m6_7d76: "{{ system_mtm.startswith('7D76') }}"
+    is_m6_7d9r: "{{ system_mtm.startswith('7D9R') }}"
+    is_m6_7d73: "{{ system_mtm.startswith('7D73') }}"
+    is_sn550: "{{ system_mtm.startswith('7X16') }}"
+
+- name: Set M6 configuration flag
+  set_fact:
+    is_m6_server: "{{ is_m6_7x02 or is_m6_7d2x or is_m6_7d2v or is_m6_7d76 or is_m6_7d9r or is_m6_7d73 }}"
+
+- name: Get current account service configuration using Redfish module
+  community.general.redfish_info:
+    category: Accounts
+    command: ListUsers
+    baseuri: "{{ bmc_ip }}"
+    username: "{{ redfish_user }}"
+    password: "{{ redfish_password }}"
+    timeout: 30
+  register: current_accounts
+  delegate_to: localhost
+  ignore_errors: yes
+
+- name: Display current account information
+  debug:
+    msg: "Current account service queried successfully"
+  when: current_accounts is succeeded
+
+# M6 Server Configuration (7X02, 7D2X, 7D2V, 7D76, 7D9R, 7D73)
+# accseccfg -am local -lp 0 -pe 0 -pew 0 -pc on -pl 10 -ci 0 -lf 0 -chgnew off -rc 0
+
+- name: Configure M6 account security via direct API (fallback)
+  uri:
+    url: "https://{{ bmc_ip }}/redfish/v1/AccountService"
+    method: PATCH
+    user: "{{ redfish_user }}"
+    password: "{{ redfish_password }}"
+    validate_certs: no
+    force_basic_auth: yes
+    body_format: json
+    body:
+      MinPasswordLength: 10
+      Oem:
+        Lenovo:
+          PasswordChangeOnFirstAccess: false
+          PasswordReuseCount: 0
+          PasswordComplexityCheck: true
+    status_code: [200, 202, 204]
+  register: m6_account_config_api
+  delegate_to: localhost
+  when:
+    - is_m6_server | bool
+  changed_when: m6_account_config_api.status in [200, 202, 204]
+
+- name: M6 account security configured
+  debug:
+    msg: "Account security configured for M6 server {{ system_mtm }}"
+  when:
+    - is_m6_server | bool
+    - (m6_account_config_api is changed)
+
+# SN550 Configuration (7X16)
+# accseccfg -lp 0 -pe 0 -pew 0 -pc off -pl 8 -ci 0 -lf 0 -chgdft off -chgnew off -rc 0
+- name: Configure account security for SN550 using Redfish command
+  community.general.redfish_command:
+    category: Accounts
+    command: UpdateAccountServiceProperties
+    baseuri: "{{ bmc_ip }}"
+    username: "{{ redfish_user }}"
+    password: "{{ redfish_password }}"
+    timeout: 30
+    account_properties:
+      MinPasswordLength: 8        # -pl 8: password length
+  register: sn550_account_config
+  delegate_to: localhost
+  when: is_sn550 | bool
+  ignore_errors: yes
+
+- name: Configure SN550 account security via direct API (fallback)
+  uri:
+    url: "https://{{ bmc_ip }}/redfish/v1/AccountService"
+    method: PATCH
+    user: "{{ redfish_user }}"
+    password: "{{ redfish_password }}"
+    validate_certs: no
+    force_basic_auth: yes
+    body_format: json
+    body:
+      MinPasswordLength: 8
+      Oem:
+        Lenovo:
+          PasswordChangeOnFirstAccess: false
+          PasswordChangeOnDefault: false
+          PasswordReuseCount: 0
+          PasswordComplexityCheck: false
+    status_code: [200, 202, 204]
+  register: sn550_account_config_api
+  delegate_to: localhost
+  when:
+    - is_sn550 | bool
+    - sn550_account_config is failed
+  changed_when: sn550_account_config_api.status in [200, 202, 204]
+
+- name: SN550 account security configured
+  debug:
+    msg: "Account security configured for SN550 {{ system_mtm }}"
+  when:
+    - is_sn550 | bool
+    - (sn550_account_config is succeeded or sn550_account_config_api is changed)
+
+- name: Skip configuration for non-M6 systems
+  debug:
+    msg: "System MTM {{ system_mtm }} is not an M6 server - skipping account security configuration"
+  when:
+    - not (is_m6_server | bool)
+    - not (is_sn550 | bool)
+
+- name: Display account security configuration summary
+  debug:
+    msg:
+      - "========================================="
+      - "Account Security Configuration Summary"
+      - "========================================="
+      - "System MTM: {{ system_mtm }}"
+      - "Is M6 Server: {{ is_m6_server }}"
+      - "Is SN550: {{ is_sn550 }}"
+      - "Module Method: {{ 'Success' if (m6_account_config_api is succeeded or sn550_account_config is succeeded) else 'Used API Fallback' }}"
+      - "========================================="

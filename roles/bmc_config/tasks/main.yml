@@ -9,8 +9,8 @@
 #- name: Configure System Lockdown
  # include_tasks: check_lockdown.yml
 
-#- name: Configure Network
- # include_tasks: configure_network.yml
+- name: Configure Network
+  include_tasks: configure_network.yml
 
 #- name: Configure Ports
  # include_tasks: configure_ports.yml

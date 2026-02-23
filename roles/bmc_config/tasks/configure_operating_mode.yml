@@ -36,18 +36,14 @@
 - name: Extract current performance settings
   set_fact:
     current_sys_profile: "{{ current_bios.json.Attributes.SysProfile | default('') }}"
-    current_proc_c1e: "{{ current_bios.json.Attributes.ProcC1E | default('') }}"
-    current_proc_cstates: "{{ current_bios.json.Attributes.ProcCStates | default('') }}"
-    current_turbo_mode: "{{ current_bios.json.Attributes.ProcTurboMode | default('') }}"
+    current_operating_mode: "{{ current_bios.json.Attributes.OperatingModes_ChooseOperatingMode | default('') }}"
 
 - name: Check if performance settings need update
   set_fact:
     performance_needs_update: >-
       {{
         current_sys_profile != 'PerfOptimized' or
-        current_proc_c1e != 'Disabled' or
-        current_proc_cstates != 'Disabled' or
-        current_turbo_mode != 'Enabled'
+        current_operating_mode != 'MaximumPerformance'
       }}
 
 - name: Set current BIOS info as a global fact
@@ -75,14 +71,9 @@
       Attributes:
         OperatingModes: "MaximumPerformance"
         SysProfile: "PerfOptimized"
-        ProcC1E: "Disabled"
-        ProcCStates: "Disabled"
-        MemFrequency: "MaxPerf"
-        ProcTurboMode: "Enabled"
-        ProcPwrPerf: "MaxPerf"
     status_code: [200, 202]
   register: performance_config
-  delegate_to: localhost
+  delegate_to: "{{ bmc_delegate_host }}"
   when: performance_needs_update | bool
   changed_when: performance_config.status in [200, 202]
 

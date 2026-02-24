@@ -30,7 +30,7 @@
     force_basic_auth: yes
     body_format: json
     body:
-      ResetType: "{{ bmc_reset_type | default('ResetAll') }}"
+      ResetType: "{{ bmc_reset.reset_type | default('ResetAll') }}"
     status_code: [200, 202, 204]
     timeout: 60
   register: factory_reset_result

@@ -1,41 +1,36 @@
-    
-- name: Call Redfish via curl for IPv6 LLA
-  command: >
-    curl -s -k
-    -u {{ bmc_user }}:{{ bmc_password }}
-    -H "Content-Type: application/json"
-    -w "HTTPSTATUS:%{http_code}"
-    https://[{{ ipv6LLA }}%{{ bmc_lla_interface }}]{{ bmc_urls.ethernet }}
-  register: redfish_raw
-  changed_when: false
-  delegate_to: jump-host
+- name: Retrieve details of network configuration
+  block:
+    - name: Retrieve network configuration using uri module
+      uri:
+        url: "https://[{{ ipv6LLA }}%{{ bmc_lla_interface | string }}]{{ bmc_urls.ethernet }}"
+        method: GET
+        user: "{{ bmc_user }}"
+        password: "{{ bmc_password }}"
+        validate_certs: no
+        force_basic_auth: yes
+        return_content: yes
+        status_code: [200]
+      register: current_network
+      delegate_to: jump-host
 
+  rescue:
+    - name: Fallback - Retrieve network configuration using curl
+      shell: |
+        curl -k -u "{{ bmc_user }}:{{ bmc_password }}" \
+          -X GET \
+          -w "\n%{http_code}" \
+          "https://[{{ ipv6LLA }}%{{ bmc_lla_interface | string }}]{{ bmc_urls.ethernet }}"
+      register: current_network_curl
+      delegate_to: jump-host
+      changed_when: false
+      failed_when: current_network_curl.rc != 0 or (current_network_curl.stdout_lines[-1] | int) not in [200]
 
-- name: Retrieve details of network configuration 
-  uri:
-    url: "https://[{{ ipv6LLA }}%{{ bmc_lla_interface | string }}]{{ bmc_urls.ethernet }}"
-    #url: "https://[{{ ipv6LLA }}%25{{ bmc_lla_interface }}]{{ bmc_urls.ethernet }}"
-    #url: "{{ bmc_base_url }}{{ bmc_urls.ethernet }}"
-    method: GET
-    user: "{{ bmc_user }}"
-    password: "{{ bmc_password }}"
-    validate_certs: no
-    force_basic_auth: yes
-    return_content: yes
-    status_code: [200]
-  register: current_network
-  delegate_to: jump-host
+    - name: Parse curl response for network configuration
+      set_fact:
+        current_network:
+          json: "{{ current_network_curl.stdout_lines[:-1] | join('\n') | from_json }}"
+          status: "{{ current_network_curl.stdout_lines[-1] | int }}"
 
-- name: Call Redfish via curl for IPv6 LLA
-  command: >
-    curl -s -k
-    -u {{ bmc_user }}:{{ bmc_password }}
-    -H "Content-Type: application/json"
-    -w "HTTPSTATUS:%{http_code}"
-    https://[{{ ipv6LLA }}%{{ bmc_lla_interface }}]{{ bmc_urls.ethernet }}
-  register: redfish_raw
-  changed_when: false
-  delegate_to: jump-host
 
 - name: Retrieve network interface from discovery response
   set_fact:
@@ -43,17 +38,37 @@
   when: current_network.json.Members | length > 0
     
 - name: Retrieve network interface details
-  uri:
-    url: "https://[{{ ipv6LLA }}%{{ bmc_lla_interface }}]{{ network_interface_uri }}"
-    #url: "{{ bmc_base_url }}{{ network_interface_uri }}"
-    method: GET
-    user: "{{ bmc_user }}"
-    password: "{{ bmc_password }}"
-    force_basic_auth: yes
-    validate_certs: no
-    return_content: yes
-  register: network_interface_detail
-  delegate_to: jump-host
+  block:
+    - name: Retrieve network interface details using uri module
+      uri:
+        url: "https://[{{ ipv6LLA }}%{{ bmc_lla_interface }}]{{ network_interface_uri }}"
+        method: GET
+        user: "{{ bmc_user }}"
+        password: "{{ bmc_password }}"
+        force_basic_auth: yes
+        validate_certs: no
+        return_content: yes
+      register: network_interface_detail
+      delegate_to: jump-host
+
+  rescue:
+    - name: Fallback - Retrieve network interface details using curl
+      shell: |
+        curl -k -u "{{ bmc_user }}:{{ bmc_password }}" \
+          -X GET \
+          -w "\n%{http_code}" \
+          "https://[{{ ipv6LLA }}%{{ bmc_lla_interface }}]{{ network_interface_uri }}"
+      register: network_interface_detail_curl
+      delegate_to: jump-host
+      changed_when: false
+      failed_when: network_interface_detail_curl.rc != 0 or (network_interface_detail_curl.stdout_lines[-1] | int) not in [200]
+
+    - name: Parse curl response for network interface details
+      set_fact:
+        network_interface_detail:
+          json: "{{ network_interface_detail_curl.stdout_lines[:-1] | join('\n') | from_json }}"
+          status: "{{ network_interface_detail_curl.stdout_lines[-1] | int }}"
+
   when: network_interface_uri is defined
 
 - name: Retrieve existing network configuration
@@ -80,53 +95,123 @@
   delegate_to: jump-host
 
 - name: Configure IPv6 and IPv4 Network Settings
-  uri:
-    url: "https://[{{ ipv6LLA }}%{{ bmc_lla_interface }}]{{ network_interface_uri }}"
-    #url: "{{ bmc_base_url }}{{ network_interface_uri }}"
-    method: PATCH
-    user: "{{ bmc_user }}"
-    password: "{{ bmc_password }}"
-    validate_certs: no
-    force_basic_auth: yes
-    headers:
-      Content-Type: "application/json"
-    body_format: json
-    body:
-      DHCPv6: 
-        OperatingMode: "{{ 'Enabled' if bmc_network.dhcp6_enabled | bool else 'Disabled' }}"
-      IPv6StaticAddresses:
-        - Address: "{{ ipv6ULA }}"
-          SubnetMask: "{{ ipv6_netmask | default('255.255.0.0') }}"
-          Gateway: "{{ bmc_network.ipv6_gateway }}"
-          AddressOrigin: "Static"
-    status_code: [200, 204]
-  delegate_to: jump-host
-  register: ipv6_config
+  block:
+    - name: Configure IPv6 and IPv4 using uri module
+      uri:
+        url: "https://[{{ ipv6LLA }}%{{ bmc_lla_interface }}]{{ network_interface_uri }}"
+        method: PATCH
+        user: "{{ bmc_user }}"
+        password: "{{ bmc_password }}"
+        validate_certs: no
+        force_basic_auth: yes
+        headers:
+          Content-Type: "application/json"
+        body_format: json
+        body:
+          DHCPv6:
+            OperatingMode: "{{ 'Enabled' if bmc_network.dhcp6_enabled | bool else 'Disabled' }}"
+          IPv6StaticAddresses:
+            - Address: "{{ ipv6ULA }}"
+              SubnetMask: "{{ ipv6_netmask | default('255.255.0.0') }}"
+              Gateway: "{{ bmc_network.ipv6_gateway }}"
+              AddressOrigin: "Static"
+        status_code: [200, 204]
+      delegate_to: jump-host
+      register: ipv6_config
+
+  rescue:
+    - name: Fallback - Configure IPv6 and IPv4 using curl
+      shell: |
+        curl -k -u "{{ bmc_user }}:{{ bmc_password }}" \
+          -X PATCH \
+          -H "Content-Type: application/json" \
+          -d '{
+            "DHCPv6": {
+              "OperatingMode": "{{ 'Enabled' if bmc_network.dhcp6_enabled | bool else 'Disabled' }}"
+            },
+            "IPv6StaticAddresses": [
+              {
+                "Address": "{{ ipv6ULA }}",
+                "SubnetMask": "{{ ipv6_netmask | default('255.255.0.0') }}",
+                "Gateway": "{{ bmc_network.ipv6_gateway }}",
+                "AddressOrigin": "Static"
+              }
+            ]
+          }' \
+          "https://[{{ ipv6LLA }}%{{ bmc_lla_interface }}]{{ network_interface_uri }}" \
+          -w "\n%{http_code}"
+      register: ipv6_config_curl
+      delegate_to: jump-host
+      changed_when: ipv6_config_curl.stdout_lines[-1] in ['200', '204']
+      failed_when: ipv6_config_curl.rc != 0 or (ipv6_config_curl.stdout_lines[-1] | int) not in [200, 204]
+
+    - name: Set ipv6_config from curl result
+      set_fact:
+        ipv6_config:
+          status: "{{ ipv6_config_curl.stdout_lines[-1] | int }}"
+          changed: "{{ ipv6_config_curl.stdout_lines[-1] in ['200', '204'] }}"
+
   when:
     - ipv6ULA is defined
     - ipv6_needs_update | bool
 
+- name: Wait for network configuration to be effective
+  pause:
+    seconds: 30
+    
 - name: Configure Network Settings
-  uri:
-    url: "https://[{{ ipv6LLA }}%{{ bmc_lla_interface }}]{{ network_interface_uri }}"
-    #url: "{{ bmc_base_url }}{{ network_interface_uri }}"
-    method: PATCH
-    user: "{{ bmc_user }}"
-    password: "{{ bmc_password }}"
-    validate_certs: no
-    force_basic_auth: yes
-    headers:
-      Content-Type: "application/json"
-    body_format: json
-    body:
-      SLAAC:
-            Enabled: "{{ bmc_network.stateless_autoconfig_enabled | bool }}"
-      Oem:
-        Lenovo:
-          NetworkSettingSync: "{{ bmc_network.name_server_sync_enabled | bool }}"
-    status_code: [200, 204]
-  delegate_to: jump-host  
-  register: oem_config
+  block:
+    - name: Configure OEM network settings using uri module
+      uri:
+        url: "https://[{{ ipv6LLA }}%{{ bmc_lla_interface }}]{{ network_interface_uri }}"
+        #url: "{{ bmc_base_url }}{{ network_interface_uri }}"
+        method: PATCH
+        user: "{{ bmc_user }}"
+        password: "{{ bmc_password }}"
+        validate_certs: no
+        force_basic_auth: yes
+        headers:
+          Content-Type: "application/json"
+        body_format: json
+        body:
+          SLAAC:
+                Enabled: "{{ bmc_network.stateless_autoconfig_enabled | bool }}"
+          Oem:
+            Lenovo:
+              NetworkSettingSync: "{{ bmc_network.name_server_sync_enabled | bool }}"
+        status_code: [200, 204]
+      delegate_to: jump-host
+      register: oem_config
+
+  rescue:
+    - name: Fallback - Configure OEM network settings using curl
+      shell: |
+        curl -k -u "{{ bmc_user }}:{{ bmc_password }}" \
+          -X PATCH \
+          -H "Content-Type: application/json" \
+          -d '{
+            "SLAAC": {
+              "Enabled": {{ bmc_network.stateless_autoconfig_enabled | bool | lower }}
+            },
+            "Oem": {
+              "Lenovo": {
+                "NetworkSettingSync": {{ bmc_network.name_server_sync_enabled | bool | lower }}
+              }
+            }
+          }' \
+          "https://[{{ ipv6LLA }}%{{ bmc_lla_interface }}]{{ network_interface_uri }}" \
+          -w "\n%{http_code}"
+      register: oem_config_curl
+      delegate_to: jump-host
+      changed_when: oem_config_curl.stdout_lines[-1] in ['200', '204']
+      failed_when: oem_config_curl.rc != 0 or (oem_config_curl.stdout_lines[-1] | int) not in [200, 204]
+
+    - name: Set oem_config from curl result
+      set_fact:
+        oem_config:
+          status: "{{ oem_config_curl.stdout_lines[-1] | int }}"
+          changed: "{{ oem_config_curl.stdout_lines[-1] in ['200', '204'] }}"
+
   when:
     - bmc_network is defined
     - bmc_network.name_server_sync_enabled is defined

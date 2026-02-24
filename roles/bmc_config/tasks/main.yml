@@ -3,14 +3,17 @@
 - name: Discover vendor
   include_tasks: discover.yml
 
+- name: Reset BMC to factory defaults
+  include_tasks: reset_bmc.yml
+
+- name: Configure Network
+  include_tasks: configure_network.yml
+
 #- name: Clean Jobs
  # include_tasks: clean_jobs.yml
 
 #- name: Configure System Lockdown
  # include_tasks: check_lockdown.yml
-
-- name: Configure Network
-  include_tasks: configure_network.yml
 
 #- name: Configure Ports
  # include_tasks: configure_ports.yml

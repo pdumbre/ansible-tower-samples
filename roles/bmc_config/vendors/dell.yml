@@ -56,3 +56,6 @@ power_policy:
 operating_mode:
   attribute_key: "SysProfile"
   desired_operating_mode: "PerfOptimized"
+
+bmc_reset:
+  reset_type: "Default"

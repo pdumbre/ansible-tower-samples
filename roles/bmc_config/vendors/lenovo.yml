@@ -85,3 +85,6 @@ performance_settings:
     conditions:
       - mtm: "7D2VCTO1WW"
 
+bmc_reset:
+  reset_type: "ResetAll"
+

@@ -1,0 +1,7 @@
+- name: Configure RAID
+  hosts: bmc_servers
+  gather_facts: false
+    
+  roles:
+    - discover
+    - configure_raid

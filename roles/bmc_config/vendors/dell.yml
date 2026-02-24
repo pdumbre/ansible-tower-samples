@@ -59,3 +59,4 @@ operating_mode:
 
 bmc_reset:
   reset_type: "ResetAll"
+  url_suffix: "Manager.ResetToDefaults"

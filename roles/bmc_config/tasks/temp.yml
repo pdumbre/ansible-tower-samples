@@ -1,0 +1,51 @@
+- name: Wait until BMC is available
+  vars:
+    bmc_url: "https://[{{ ipv6ULA }}%{{ bmc_lla_interface }}]/redfish/v1"
+  shell: curl -k -L -s {{ bmc_url }}
+  register: bmc_status
+  failed_when: false
+  retries: 30
+  delay: 10
+  until:
+    - bmc_status.rc == 0
+    - bmc_status.stdout is search('RedfishVersion')
+  loop_control:
+    label: "Checking BMC status..." 
+  delegate_to: jump-host
+
+- name: Inform that BMC is available
+  debug:
+    msg:
+      - "BMC reboot completed successfully."
+
+- name: Wait for BMC SSH to become reachable
+  shell: |
+    nc -z -6 {{ bmc_lla_ip }}%{{ bmc_lla_interface }} 22
+  register: ssh_check
+  retries: 60
+  delay: 10
+  until: ssh_check.rc == 0
+  delegate_to: jump-host
+
+- name: Generate BMC secret
+  set_fact:
+    updated_bmc_password: >-
+      {{
+        lookup('password', '/dev/null length=20 chars=ascii_letters,digits') +
+        '!'
+      }}
+
+  
+- name: Configure BMC Account
+  uri:
+    url: "https://[{{ ipv6ULA }}%{{ bmc_lla_interface }}]/redfish/v1/AccountService/Accounts/1"
+    method: PATCH
+    user: "{{ bmc_username }}"
+    password: "{{ bmc_password }}"
+    force_basic_auth: yes
+    validate_certs: no
+    body_format: json
+    body:
+      Password: "{{ latest_redfish_password }}"
+    status_code: 200
+  delegate_to: mgen

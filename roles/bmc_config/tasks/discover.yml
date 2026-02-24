@@ -80,8 +80,7 @@
 - name: Initialize derived URLs
   set_fact:
     bmc_bios_url: "{{ bmc_systems_url }}/Bios"
-    #bmc_reset_url: "{{ bmc_systems_url }}/Actions/ComputerSystem.Reset"
-    bmc_reset_url: "{{ bmc_manager_url }}/Actions/Manager.ResetToDefaults"
+    bmc_reset_url: "{{ bmc_manager_url }}/Actions/{{ reset.url_suffix }}"
     bmc_manager_ethernet_url: "{{ bmc_manager_url }}/EthernetInterfaces"
 
 - name: Configure vendor

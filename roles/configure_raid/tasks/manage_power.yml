@@ -18,7 +18,7 @@
   block:
     - name: Send power on command
       uri:
-        url: "{{ bmc_systems_url }}{{ power_url_suffix }}"
+        url: "{{ bmc_systems_url }}{{ power_policy.url_suffix }}"
         method: POST
         user: "{{ bmc_user }}"
         password: "{{ bmc_password }}"
@@ -55,13 +55,13 @@
 
   when: 
     - power_update_required
-    - desired_power_state == "On"
+    - power_policy.desired_power_state == "On"
 
 - name: Power off system if needed
   block:
     - name: Send graceful shutdown command
       uri:
-        url: "{{ bmc_systems_url }}{{ power_url_suffix }}"
+        url: "{{ bmc_systems_url }}{{ power_policy.url_suffix }}"
         method: POST
         user: "{{ bmc_user }}"
         password: "{{ bmc_password }}"
@@ -114,13 +114,13 @@
 
   when:
     - power_update_required
-    - desired_power_state == "Off"
+    - power_policy.desired_power_state == "Off"
 
 - name: Power cycle system if needed
   block:
     - name: Send power cycle command
       uri:
-        url: "{{ bmc_systems_url }}{{ power_url_suffix }}"
+        url: "{{ bmc_systems_url }}{{ power_policy.url_suffix }}"
         method: POST
         user: "{{ bmc_user }}"
         password: "{{ bmc_password }}"
@@ -140,4 +140,4 @@
       debug:
         msg: "System power cycled successfully"
 
-  when: desired_power_state == "Restart"
+  when: power_policy.desired_power_state == "Restart"

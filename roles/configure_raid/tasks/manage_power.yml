@@ -1,0 +1,157 @@
+---
+# roles/configure_nodes_raid/tasks/power_management.yml
+# Common power management tasks for both Dell and Lenovo
+
+- name: Get current power state
+  uri:
+    url: "{{ bmc_base_url }}/redfish/v1/Systems/{{ system_id }}"
+    method: GET
+    user: "{{ bmc_user }}"
+    password: "{{ bmc_password }}"
+    validate_certs: false
+    force_basic_auth: true
+    status_code: [200, 201]
+  delegate_to: localhost
+  register: system_state
+  retries: 3
+  delay: 10
+
+- name: Set current power state
+  set_fact:
+    current_power_state: "{{ system_state.json.PowerState }}"
+
+- name: Debug current power state
+  debug:
+    msg: "Current power state: {{ current_power_state }}"
+
+- name: Check if power state change needed
+  set_fact:
+    power_state_changed: "{{ current_power_state != desired_power_state }}"
+
+- name: Power on system if needed
+  block:
+    - name: Send power on command
+      uri:
+        url: "{{ bmc_base_url }}/redfish/v1/Systems/{{ system_id }}/Actions/ComputerSystem.Reset"
+        method: POST
+        user: "{{ bmc_user }}"
+        password: "{{ bmc_password }}"
+        validate_certs: false
+        force_basic_auth: true
+        body_format: json
+        body:
+          ResetType: "On"
+        status_code: [200, 202, 204]
+      delegate_to: localhost
+      register: power_on_result
+
+    - name: Wait for system to power on
+      pause:
+        seconds: 5
+
+    - name: Verify power state
+      uri:
+        url: "{{ bmc_base_url }}/redfish/v1/Systems/{{ system_id }}"
+        method: GET
+        user: "{{ bmc_user }}"
+        password: "{{ bmc_password }}"
+        validate_certs: false
+        force_basic_auth: true
+        status_code: [200, 201]
+      delegate_to: localhost
+      register: verify_power
+      retries: 5
+      delay: 10
+
+    - name: Log power state change
+      debug:
+        msg: "System powered on successfully. Current state: {{ verify_power.json.PowerState }}"
+
+  when: 
+    - power_state_changed
+    - desired_power_state == "On"
+
+- name: Power off system if needed
+  block:
+    - name: Send graceful shutdown command
+      uri:
+        url: "{{ bmc_base_url }}/redfish/v1/Systems/{{ system_id }}/Actions/ComputerSystem.Reset"
+        method: POST
+        user: "{{ bmc_user }}"
+        password: "{{ bmc_password }}"
+        validate_certs: false
+        force_basic_auth: true
+        body_format: json
+        body:
+          ResetType: "GracefulShutdown"
+        status_code: [200, 202, 204]
+      delegate_to: localhost
+      register: power_off_result
+      ignore_errors: true
+
+    - name: Force power off if graceful shutdown fails
+      uri:
+        url: "{{ bmc_base_url }}/redfish/v1/Systems/{{ system_id }}/Actions/ComputerSystem.Reset"
+        method: POST
+        user: "{{ bmc_user }}"
+        password: "{{ bmc_password }}"
+        validate_certs: false
+        force_basic_auth: true
+        body_format: json
+        body:
+          ResetType: "ForceOff"
+        status_code: [200, 202, 204]
+      delegate_to: localhost
+      when: power_off_result is failed
+
+    - name: Wait for system to power off
+      pause:
+        seconds: 30
+
+    - name: Verify power off state
+      uri:
+        url: "{{ bmc_base_url }}/redfish/v1/Systems/{{ system_id }}"
+        method: GET
+        user: "{{ bmc_user }}"
+        password: "{{ bmc_password }}"
+        validate_certs: false
+        force_basic_auth: true
+        status_code: [200, 201]
+      delegate_to: localhost
+      register: verify_power_off
+      retries: 5
+      delay: 10
+
+    - name: Log power off state
+      debug:
+        msg: "System powered off successfully. Current state: {{ verify_power_off.json.PowerState }}"
+
+  when:
+    - power_state_changed
+    - desired_power_state == "Off"
+
+- name: Power cycle system if needed
+  block:
+    - name: Send power cycle command
+      uri:
+        url: "{{ bmc_base_url }}/redfish/v1/Systems/{{ system_id }}/Actions/ComputerSystem.Reset"
+        method: POST
+        user: "{{ bmc_user }}"
+        password: "{{ bmc_password }}"
+        validate_certs: false
+        force_basic_auth: true
+        body_format: json
+        body:
+          ResetType: "ForceRestart"
+        status_code: [200, 202, 204]
+      delegate_to: localhost
+
+    - name: Wait for power cycle to complete
+      pause:
+        seconds: 60
+
+    - name: Log power cycle completion
+      debug:
+        msg: "System power cycled successfully"
+
+  when: desired_power_state == "Restart"

@@ -1,4 +1,10 @@
 
-reset_url_suffix:  /Actions/ComputerSystem.Reset
+bmc_urls:
+ 
+bmc_capabilities:
 
-desired_power_state: "on"
+
+#Power State
+power_policy:
+  reset_url_suffix:  /Actions/ComputerSystem.Reset
+  desired_power_state: "on"

@@ -1,8 +1,5 @@
 
 # roles/configure_raid/tasks/main.yml
-
-- name: Discover vendor
-  include_tasks: discover.yml
   
 - name: Check Power State
   include_tasks: manage_power.yml

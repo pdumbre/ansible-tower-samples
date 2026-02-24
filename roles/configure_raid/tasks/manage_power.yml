@@ -2,23 +2,9 @@
 # roles/configure_nodes_raid/tasks/power_management.yml
 # Common power management tasks for both Dell and Lenovo
 
-- name: Get current power state
-  uri:
-    url: "{{ bmc_base_url }}/redfish/v1/Systems/{{ system_id }}"
-    method: GET
-    user: "{{ bmc_user }}"
-    password: "{{ bmc_password }}"
-    validate_certs: false
-    force_basic_auth: true
-    status_code: [200, 201]
-  delegate_to: localhost
-  register: system_state
-  retries: 3
-  delay: 10
-
 - name: Set current power state
   set_fact:
-    current_power_state: "{{ system_state.json.PowerState }}"
+    current_power_state: "{{ bmc_system_details.json.PowerState }}"
 
 - name: Debug current power state
   debug:
@@ -26,13 +12,13 @@
 
 - name: Check if power state change needed
   set_fact:
-    power_state_changed: "{{ current_power_state != desired_power_state }}"
+    power_update_required: "{{ current_power_state != desired_power_state }}"
 
 - name: Power on system if needed
   block:
     - name: Send power on command
       uri:
-        url: "{{ bmc_base_url }}/redfish/v1/Systems/{{ system_id }}/Actions/ComputerSystem.Reset"
+        url: "{{ bmc_systems_url }}{{ power_url_suffix }}"
         method: POST
         user: "{{ bmc_user }}"
         password: "{{ bmc_password }}"
@@ -51,7 +37,7 @@
 
     - name: Verify power state
       uri:
-        url: "{{ bmc_base_url }}/redfish/v1/Systems/{{ system_id }}"
+        url: "{{ bmc_systems_url }}"
         method: GET
         user: "{{ bmc_user }}"
         password: "{{ bmc_password }}"
@@ -68,14 +54,14 @@
         msg: "System powered on successfully. Current state: {{ verify_power.json.PowerState }}"
 
   when: 
-    - power_state_changed
+    - power_update_required
     - desired_power_state == "On"
 
 - name: Power off system if needed
   block:
     - name: Send graceful shutdown command
       uri:
-        url: "{{ bmc_base_url }}/redfish/v1/Systems/{{ system_id }}/Actions/ComputerSystem.Reset"
+        url: "{{ bmc_systems_url }}{{ power_url_suffix }}"
         method: POST
         user: "{{ bmc_user }}"
         password: "{{ bmc_password }}"
@@ -91,7 +77,7 @@
 
     - name: Force power off if graceful shutdown fails
       uri:
-        url: "{{ bmc_base_url }}/redfish/v1/Systems/{{ system_id }}/Actions/ComputerSystem.Reset"
+        url: "{{ bmc_systems_url }}{{ power_url_suffix }}"
         method: POST
         user: "{{ bmc_user }}"
         password: "{{ bmc_password }}"
@@ -110,7 +96,7 @@
 
     - name: Verify power off state
       uri:
-        url: "{{ bmc_base_url }}/redfish/v1/Systems/{{ system_id }}"
+        url: "{{ bmc_systems_url}}"
         method: GET
         user: "{{ bmc_user }}"
         password: "{{ bmc_password }}"
@@ -127,14 +113,14 @@
         msg: "System powered off successfully. Current state: {{ verify_power_off.json.PowerState }}"
 
   when:
-    - power_state_changed
+    - power_update_required
     - desired_power_state == "Off"
 
 - name: Power cycle system if needed
   block:
     - name: Send power cycle command
       uri:
-        url: "{{ bmc_base_url }}/redfish/v1/Systems/{{ system_id }}/Actions/ComputerSystem.Reset"
+        url: "{{ bmc_systems_url }}{{ power_url_suffix }}"
         method: POST
         user: "{{ bmc_user }}"
         password: "{{ bmc_password }}"

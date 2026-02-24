@@ -1,1 +1,4 @@
+# roles/discover/tasks/main.yml
 
+- name: Discover Configurations
+  include_tasks: discover.yml

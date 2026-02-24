@@ -58,4 +58,4 @@ operating_mode:
   desired_operating_mode: "PerfOptimized"
 
 bmc_reset:
-  reset_type: "Default"
+  reset_type: "ResetAll"

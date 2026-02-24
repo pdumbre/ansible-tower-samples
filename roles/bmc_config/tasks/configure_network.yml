@@ -11,6 +11,7 @@
         return_content: yes
         status_code: [200]
       register: current_network
+      no_log: true
       delegate_to: jump-host
 
   rescue:
@@ -49,6 +50,7 @@
         validate_certs: no
         return_content: yes
       register: network_interface_detail
+      no_log: true
       delegate_to: jump-host
 
   rescue:
@@ -117,6 +119,7 @@
               AddressOrigin: "Static"
         status_code: [200, 204]
       delegate_to: jump-host
+      no_log: true
       register: ipv6_config
 
   rescue:
@@ -181,6 +184,7 @@
               NetworkSettingSync: "{{ bmc_network.name_server_sync_enabled | bool }}"
         status_code: [200, 204]
       delegate_to: jump-host
+      no_log: true
       register: oem_config
 
   rescue:

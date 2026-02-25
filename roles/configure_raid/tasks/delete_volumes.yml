@@ -1,0 +1,24 @@
+# Delete RAID volume
+
+  - name: Extract first volume ID
+    set_fact:
+      first_volume_id: "{{ volumes_response.json.Members[0]['@odata.id'].split('/')[-1] }}"
+
+  - name: Show selected volume for deletion
+    debug:
+       msg: "Deleting volume: {{ first_volume_id }}"
+
+  - name: Delete the selected volume
+    uri:
+      url: "{{Systems/1/Storage redfish_base }}/Volumes/{{ first/{{ storage_id }}/_volume_id }}"
+      method: DELETE
+      user: "{{ redfish_user }}"
+      password: "{{ redfish_pass }}"
+      force_basic_auth: yes
+      validate_certs: no
+      status_code: 200,204
+    register: delete_response
+
+  - name: Confirm deletion
+    debug:
+      msg: "Delete response status.status }}"

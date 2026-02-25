@@ -1,18 +1,13 @@
 
-- name: Validate storage controllers
-  fail:
-    msg: "Expected at least 2 storage controllers, found {{ m2_storage.json.StorageControllers | length }}"
-  when: storage_controllers.json.StorageControllers | length < 2
-
-- name: Fail if fewer than 2 controllers
-  fail:
-    msg: "Expected at least 2 storage controllers, found {{ m2_storage.json.StorageControllers | length }}"
-  when: storage_controllers.json.StorageControllers | length < 2
-
-- name: Print controller summary
+- name: Retrieve disk configuration
   debug:
-    msg: "Number of storage controllers: {{ storage_controllers.json.StorageControllers | length }}"
+    msg: "Number of disks: {{ m2_storage.json.Drives | length }}"
 
-- name: Controller check completed
+- name: Validate M.2 disks
+  fail:
+    msg: "Expected at least 2 M2.disks, found {{ m2_storage.json.Drives | length }}"
+  when: m2_storage.json.Drives | length < 2
+
+- name: Disks check completed
   debug:
-    msg: "Storage controller verification successful"
+    msg: "Storage disks verification successful"

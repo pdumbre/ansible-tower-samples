@@ -8,5 +8,5 @@ power_config:
   url_suffix:  "/Actions/ComputerSystem.Reset"
   desired_power_state: "on"
 
-controller_config:
-  url_suffix: "/M.2"
+storage_config:
+  storage_id: "M.2"

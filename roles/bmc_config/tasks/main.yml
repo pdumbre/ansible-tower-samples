@@ -6,8 +6,8 @@
 #- name: Reset BMC to factory defaults
  # include_tasks: reset_bmc.yml
   
-- name: Reset BMC to factory defaults
-  include_tasks: temp.yml
+#- name: Reset BMC to factory defaults
+ # include_tasks: temp.yml
 
 
 - name: Configure Network

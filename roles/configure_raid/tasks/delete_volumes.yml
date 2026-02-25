@@ -37,7 +37,7 @@
   - name: Fail if volume still exists
     fail:
       msg: "Volume {{ volume_id }} was not deleted!"
-    when: "'/Volumes/' ~ volume_id in (delete_response.json.Members | map(attribute='@odata.id') | list)"
+    when: "'/Volumes/' ~ volume_id in (volume_response.json.Members | map(attribute='@odata.id') | list)"
 
   - name: Confirm deletion success
     debug:

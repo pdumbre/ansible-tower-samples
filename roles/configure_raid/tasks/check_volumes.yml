@@ -1,9 +1,9 @@
 - name: Check storage volumes
   uri:
-    url: "https://<server-ip>/redfish/v1/Systems/1/Storage/M.2/Volumes"
+    url: "{{ bmc_storage_url}}/{{ controller_config.url_suffix }}/Volumes"
     method: GET
-    user: "{{ redfish_user }}"
-    password: "{{ redfish_pass }}"
+    user: "{{ bmc_user }}"
+    password: "{{ bmc_password }}"
     force_basic_auth: yes
     validate_certs: no
     return_content: yes
@@ -13,7 +13,7 @@
   debug:
     var: volumes_response.json
 
-- name: Validate that volumes exist
+- name: Validate storage volumes
   debug:
     msg: "No volumes found in M.2 storage!"
   when: volumes_response.json.Members is not defined or volumes_response.json.Members | length == 0

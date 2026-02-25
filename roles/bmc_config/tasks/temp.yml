@@ -1,3 +1,7 @@
+- name: Setting up interface
+  set_fact:
+    bmc_lla_interface: "eno2" 
+
 - name: Wait until BMC is available
   vars:
     bmc_url: "https://[{{ ipv6ULA }}%{{ bmc_lla_interface }}]/redfish/v1"
@@ -20,7 +24,7 @@
 
 - name: Wait for BMC SSH to become reachable
   shell: |
-    nc -z -6 {{ bmc_lla_ip }}%{{ bmc_lla_interface }} 22
+    nc -z -6 {{ ipv6ULA }}%{{ bmc_lla_interface }} 22
   register: ssh_check
   retries: 60
   delay: 10

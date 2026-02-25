@@ -15,3 +15,6 @@
 
 - name: Validate volume
   include_tasks: validate_volumes.yml
+  
+- name: Delete volume
+  include_tasks: delete_volumes.yml

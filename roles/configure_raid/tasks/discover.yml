@@ -89,6 +89,7 @@
 
 - name: Initialize derived URLs
   set_fact:
-    power_url: "{{ bmc_systems_url }}{{ power_config.url_suffix }}"
+    bmc_power_url: "{{ bmc_systems_url }}{{ power_config.url_suffix }}"
+    bmc_storage_url: "{{ bmc_systems_url }}/Storage"
     
 

@@ -4,7 +4,7 @@
 
 - name: Set current power state
   set_fact:
-    current_power_state: "{{ bmc_system_details.json.PowerState }}"
+    current_power_state: "{{ bmc_systems_details.json.PowerState }}"
 
 - name: Debug current power state
   debug:

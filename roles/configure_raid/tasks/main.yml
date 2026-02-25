@@ -6,3 +6,9 @@
   
 - name: Check Power State
   include_tasks: manage_power.yml
+
+- name: Validate Storage Controller
+  include_tasks: validate_controller.yml
+
+- name: Validate disks
+  include_tasks: validate_disks.yml

@@ -3,5 +3,4 @@
   gather_facts: false
     
   roles:
-    - discover
     - configure_raid

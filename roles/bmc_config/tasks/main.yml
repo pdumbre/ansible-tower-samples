@@ -1,7 +1,7 @@
 # roles/bmc_config/tasks/main.yml
 
-- name: Discover vendor
-  include_tasks: discover.yml
+#- name: Discover vendor
+ # include_tasks: discover.yml
 
 #- name: Reset BMC to factory defaults
  # include_tasks: reset_bmc.yml

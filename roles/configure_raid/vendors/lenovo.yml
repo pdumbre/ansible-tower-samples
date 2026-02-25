@@ -1,1 +1,9 @@
+bmc_urls:
+ 
+bmc_capabilities:
 
+
+#Power Configuration
+power_config:
+  url_suffix:  /Actions/ComputerSystem.Reset
+  desired_power_state: "on"

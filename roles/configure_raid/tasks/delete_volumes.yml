@@ -10,7 +10,7 @@
 
   - name: Delete the selected volume
     uri:
-      url: "{{Systems/1/Storage redfish_base }}/Volumes/{{ first/{{ storage_id }}/_volume_id }}"
+      url: "{{ bmc_storage_url}}/{{ controller_config.url_suffix }}/Volumes/{{ volume_id }}"
       method: DELETE
       user: "{{ bmc_user }}"
       password: "{{ bmc_password }}"
@@ -21,4 +21,24 @@
 
   - name: Confirm deletion
     debug:
-      msg: "Delete response status.status }}"
+      msg: "Deleting volume response: {{ delete_response.status }}"
+
+  - name: Check deleted volume
+    uri:
+      url: "{{ bmc_storage_url}}/{{ controller_config.url_suffix }}/Volumes/{{ volume_id }}"
+      method: GET
+      user: "{{ bmc_user }}"
+      password: "{{ bmc_password }}"
+      force_basic_auth: yes
+      validate_certs: no
+      status_code: 200,204
+    register: volume_response
+
+  - name: Fail if volume still exists
+    fail:
+      msg: "Volume {{ volume_id }} was not deleted!"
+    when: "'/Volumes/' ~ volume_id in (volumes_after_delete.json.Members | map(attribute='@odata.id') | list)"
+
+  - name: Confirm deletion success
+    debug:
+      msg: "Volume {{ volume_id }} successfully deleted."

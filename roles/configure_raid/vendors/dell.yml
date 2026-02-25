@@ -4,7 +4,7 @@ bmc_urls:
 bmc_capabilities:
 
 
-#Power State
-power_policy:
+#Power Configuration
+power_config:
   url_suffix:  /Actions/ComputerSystem.Reset
   desired_power_state: "on"

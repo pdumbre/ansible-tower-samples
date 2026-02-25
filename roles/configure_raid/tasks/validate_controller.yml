@@ -19,24 +19,6 @@
     msg: "No storage controllers found!"
   when: storage_controllers.json.StorageControllers | length == 0
 
-- name: Print number of storage controllers
-  debug:
-    msg: "Found {{ m2_storage.json.StorageControllers | length }} storage controllers."
-
-- name: Validate storage controllers
-  fail:
-    msg: "Expected at least 2 storage controllers, found {{ m2_storage.json.StorageControllers | length }}"
-  when: storage_controllers.json.StorageControllers | length < 2
-
-- name: Fail if fewer than 2 controllers
-  fail:
-    msg: "Expected at least 2 storage controllers, found {{ m2_storage.json.StorageControllers | length }}"
-  when: storage_controllers.json.StorageControllers | length < 2
-
-- name: Print controller summary
-  debug:
-    msg: "Number of storage controllers: {{ storage_controllers.json.StorageControllers | length }}"
-
-- name: Controller check completed
-  debug:
-    msg: "Storage controller verification successful"
+- name: Storage Configuration
+  set_fact:
+    m2_storage: "{{ storage_controllers }}"

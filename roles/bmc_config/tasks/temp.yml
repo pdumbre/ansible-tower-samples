@@ -1,7 +1,12 @@
 - name: Setting up interface
   set_fact:
-    bmc_lla_interface: "eno2" 
+    bmc_lla_interface: "eno2"
+    bmc_url: "https://[{{ ipv6ULA }}%{{ bmc_lla_interface }}]/redfish/v1"
 
+
+-debug:
+   msg: "{{ bmc_url }}"
+   
 - name: Wait until BMC is available
   vars:
     bmc_url: "https://[{{ ipv6ULA }}%{{ bmc_lla_interface }}]/redfish/v1"

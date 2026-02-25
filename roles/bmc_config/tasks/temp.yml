@@ -4,7 +4,7 @@
     bmc_url: "https://[{{ ipv6ULA }}%{{ bmc_lla_interface }}]/redfish/v1"
 
 
--debug:
+- debug:
    msg: "{{ bmc_url }}"
    
 - name: Wait until BMC is available

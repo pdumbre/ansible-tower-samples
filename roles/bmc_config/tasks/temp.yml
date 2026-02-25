@@ -60,4 +60,4 @@
     body:
       Password: "{{ latest_redfish_password }}"
     status_code: 200
-  delegate_to: mgen
+  delegate_to: jump-host

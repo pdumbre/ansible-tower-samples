@@ -1,8 +1,8 @@
 # Create RAID volume
   
- - name: Get available drives for Lenovo RAID
+ - name: Get available drives
       uri:
-        url: "{{ bmc_base_url }}/redfish/v1/Systems/{{ lenovo_system_id }}/Storage/{{ storage_controller_id }}/Drives"
+        url: "{{ bmc_system_url }}/Storage/{{ storage_controller_id }}/Drives"
         method: GET
         user: "{{ bmc_user }}"
         password: "{{ bmc_password }}"
@@ -10,12 +10,12 @@
         force_basic_auth: yes
         return_content: yes
         status_code: [200]
-      register: lenovo_drives_info
+      register: drives_info
       delegate_to: "{{ bmc_delegate_host }}"
 
     - name: Create Lenovo RAID volume using Redfish API
       uri:
-        url: "{{ bmc_base_url }}/redfish/v1/Systems/{{ lenovo_system_id }}/Storage/{{ storage_controller_id }}/Volumes"
+        url: "{{ bmc_system_url }}/Storage/{{ storage_controller_id }}/Volumes"
         method: POST
         user: "{{ bmc_user }}"
         password: "{{ bmc_password }}"
@@ -29,7 +29,7 @@
           CapacityBytes: null
           StripSizeBytes: "{{ raid_config.stripe_size | regex_replace('[kK]', '000') | int }}"
         status_code: [200, 201, 202, 204]
-      register: lenovo_volume_create
+      register: volume_create
       delegate_to: "{{ bmc_delegate_host }}"
       retries: "{{ lenovo_create_retries }}"
       delay: 30

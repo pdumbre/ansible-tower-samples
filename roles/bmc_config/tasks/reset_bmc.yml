@@ -112,7 +112,7 @@
   uri:
     url: "https://[{{ ipv6LLA }}%{{ bmc_lla_interface }}]/redfish/v1/AccountService/Accounts/1"
     method: PATCH
-    user: "{{ bmc_username }}"
+    user: "{{ bmc_user }}"
     password: "{{ bmc_password }}"
     force_basic_auth: yes
     validate_certs: no

@@ -18,3 +18,7 @@
   debug:
     msg: "No volumes found in M.2 storage!"
   when: volumes_response.json.Members is not defined or volumes_response.json.Members | length == 0
+
+- name: Storage Configuration
+  set_fact:
+    volumes: "{{ volumes_response }}"

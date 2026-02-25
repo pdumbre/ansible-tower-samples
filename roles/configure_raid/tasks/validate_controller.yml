@@ -3,7 +3,7 @@
 
 - name: Retrieve storage controllers
   uri:
-    url: "{{ bmc_storage_url}}/{{ storage_config.storage_id }}"
+    url: "{{ bmc_storage_url}}/{{ storage_config.storage_controller_id }}"
     method: GET
     user: "{{ bmc_user }}"
     password: "{{ bmc_password }}"

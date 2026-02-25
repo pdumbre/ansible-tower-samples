@@ -1,7 +1,7 @@
 # roles/bmc_config/tasks/main.yml
 
-#- name: Discover vendor
- # include_tasks: discover.yml
+- name: Discover vendor
+  include_tasks: discover.yml
 
 #- name: Reset BMC to factory defaults
  # include_tasks: reset_bmc.yml
@@ -13,26 +13,26 @@
 - name: Configure Network
   include_tasks: configure_network.yml
 
-#- name: Clean Jobs
- # include_tasks: clean_jobs.yml
+- name: Clean Jobs
+  include_tasks: clean_jobs.yml
 
-#- name: Configure System Lockdown
- # include_tasks: check_lockdown.yml
+- name: Configure System Lockdown
+  include_tasks: check_lockdown.yml
 
-#- name: Configure Ports
- # include_tasks: configure_ports.yml
+- name: Configure Ports
+  include_tasks: configure_ports.yml
 
-#- name: Configure Logging
- # include_tasks: configure_logging.yml
+- name: Configure Logging
+  include_tasks: configure_logging.yml
 
-#- name: Configure Power Policy
- # include_tasks: configure_power_policy.yml
+- name: Configure Power Policy
+  include_tasks: configure_power_policy.yml
 
-#- name: Configure IPMI
- # include_tasks: configure_ipmi.yml
+- name: Configure IPMI
+  include_tasks: configure_ipmi.yml
 
-#- name: Configure Account Security
- # include_tasks: configure_account_security.yml
+- name: Configure Account Security
+  include_tasks: configure_account_security.yml
 
 - name: Configure Operating Mode
   include_tasks: configure_operating_mode.yml

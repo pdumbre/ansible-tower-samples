@@ -77,18 +77,19 @@
 - set_fact:
     bmc_manager_url: "{{ bmc_base_url }}{{ managers.json.Members[0]['@odata.id'] }}"
 
-- name: Initialize derived URLs
-  set_fact:
-    bmc_bios_url: "{{ bmc_systems_url }}/Bios"
-    bmc_reset_url: "{{ bmc_manager_url }}/Actions/{{ bmc_reset.url_suffix }}"
-    bmc_manager_ethernet_url: "{{ bmc_manager_url }}/EthernetInterfaces"
-
 - name: Configure vendor
   set_fact:
     bmc_vendor: "{{ system_details.json.Oem.keys() | list | first | lower }}"
 
 - name: Load vendor variables
   include_vars: "vendors/{{ bmc_vendor }}.yml"
+
+- name: Initialize derived URLs
+  set_fact:
+    bmc_bios_url: "{{ bmc_systems_url }}/Bios"
+    bmc_reset_url: "{{ bmc_manager_url }}/Actions/{{ bmc_reset.url_suffix }}"
+    bmc_manager_ethernet_url: "{{ bmc_manager_url }}/EthernetInterfaces"
+
   
 - name: Discover interface for BMC link local address
   shell: |

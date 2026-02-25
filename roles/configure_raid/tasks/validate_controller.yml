@@ -14,6 +14,20 @@
   register: storage_controllers
   delegate_to: "{{ bmc_delegate_host }}"
 
+- name: Ensure storage controllers list is not empty
+  fail:
+    msg: "No storage controllers found!"
+  when: storage_controllers.json.StorageControllers | length == 0
+
+- name: Print number of storage controllers
+  debug:
+    msg: "Found {{ m2_storage.json.StorageControllers | length }} storage controllers."
+
+- name: Validate storage controllers
+  fail:
+    msg: "Expected at least 2 storage controllers, found {{ m2_storage.json.StorageControllers | length }}"
+  when: storage_controllers.json.StorageControllers | length < 2
+
 - name: Fail if fewer than 2 controllers
   fail:
     msg: "Expected at least 2 storage controllers, found {{ m2_storage.json.StorageControllers | length }}"

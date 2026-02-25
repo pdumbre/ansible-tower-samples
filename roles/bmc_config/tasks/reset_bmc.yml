@@ -120,4 +120,5 @@
     body:
       Password: "{{ latest_redfish_password }}"
     status_code: 200
-  delegate_to: mgen
+  when: bmc_capabilities.require_patch_default_acct is defined  
+  delegate_to: jump-host

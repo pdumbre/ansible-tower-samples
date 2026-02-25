@@ -12,3 +12,6 @@
 
 - name: Validate disks
   include_tasks: validate_disks.yml
+
+- name: Validate volume
+  include_tasks: validate_volumes.yml

@@ -20,6 +20,9 @@
   set_fact:
     bmc_base_url: "{{ bmc_base_url | trim }}"
 
+- debug:
+    msg: "{{ bmc_base_url }}"
+
 - name: Configure BMC IP address
   set_fact:
     bmc_ip: >-

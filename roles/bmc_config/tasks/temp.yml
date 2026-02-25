@@ -1,8 +1,11 @@
-- name: Setting up interface
+
+- name: Set interface
   set_fact:
     bmc_lla_interface: "eno2"
-    bmc_url: "https://[{{ ipv6ULA }}%{{ bmc_lla_interface }}]/redfish/v1"
 
+- name: Build Redfish URL
+  set_fact:
+    bmc_url: "https://[{{ ipv6ULA }}%{{ bmc_lla_interface }}]/redfish/v1"
 
 - debug:
    msg: "{{ bmc_url }}"

@@ -5,14 +5,14 @@
 
 - name: Build Redfish URL
   set_fact:
-    bmc_url: "https://[{{ ipv6ULA }}%{{ bmc_lla_interface }}]/redfish/v1"
+    bmc_url: "https://[{{ ipv6LLA }}%{{ bmc_lla_interface }}]/redfish/v1"
 
 - debug:
    msg: "{{ bmc_url }}"
    
 - name: Wait until BMC is available
   vars:
-    bmc_url: "https://[{{ ipv6ULA }}%{{ bmc_lla_interface }}]/redfish/v1"
+    bmc_url: "https://[{{ ipv6LLA }}%{{ bmc_lla_interface }}]/redfish/v1"
   shell: curl -k -L -s {{ bmc_url }}
   register: bmc_status
   failed_when: false
@@ -32,7 +32,7 @@
 
 - name: Wait for BMC SSH to become reachable
   shell: |
-    nc -z -6 {{ ipv6ULA }}%{{ bmc_lla_interface }} 22
+    nc -z -6 {{ ipv6LLA }}%{{ bmc_lla_interface }} 22
   register: ssh_check
   retries: 60
   delay: 10
@@ -50,7 +50,7 @@
   
 - name: Configure BMC Account
   uri:
-    url: "https://[{{ ipv6ULA }}%{{ bmc_lla_interface }}]/redfish/v1/AccountService/Accounts/1"
+    url: "https://[{{ ipv6LLA }}%{{ bmc_lla_interface }}]/redfish/v1/AccountService/Accounts/1"
     method: PATCH
     user: "{{ bmc_username }}"
     password: "{{ bmc_password }}"

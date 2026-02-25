@@ -18,6 +18,7 @@
       validate_certs: no
       status_code: 200,204
     register: delete_response
+    delegate_to: "{{ bmc_delegate_host }}"
 
   - name: Confirm deletion
     debug:
@@ -33,6 +34,7 @@
       validate_certs: no
       status_code: 200,204
     register: volume_response
+    delegate_to: "{{ bmc_delegate_host }}"
 
   - name: Fail if volume still exists
     fail:

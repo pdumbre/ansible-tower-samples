@@ -82,7 +82,7 @@
 
 - name: Initialize derived URLs
   set_fact:
-    power_url: "{{ bmc_manager_url }}/Actions/{{ bmc_reset.url_suffix }}"
+    power_url: "{{ bmc_systems_url }}{{ powerConfig.url_suffix }}"
     
 - name: Configure vendor
   set_fact:

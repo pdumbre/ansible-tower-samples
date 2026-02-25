@@ -5,5 +5,8 @@ bmc_capabilities:
 
 #Power Configuration
 power_config:
-  url_suffix:  /Actions/ComputerSystem.Reset
+  url_suffix:  "/Actions/ComputerSystem.Reset"
   desired_power_state: "on"
+
+controller_config:
+  url_suffix: "/M.2"

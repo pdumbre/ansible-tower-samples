@@ -8,6 +8,7 @@
     validate_certs: no
     return_content: yes
   register: volumes_response
+  delegate_to: "{{ bmc_delegate_host }}"
 
 - name: Print volume details
   debug:

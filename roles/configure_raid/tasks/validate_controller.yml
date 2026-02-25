@@ -11,14 +11,14 @@
     force_basic_auth: yes
     return_content: yes
     status_code: [200]
-  register: storage_controllers
+  register: storage_info
   delegate_to: "{{ bmc_delegate_host }}"
 
 - name: Ensure storage controllers list is not empty
   fail:
     msg: "No storage controllers found!"
-  when: storage_controllers.json.StorageControllers | length == 0
+  when: storage_info.json.StorageControllers | length == 0
 
 - name: Storage Configuration
   set_fact:
-    m2_storage: "{{ storage_controllers }}"
+    m2_storage: "{{ storage_info }}"

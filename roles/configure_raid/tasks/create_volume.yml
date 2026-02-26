@@ -94,7 +94,7 @@
     - debug:
         msg: "{{ ufi_result }}"
 
-    - name: Store volume_id as workflow artifact
+    - name: Store ufi as workflow artifact
       set_stats:
         data:
           ufi_result: "{{ ufi_result }}"

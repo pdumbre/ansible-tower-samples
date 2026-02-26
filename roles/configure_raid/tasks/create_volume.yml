@@ -2,7 +2,7 @@
 
 - name: Get available drives
   uri:
-    url: "{{ bmc_system_url }}/Storage/{{ storage_config.storage_controller_id }}/Drives"
+    url: "{{ bmc_systems_url }}/Storage/{{ storage_config.storage_controller_id }}/Drives"
     method: GET
     user: "{{ bmc_user }}"
     password: "{{ bmc_password }}"
@@ -28,7 +28,7 @@
 
 - name: Create RAID volume using Redfish API
   uri:
-    url: "{{ bmc_system_url }}/Storage/{{ storage_config.storage_controller_id }}/Volumes"
+    url: "{{ bmc_systems_url }}/Storage/{{ storage_config.storage_controller_id }}/Volumes"
     method: POST
     user: "{{ bmc_user }}"
     password: "{{ bmc_password }}"
@@ -135,7 +135,7 @@
     
     - name: Retry volume creation after power cycle
       uri:
-        url: "{{ bmc_system_url }}/Storage/{{ storage_config.storage_controller_id }}/Volumes"
+        url: "{{ bmc_systems_url }}/Storage/{{ storage_config.storage_controller_id }}/Volumes"
         method: POST
         user: "{{ bmc_user }}"
         password: "{{ bmc_password }}"

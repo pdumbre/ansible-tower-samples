@@ -22,7 +22,6 @@
       Name: "{{ raid_config.volume_name }}"
       RAIDType: "{{ raid_config.raid_level | upper }}"
       Drives: "{{ drive_urls }}"
-      CapacityBytes: null
       StripSizeBytes: "{{ raid_config.stripe_size | regex_replace('[kK]', '000') | int }}"
     status_code: [200, 201, 202, 204]
   register: volume_create

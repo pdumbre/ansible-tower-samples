@@ -1,7 +1,3 @@
-bmc_urls:
- 
-bmc_capabilities:
-
 
 #Power Configuration
 power_config:

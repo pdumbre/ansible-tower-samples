@@ -6,10 +6,6 @@
     drive_urls: "{{ m2_storage.json.Drives | json_query('[*].\"@odata.id\"') }}"
   when: m2_storage.json.Drives is defined
 
-- name: Ensure capacity is a numeric type
-  ansible.builtin.set_fact:
-    clean_capacity: "{{ raid_config.stripe_size | int }}"
-
 - name: Create RAID volume using Redfish API
   uri:
     url: "{{ bmc_storage_url }}/{{ storage_config.storage_controller_id }}/Volumes"
@@ -22,7 +18,6 @@
     body:
       Name: "{{ raid_config.volume_name }}"
       RAIDType: "{{ raid_config.raid_level | upper }}"
-      CapacityBytes: "{{ clean_capacity }}"
     status_code: [200, 201, 202, 204]
   register: volume_create
   delegate_to: "{{ bmc_delegate_host }}"

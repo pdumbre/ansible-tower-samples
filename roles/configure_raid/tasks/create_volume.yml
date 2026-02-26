@@ -2,7 +2,7 @@
 
 - name: Get available drives
   uri:
-    url: "{{ bmc_stoage_url }}/{{ storage_config.storage_controller_id }}/Drives"
+    url: "{{ bmc_storage_url }}/{{ storage_config.storage_controller_id }}/Drives"
     method: GET
     user: "{{ bmc_user }}"
     password: "{{ bmc_password }}"

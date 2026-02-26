@@ -1,43 +1,41 @@
-# Delete RAID volume
+- name: Extract volume ID
+  set_fact:
+    volume_id: "{{ (volumes.json.Members | default([]) | first | default({})).get('@odata.id','').split('/')[-1] }}"
 
-  - name: Extract volume ID 
-    set_fact:
-      volume_id: "{{ (volumes.json.Members | default([]) | first | default({})).get('@odata.id','').split('/')[-1] }}"
+- name: Delete the selected volume
+  uri:
+    url: "{{ bmc_storage_url}}/{{ controller_config.url_suffix }}/Volumes/{{ volume_id }}"
+    method: DELETE
+    user: "{{ bmc_user }}"
+    password: "{{ bmc_password }}"
+    force_basic_auth: yes
+    validate_certs: no
+    status_code: 200,204
+  register: delete_response
+  delegate_to: "{{ bmc_delegate_host }}"
+  when: volume_id != ""
 
-  - name: Delete the selected volume
-    uri:
-      url: "{{ bmc_storage_url}}/{{ controller_config.url_suffix }}/Volumes/{{ volume_id }}"
-      method: DELETE
-      user: "{{ bmc_user }}"
-      password: "{{ bmc_password }}"
-      force_basic_auth: yes
-      validate_certs: no
-      status_code: 200,204
-    register: delete_response
-    delegate_to: "{{ bmc_delegate_host }}"
-    when volume_id != ""
+- name: Confirm deletion
+  debug:
+    msg: "Deleting volume response: {{ delete_response.status }}"
 
-  - name: Confirm deletion
-    debug:
-      msg: "Deleting volume response: {{ delete_response.status }}"
+- name: Check deleted volume
+  uri:
+    url: "{{ bmc_storage_url}}/{{ controller_config.url_suffix }}/Volumes"
+    method: GET
+    user: "{{ bmc_user }}"
+    password: "{{ bmc_password }}"
+    force_basic_auth: yes
+    validate_certs: no
+    status_code: 200,204
+  register: volume_response
+  delegate_to: "{{ bmc_delegate_host }}"
 
-  - name: Check deleted volume
-    uri:
-      url: "{{ bmc_storage_url}}/{{ controller_config.url_suffix }}/Volumes"
-      method: GET
-      user: "{{ bmc_user }}"
-      password: "{{ bmc_password }}"
-      force_basic_auth: yes
-      validate_certs: no
-      status_code: 200,204
-    register: volume_response
-    delegate_to: "{{ bmc_delegate_host }}"
+- name: Fail if volume still exists
+  fail:
+    msg: "Volume {{ volume_id }} was not deleted!"
+  when: "'/Volumes/' ~ volume_id in (volume_response.json.Members | map(attribute='@odata.id') | list)"
 
-  - name: Fail if volume still exists
-    fail:
-      msg: "Volume {{ volume_id }} was not deleted!"
-    when: "'/Volumes/' ~ volume_id in (volume_response.json.Members | map(attribute='@odata.id') | list)"
-
-  - name: Confirm deletion success
-    debug:
-      msg: "Volume {{ volume_id }} successfully deleted."
+- name: Confirm deletion success
+  debug:
+    msg: "Volume {{ volume_id }} successfully deleted."

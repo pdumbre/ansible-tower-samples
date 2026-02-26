@@ -1,12 +1,8 @@
 # Delete RAID volume
 
-  - name: Extract first volume ID
+  - name: Extract volume ID 
     set_fact:
-      volume_id: "{{ volumes.json.Members[0]['@odata.id'].split('/')[-1] }}"
-
-  - name: Show selected volume for deletion
-    debug:
-       msg: "Deleting volume: {{ volume_id }}"
+      volume_id: "{{ (volumes.json.Members | default([]) | first | default({})).get('@odata.id','').split('/')[-1] }}"
 
   - name: Delete the selected volume
     uri:
@@ -19,6 +15,7 @@
       status_code: 200,204
     register: delete_response
     delegate_to: "{{ bmc_delegate_host }}"
+    when volume_id != ""
 
   - name: Confirm deletion
     debug:

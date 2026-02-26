@@ -15,10 +15,6 @@
   delegate_to: "{{ bmc_delegate_host }}"
   when: volume_id != ""
 
-- name: Confirm deletion
-  debug:
-    msg: "Deleting volume response: {{ delete_response.status }}"
-
 - name: Check deleted volume
   uri:
     url: "{{ bmc_storage_url}}/{{ controller_config.url_suffix }}/Volumes"

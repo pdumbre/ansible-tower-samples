@@ -6,6 +6,9 @@
     drive_urls: "{{ m2_storage.json.Drives | json_query('[*].\"@odata.id\"') }}"
   when: m2_storage.json.Drives is defined
 
+- debug:
+    msg: "CapacityBytes type is {{ (raid_config.stripe_size | int) | type_debug }}"
+
 - name: Create RAID volume using Redfish API
   uri:
     url: "{{ bmc_storage_url }}/{{ storage_config.storage_controller_id }}/Volumes"

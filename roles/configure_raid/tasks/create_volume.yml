@@ -1,12 +1,16 @@
 # Create RAID volume
 
-- name: Extract attached drives
+- name: Extract drive count
   set_fact:
-    attached_drives: "{{ m2_storage.json.Links.Drives | map(attribute='@odata.id') | list }}"
+    drive_count: "{{ m2_storage.json['Drives@odata.count'] | default(0) }}"
 
-- name: Show drives
-  debug:
-    msg: "Drives attached to {{ storage_config.storage_controller_id }}: {{ attached_drives }}"
+- name: Extract drive URLs from Drives array
+  set_fact:
+    drive_urls: "{{ m2_storage.json.Drives | map(attribute='@odata.id') | list }}"
+  when: m2_storage.json.Drives is defined
+
+- debug:
+    msg: "{{ drive_urls }}"
 
 - name: Create RAID volume using Redfish API
   uri:

@@ -11,7 +11,7 @@
     
 - name: Calculate stripe bytes
   set_fact:
-    stripe_bytes: "{{ (raid_config.stripe_size | regex_replace('[kK]', '') | int) * 1024 }}"
+    stripe_bytes: {{ (raid_config.stripe_size | regex_replace('[kK]', '') | int) * 1024 }}
 
 - debug:
     msg:

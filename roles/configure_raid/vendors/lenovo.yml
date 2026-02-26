@@ -9,7 +9,7 @@ storage_config:
   
   # RAID Configuration Parameters
 raid_config:
-  raid_level: "r1"  # RAID level: r0, r1, r5, r10
+  raid_level: "RAID1"  # RAID level: r0, r1, r5, r10
   volume_name: "VD0"  # Virtual disk name
   stripe_size: "64k"  # Stripe size
   write_policy: "wt"  # Write policy: wt (write-through), wb (write-back)

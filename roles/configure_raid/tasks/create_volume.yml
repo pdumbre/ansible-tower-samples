@@ -6,7 +6,7 @@
 
 - name: Show drives
   debug:
-    msg: "Drives attached to {{ storage_id }}: {{ attached_drives }}"
+    msg: "Drives attached to {{ storage_config.storage_controller_id }}: {{ attached_drives }}"
 
 - name: Create RAID volume using Redfish API
   uri:

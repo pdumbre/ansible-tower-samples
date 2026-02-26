@@ -16,7 +16,6 @@
     force_basic_auth: yes
     body_format: json
     body:
-      Name: "{{ raid_config.volume_name }}"
       RAIDType: "{{ raid_config.raid_level | upper }}"
     status_code: [200, 201, 202, 204]
   register: volume_create

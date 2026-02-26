@@ -32,6 +32,9 @@
   until: volume_create.status in [200, 201, 202, 204]
   failed_when: false
 
+- debug:
+    msg: "{{ volume_create }}"
+    
 - name: Handle volume creation requiring system reboot
   block:
     - name: Power off server
@@ -80,8 +83,12 @@
             BootSourceOverrideTarget: "UefiShell"
             BootSourceOverrideEnabled: "Once"
         status_code: [200, 204]
+      register: ufi_result
       delegate_to: "{{ bmc_delegate_host }}"
 
+    - debug:
+        msg: "{{ ufi_result }}"
+        
     - name: Wait for UEFI boot
       pause:
         seconds: 15

@@ -33,3 +33,16 @@ power_on_wait_time: 180  # Wait time after power on (seconds)
 post_deletion_wait_time: 60  # Wait time after volume deletion (seconds)
 post_creation_wait_time: 60  # Wait time after volume creation (seconds)
 
+raid_slot: 0  # Default RAID controller slot for Lenovo
+max_retries: 10  # Lenovo-specific retry count
+sr630v3_retries: 20  # SR630v3 specific retry count
+
+# Feature Flags
+force_volume_deletion: true  # Force deletion of existing volumes
+verify_disk_capacity: false  # Verify disk capacity matches expected
+clean_pending_jobs: true  # Clean pending jobs before creating new ones
+enable_uefi_boot: true  # Enable UEFI boot mode for Lenovo systems
+
+# Logging and Debug
+debug_mode: false  # Enable debug output
+log_command_output: true  # Log command outputs

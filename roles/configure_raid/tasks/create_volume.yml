@@ -46,7 +46,7 @@
   delegate_to: "{{ bmc_delegate_host }}"
   retries: "{{ retries }}"
   delay: 30
-  until: lenovo_volume_create.status in [200, 201, 202, 204]
+  until: volume_create.status in [200, 201, 202, 204]
   failed_when: false
 
 - name: Handle volume creation requiring system reboot
@@ -69,7 +69,7 @@
       pause:
         seconds: 5
 
-    - name: Power on Lenovo server
+    - name: Power on server
       uri:
         url: "{{ bmc_systems_url }}/Actions/ComputerSystem.Reset"
         method: POST
@@ -132,10 +132,10 @@
     - name: Wait after reaching setup
       pause:
         seconds: 120
-
+    
     - name: Retry volume creation after power cycle
       uri:
-        url: "{{ bmc_base_url }}/redfish/v1/Systems/{{ lenovo_system_id }}/Storage/{{ storage_controller_id }}/Volumes"
+        url: "{{ bmc_storage_url}}/{{ storage_config.storage_controller_id }}/Volumes"
         method: POST
         user: "{{ bmc_user }}"
         password: "{{ bmc_password }}"
@@ -167,7 +167,7 @@
 
 - name: Verify volume was created successfully
   uri:
-    url: "{{ bmc_base_url }}/redfish/v1/Systems/{{ lenovo_system_id }}/Storage/{{ storage_controller_id }}/Volumes"
+    url: "{{ bmc_storage_url}}/{{ storage_config.storage_controller_id }}/Volumes"
     method: GET
     user: "{{ bmc_user }}"
     password: "{{ bmc_password }}"

@@ -1,30 +1,12 @@
 # Create RAID volume
 
-- name: Get available drives
-  uri:
-    url: "{{ bmc_storage_url }}/{{ storage_config.storage_controller_id }}/Drives"
-    method: GET
-    user: "{{ bmc_user }}"
-    password: "{{ bmc_password }}"
-    validate_certs: no
-    force_basic_auth: yes
-    return_content: yes
-    status_code: [200]
-  register: drives_collection
-  delegate_to: "{{ bmc_delegate_host }}"
-
-- name: Build drive list for RAID
+- name: Extract attached drives
   set_fact:
-    selected_drives: >-
-      {{
-        drives_collection.json.Members
-        | map(attribute='@odata.id')
-        | map('community.general.dict_kv', '@odata.id')
-        | list
-      }}
+    attached_drives: "{{ m2_storage.json.Links.Drives | map(attribute='@odata.id') | list }}"
 
-- debug:
-    msg: "{{ selected_drives }}"
+- name: Show drives
+  debug:
+    msg: "Drives attached to {{ storage_id }}: {{ attached_drives }}"
 
 - name: Create RAID volume using Redfish API
   uri:
@@ -38,7 +20,7 @@
     body:
       Name: "{{ raid_config.volume_name }}"
       RAIDType: "{{ raid_config.raid_level | upper }}"
-      Drives: "{{ selected_drives }}"
+      Drives: "{{ attached_drives }}"
       CapacityBytes: null
       StripSizeBytes: "{{ raid_config.stripe_size | regex_replace('[kK]', '000') | int }}"
     status_code: [200, 201, 202, 204]

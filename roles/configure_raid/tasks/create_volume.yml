@@ -135,7 +135,7 @@
     
     - name: Retry volume creation after power cycle
       uri:
-        url: "{{ bmc_storage_url}}/{{ storage_config.storage_controller_id }}/Volumes"
+        url: "{{ bmc_system_url }}/Storage/{{ storage_config.storage_controller_id }}/Volumes"
         method: POST
         user: "{{ bmc_user }}"
         password: "{{ bmc_password }}"
@@ -145,23 +145,27 @@
         body:
           Name: "{{ raid_config.volume_name }}"
           RAIDType: "{{ raid_config.raid_level | upper }}"
-          Drives: "{{ physical_disks | map('regex_replace', '^.*/', '') | map('regex_replace', '^', '/redfish/v1/Systems/' + lenovo_system_id + '/Storage/' + storage_controller_id + '/Drives/') | list }}"
+          Drives: "{{ selected_drives }}"
           CapacityBytes: null
           StripSizeBytes: "{{ raid_config.stripe_size | regex_replace('[kK]', '000') | int }}"
         status_code: [200, 201, 202, 204]
-      register: lenovo_create_retry
+      register: volume_create_retry
       delegate_to: "{{ bmc_delegate_host }}"
+      retries: "{{ retries }}"
+      delay: 30
+      until: volume_create_retry.status in [200, 201, 202, 204]
+      failed_when: false
 
   when: volume_create.status not in [200, 201, 202, 204]
 
-- name: Verify Lenovo volume creation
+- name: Verify volume creation
   fail:
-    msg: "Creating volume failed. Status: {{ lenovo_volume_create.status | default('Unknown') }}"
+    msg: "Creating volume failed. Status: {{ volume_create.status | default('Unknown') }}"
   when: >
     volume_create.status is not defined or
     volume_create.status not in [200, 201, 202, 204]
 
-- name: Wait after Lenovo volume creation
+- name: Wait after volume creation
   pause:
     seconds: 10
 

@@ -8,7 +8,17 @@
 
 - debug:
     msg: "{{ drive_urls }}"
+    
+- name: Calculate stripe bytes
+  set_fact:
+    stripe_bytes: "{{ (raid_config.stripe_size | regex_replace('[kK]', '') | int) * 1024 }}"
 
+- debug:
+    msg:
+      stripe_bytes: "{{ stripe_bytes }} type={{ stripe_bytes | type_debug }}"
+      drives_type: "{{ drive_urls | type_debug }}"
+
+      
 - name: Create RAID volume using Redfish API
   uri:
     url: "{{ bmc_storage_url }}/{{ storage_config.storage_controller_id }}/Volumes"
@@ -22,7 +32,7 @@
       Name: "{{ raid_config.volume_name }}"
       RAIDType: "{{ raid_config.raid_level | upper }}"
       Drives: "{{ drive_urls }}"
-      StripSizeBytes: {{ (raid_config.stripe_size | regex_replace('[kK]', '') | int) * 1024 }}
+      StripSizeBytes: "{{ stripe_bytes | int }}"
     status_code: [200, 201, 202, 204]
   register: volume_create
   delegate_to: "{{ bmc_delegate_host }}"

@@ -1,6 +1,6 @@
 - name: Check storage volumes
   uri:
-    url: "{{ bmc_storage_url}}/{{ controller_config.url_suffix }}/Volumes"
+    url: "{{ bmc_storage_url}}/{{ storage_config.storage_controller_id }}/Volumes"
     method: GET
     user: "{{ bmc_user }}"
     password: "{{ bmc_password }}"

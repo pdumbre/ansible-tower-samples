@@ -18,3 +18,6 @@
   
 - name: Delete volume
   include_tasks: delete_volumes.yml
+
+- name: Create volume
+  include_tasks: create_volume.yml

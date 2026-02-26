@@ -20,7 +20,7 @@
         {
           "CapacityBytes": raid_config.stripe_size | int,
           "Name": raid_config.volume_name,
-          "RAIDType": aid_config.raid_level | upper
+          "RAIDType": raid_config.raid_level | upper
         } | to_json 
       }}
       

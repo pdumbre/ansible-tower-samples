@@ -28,9 +28,9 @@
   set_fact:
     need_uefi_boot: true
   when: >
-    volume_create.status not in [200,201,202] and
-    (volume_create.json.error is defined and
-     'UEFI Post End' in volume_create.json.error.Message | default(''))
+    (volume_create.status not in [200, 201, 202]) and
+    (volume_create.json.error is defined) and
+    ('UEFI Post' in volume_create.json.error.get('Message', ''))
      
 - name: Handle volume creation requiring system reboot
   block:
@@ -135,13 +135,11 @@
         force_basic_auth: yes
         body_format: json
         body:
-          Name: "{{ raid_config.volume_name }}"
           RAIDType: "{{ raid_config.raid_level | upper }}"
-          CapacityBytes: "{{ raid_config.stripe_size | int }}"
         status_code: [200, 201, 202, 204]
       register: volume_create_retry
       delegate_to: "{{ bmc_delegate_host }}"
-      retries: "{{ retries }}"
+      retries: "{{ max_retries }}"
       delay: 30
       until: volume_create_retry.status in [200, 201, 202, 204]
       failed_when: false

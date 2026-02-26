@@ -1,12 +1,9 @@
 # Create RAID volume
 
-- name: Extract drive count
+# Alternative simpler method using json_query (requires jmespath)
+- name: Extract drive URLs (alternative method)
   set_fact:
-    drive_count: "{{ m2_storage.json['Drives@odata.count'] | default(0) }}"
-
-- name: Extract drive URLs from Drives array
-  set_fact:
-    drive_urls: "{{ m2_storage.json.Drives | map(attribute='@odata.id') | list }}"
+    drive_urls: "{{ m2_storage.json.Drives | json_query('[*].\"@odata.id\"') }}"
   when: m2_storage.json.Drives is defined
 
 - debug:
@@ -24,7 +21,7 @@
     body:
       Name: "{{ raid_config.volume_name }}"
       RAIDType: "{{ raid_config.raid_level | upper }}"
-      Drives: "{{ attached_drives }}"
+      Drives: "{{ drive_urls }}"
       CapacityBytes: null
       StripSizeBytes: "{{ raid_config.stripe_size | regex_replace('[kK]', '000') | int }}"
     status_code: [200, 201, 202, 204]

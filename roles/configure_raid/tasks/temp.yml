@@ -1,0 +1,118 @@
+- name: Handle volume creation requiring system reboot
+  block:
+    - name: Power off server
+      uri:
+        url: "{{ bmc_systems_url }}/Actions/ComputerSystem.Reset"
+        method: POST
+        user: "{{ bmc_user }}"
+        password: "{{ bmc_password }}"
+        validate_certs: no
+        force_basic_auth: yes
+        body_format: json
+        body:
+          ResetType: "ForceOff"
+        status_code: [200, 204]
+      delegate_to: "{{ bmc_delegate_host }}"
+
+    - name: Wait after power off
+      pause:
+        seconds: 5
+
+    - name: Power on server
+      uri:
+        url: "{{ bmc_systems_url }}/Actions/ComputerSystem.Reset"
+        method: POST
+        user: "{{ bmc_user }}"
+        password: "{{ bmc_password }}"
+        validate_certs: no
+        force_basic_auth: yes
+        body_format: json
+        body:
+          ResetType: "On"
+        status_code: [200, 204]
+      delegate_to: "{{ bmc_delegate_host }}"
+
+    - name: Set boot to UEFI mode
+      uri:
+        url: "{{ bmc_bios_url }}/Settings"
+        method: PATCH
+        user: "{{ bmc_user }}"
+        password: "{{ bmc_password }}"
+        validate_certs: no
+        force_basic_auth: yes
+        body_format: json
+        body:
+          Attributes:
+            BootMode: Uefi
+        status_code: [200, 204]
+      register: ufi_result
+      delegate_to: "{{ bmc_delegate_host }}"
+
+    - debug:
+        msg: "{{ ufi_result }}"
+
+    - name: Store ufi as workflow artifact
+      set_stats:
+        data:
+          ufi_result: "{{ ufi_result }}"
+        
+    - name: Wait for UEFI boot
+      pause:
+        seconds: 15
+
+
+    - name: Wait for system to reach setup state
+      uri:
+        url: "{{ bmc_systems_url }}"
+        method: GET
+        user: "{{ bmc_user }}"
+        password: "{{ bmc_password }}"
+        validate_certs: no
+        force_basic_auth: yes
+        return_content: yes
+        status_code: [200]
+      register: power_state_check
+      delegate_to: "{{ bmc_delegate_host }}"
+      retries: 5
+      delay: 60
+      until: >
+        power_state_check.json.PowerState is defined and
+        power_state_check.json.PowerState == "On"
+      failed_when: false
+
+    - name: Verify system state
+      fail:
+        msg: "BMC status failed, check for hardware errors. Power state: {{ power_state_check.json.PowerState | default('Unknown') }}"
+      when: >
+        power_state_check.json.PowerState is not defined or
+        power_state_check.json.PowerState == "Unknown"
+
+    - name: Wait after reaching setup
+      pause:
+        seconds: 120
+    
+    - name: Retry volume creation after power cycle
+      uri:
+        url: "{{ bmc_storage_url }}/{{ storage_config.storage_controller_id }}/Volumes"
+        method: POST
+        user: "{{ bmc_user }}"
+        password: "{{ bmc_password }}"
+        validate_certs: no
+        force_basic_auth: yes
+        body_format: json
+        body:
+          RAIDType: "{{ raid_config.raid_level | upper }}"
+        status_code: [200, 201, 202, 204]
+      register: volume_create_retry
+      delegate_to: "{{ bmc_delegate_host }}"
+      retries: "{{ max_retries }}"
+      delay: 30
+      until: volume_create_retry.status in [200, 201, 202, 204]
+      failed_when: false
+
+- name: Verify volume creation
+  fail:
+    msg: "Creating volume failed. Status: {{ volume_create.status | default('Unknown') }}"
+  when: >
+    volume_create.status is not defined or
+    volume_create.status not in [200, 201, 202, 204]

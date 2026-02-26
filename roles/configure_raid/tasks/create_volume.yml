@@ -20,7 +20,7 @@
   register: volume_create
   delegate_to: "{{ bmc_delegate_host }}"
   retries: "{{ retries }}"
-  delay: 2
+  delay: "{{ retry_delay }}"
   until: volume_create.status in [200, 201, 202, 204]
   failed_when: false
 

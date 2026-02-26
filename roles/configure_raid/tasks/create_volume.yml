@@ -1,15 +1,11 @@
 # Create RAID volume
 
-# Alternative simpler method using json_query (requires jmespath)
 - name: Extract drive URLs (alternative method)
   set_fact:
     drive_urls: "{{ m2_storage.json.Drives | json_query('[*].\"@odata.id\"') }}"
   when: m2_storage.json.Drives is defined
 
-- debug:
-    msg: "CapacityBytes type is {{ (raid_config.stripe_size | int) | type_debug }}"
-
-- name: Create RAID volume using Redfish API
+- name: Create RAID volume
   uri:
     url: "{{ bmc_storage_url }}/{{ storage_config.storage_controller_id }}/Volumes"
     method: POST
@@ -27,14 +23,6 @@
   delay: 2
   until: volume_create.status in [200, 201, 202, 204]
   failed_when: false
-
-- debug:
-    msg: "{{ volume_create }}"
-
-- name: Store volume_id as workflow artifact
-  set_stats:
-    data:
-      volume_create: "{{ volume_create }}"
 
 - name: Check if RAID creation failed with UEFI POST message
   set_fact:

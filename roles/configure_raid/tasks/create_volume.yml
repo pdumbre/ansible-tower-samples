@@ -38,7 +38,15 @@
   set_stats:
     data:
       volume_create: "{{ volume_create }}"
-    
+
+- name: Check if RAID creation failed with UEFI POST message
+  set_fact:
+    need_uefi_boot: true
+  when: >
+    volume_create.status not in [200,201,202] and
+    (volume_create.json.error is defined and
+     'UEFI Post End' in volume_create.json.error.Message | default(''))
+     
 - name: Handle volume creation requiring system reboot
   block:
     - name: Power off server
@@ -75,7 +83,7 @@
 
     - name: Set boot to UEFI mode
       uri:
-        url: "{{ bmc_systems_url }}"
+        url: "{{ bmc_bios_url }}/Settings"
         method: PATCH
         user: "{{ bmc_user }}"
         password: "{{ bmc_password }}"
@@ -83,10 +91,9 @@
         force_basic_auth: yes
         body_format: json
         body:
-          Boot:
-            BootSourceOverrideTarget: "UefiShell"
-            BootSourceOverrideEnabled: "Once"
-        #status_code: [200, 204]
+          Attributes:
+            BootMode: Uefi
+        status_code: [200, 204]
       register: ufi_result
       delegate_to: "{{ bmc_delegate_host }}"
 
@@ -101,6 +108,7 @@
     - name: Wait for UEFI boot
       pause:
         seconds: 15
+
 
     - name: Wait for system to reach setup state
       uri:
@@ -155,7 +163,9 @@
       until: volume_create_retry.status in [200, 201, 202, 204]
       failed_when: false
 
-  when: volume_create.status not in [200, 201, 202, 204]
+  when: 
+    - volume_create.status not in [200, 201, 202, 204]
+    - need_uefi_boot | default(false)
 
 - name: Verify volume creation
   fail:

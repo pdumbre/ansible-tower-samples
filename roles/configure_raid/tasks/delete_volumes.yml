@@ -4,7 +4,7 @@
 
 - name: Delete the selected volume
   uri:
-    url: "{{ bmc_storage_url}}/{{ controller_config.url_suffix }}/Volumes/{{ volume_id }}"
+    url: "{{ bmc_storage_url}}/{{ storage_config.storage_controller_id }}/Volumes/{{ volume_id }}"
     method: DELETE
     user: "{{ bmc_user }}"
     password: "{{ bmc_password }}"
@@ -17,7 +17,7 @@
 
 - name: Check deleted volume
   uri:
-    url: "{{ bmc_storage_url}}/{{ controller_config.url_suffix }}/Volumes"
+    url: "{{ bmc_storage_url}}/{{ storage_config.storage_controller_id }}/Volumes"
     method: GET
     user: "{{ bmc_user }}"
     password: "{{ bmc_password }}"

@@ -14,15 +14,11 @@
     password: "{{ bmc_password }}"
     validate_certs: no
     force_basic_auth: yes
-    headers:
-      Content-Type: "application/json"
-    #body_format: json
-    body: |
-      {
-        "CapacityBytes": {{ raid_config.stripe_size | int }},
-        "Name": "{{ raid_config.volume_name }}",
-        "RAIDType": "{{ raid_config.raid_level | upper }}"
-      }    
+    body_format: json
+    body:
+      Name: "{{ raid_config.volume_name }}"
+      RAIDType: "{{ raid_config.raid_level | upper }}"
+      stripe_bytes: "{{ raid_config.stripe_size | int }}"
     status_code: [200, 201, 202, 204]
   register: volume_create
   delegate_to: "{{ bmc_delegate_host }}"

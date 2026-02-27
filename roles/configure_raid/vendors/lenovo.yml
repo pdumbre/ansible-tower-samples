@@ -9,7 +9,7 @@ bios_config:
   url_suffix:  "/Pending"
 
 storage_config:
-  storage_controller_id: "M.2"
+  storage_controller_name: "M.2"
   
   # RAID Configuration Parameters
 raid_config:

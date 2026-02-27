@@ -34,6 +34,22 @@
      
 - name: Handle volume creation requiring system reboot
   block:
+    - name: Set boot to UEFI mode
+      uri:
+        url: "{{ bmc_bios_url }}/{{ bios_config.url_suffix }}"
+        method: PATCH
+        user: "{{ bmc_user }}"
+        password: "{{ bmc_password }}"
+        validate_certs: no
+        force_basic_auth: yes
+        body_format: json
+        body:
+          Attributes:
+            BootMode: Uefi
+        status_code: [200, 204]
+      register: ufi_result
+      delegate_to: "{{ bmc_delegate_host }}"
+      
     - name: Power off server
       uri:
         url: "{{ bmc_systems_url }}/Actions/ComputerSystem.Reset"
@@ -50,7 +66,7 @@
 
     - name: Wait after power off
       pause:
-        seconds: 5
+        seconds: {{ wait
 
     - name: Power on server
       uri:

@@ -84,7 +84,11 @@
         - storage_list.status == 200
         - storage_list.json.Members | length > 0
       delegate_to: "{{ bmc_delegate_host }}"
-    
+
+    - name: Wait before retring volume creation
+      pause:
+        seconds: "{{ power_on_wait_time }}"
+        
     - name: Retry volume creation after power cycle
       uri:
         url: "{{ bmc_storage_url }}/{{ storage_config.storage_controller_id }}/Volumes"

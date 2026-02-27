@@ -148,7 +148,7 @@
 
 - name: Wait after volume creation
   pause:
-    seconds: 10
+    seconds: "{{ volume_create_wait_time }}"
 
 - name: Verify volume was created successfully
   uri:
@@ -169,7 +169,7 @@
 
 - name: Wait for RAID configuration to stabilize
   pause:
-    seconds: 60
+    seconds: "{{ raid_config_wait_time }}"
 
 - name: Volume creation completed
   debug:

@@ -4,6 +4,10 @@ power_config:
   url_suffix:  "/Actions/ComputerSystem.Reset"
   desired_power_state: "on"
 
+#BIOS Configuration
+bios_config:
+  url_suffix:  "/Pending"
+
 storage_config:
   storage_controller_id: "M.2"
   

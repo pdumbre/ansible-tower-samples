@@ -69,6 +69,20 @@
       when: >
         power_state_check.json.PowerState is not defined or
         power_state_check.json.PowerState == "Unknown"
+
+    - name: Wait for storage controller discovery
+      uri:
+        url: "{{ bmc_storage_url }}"
+        method: GET
+        user: "{{ bmc_user }}"
+        password: "{{ bmc_pass }}"
+        validate_certs: no
+      register: storage_list
+      retries: 40
+      delay: 15
+      until:
+        - storage_list.status == 200
+        - storage_list.json.Members | length > 0
     
     - name: Retry volume creation after power cycle
       uri:

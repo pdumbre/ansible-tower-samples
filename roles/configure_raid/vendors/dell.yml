@@ -1,7 +1,8 @@
 
 storage_config:
-  storage_controller_id: "M.2"
+  storage_controller_name: "BOSS" 
 
+  
 #Power Configuration
 power_config:
   url_suffix:  /Actions/ComputerSystem.Reset

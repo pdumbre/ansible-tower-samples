@@ -17,7 +17,9 @@
         storage_collection.json.Members[0]['@odata.id']
         | regex_replace('.*/Storage/', '')
       }}
-      
+- debug:
+    msg: "{{ storage_controller_id }}"
+    
 - name: Retrieve storage controllers
   uri:
     url: "{{ bmc_storage_url}}/{{ storage_controller_id }}"

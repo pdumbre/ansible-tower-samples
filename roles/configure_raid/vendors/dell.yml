@@ -1,8 +1,6 @@
 
-bmc_urls:
- 
-bmc_capabilities:
-
+storage_config:
+  storage_controller_id: "M.2"
 
 #Power Configuration
 power_config:

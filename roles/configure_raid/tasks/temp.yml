@@ -92,6 +92,14 @@
   when: 
     - need_uefi_boot | default(false)
 
+- debug:
+    msg: "{{ volume_create }}"
+
+- name: Store volume create as workflow artifact
+  set_stats:
+    data:
+      ufi_result: "{{ volume_create }}"
+
 - name: Verify volume creation
   fail:
     msg: "Creating volume failed. Status: {{ volume_create.status | default('Unknown') }}"

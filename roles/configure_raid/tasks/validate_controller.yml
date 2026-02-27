@@ -10,10 +10,17 @@
     validate_certs: no
   register: storage_collection
 
-  
+- name: Extract storage controller id
+  set_fact:
+    storage_controller_id: >-
+      {{
+        storage_collection.json.Members[0]['@odata.id']
+        | regex_replace('.*/Storage/', '')
+      }}
+      
 - name: Retrieve storage controllers
   uri:
-    url: "{{ bmc_storage_url}}/{{ storage_config.storage_controller_id }}"
+    url: "{{ bmc_storage_url}}/{{ storage_controller_id }}"
     method: GET
     user: "{{ bmc_user }}"
     password: "{{ bmc_password }}"

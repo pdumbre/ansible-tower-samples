@@ -75,7 +75,7 @@
         url: "{{ bmc_storage_url }}"
         method: GET
         user: "{{ bmc_user }}"
-        password: "{{ bmc_pass }}"
+        password: "{{ bmc_password }}"
         validate_certs: no
       register: storage_list
       retries: 40

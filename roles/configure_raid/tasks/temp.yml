@@ -1,7 +1,7 @@
 
 - name: Set uefi boot
-    set_fact:
-      need_uefi_boot: true
+  set_fact:
+    need_uefi_boot: true
         
 - name: Handle volume creation requiring system reboot
   block: 

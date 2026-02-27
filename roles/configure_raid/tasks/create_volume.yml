@@ -19,7 +19,7 @@
     status_code: [200, 201, 202, 204]
   register: volume_create
   delegate_to: "{{ bmc_delegate_host }}"
-  retries: "{{ retries }}"
+  retries: "{{ max_retries }}"
   delay: "{{ retry_delay }}"
   until: volume_create.status in [200, 201, 202, 204]
   failed_when: false
@@ -29,14 +29,13 @@
     need_uefi_boot: true
   when: >
     (volume_create.status not in [200, 201, 202]) and
-    (volume_create.json.error is defined) and
-    ('UEFI Post' in volume_create.json.error.get('Message', ''))
-     
+    (volume_create.json.error is defined)
+
 - name: Handle volume creation requiring system reboot
-  block:
-    - name: Set boot to UEFI mode
+  block: 
+    - name: Set next boot to UEFI Setup (one-time)
       uri:
-        url: "{{ bmc_bios_url }}/{{ bios_config.url_suffix }}"
+        url: "{{ bmc_systems_url }}"
         method: PATCH
         user: "{{ bmc_user }}"
         password: "{{ bmc_password }}"
@@ -44,21 +43,14 @@
         force_basic_auth: yes
         body_format: json
         body:
-          Attributes:
-            BootMode: Uefi
+          Boot:
+            BootSourceOverrideTarget: BiosSetup
+            BootSourceOverrideEnabled: Once
         status_code: [200, 204]
       register: ufi_result
-      delegate_to: "{{ bmc_delegate_host }}"
+      delegate_to: "{{ bmc_delegate_host }}"  
 
-    - debug:
-        msg: "{{ ufi_result }}"
-
-    - name: Store ufi as workflow artifact
-      set_stats:
-        data:
-          ufi_result: "{{ ufi_result }}"
-      
-    - name: Power off server
+    - name: Restart Server
       uri:
         url: "{{ bmc_systems_url }}/Actions/ComputerSystem.Reset"
         method: POST
@@ -68,25 +60,7 @@
         force_basic_auth: yes
         body_format: json
         body:
-          ResetType: "ForceOff"
-        status_code: [200, 204]
-      delegate_to: "{{ bmc_delegate_host }}"
-
-    - name: Wait after power off
-      pause:
-        seconds: "{{ power_off_wait_time }}"
-
-    - name: Power on server
-      uri:
-        url: "{{ bmc_systems_url }}/Actions/ComputerSystem.Reset"
-        method: POST
-        user: "{{ bmc_user }}"
-        password: "{{ bmc_password }}"
-        validate_certs: no
-        force_basic_auth: yes
-        body_format: json
-        body:
-          ResetType: "On"
+          ResetType: "ForceRestart"
         status_code: [200, 204]
       delegate_to: "{{ bmc_delegate_host }}"
 
@@ -102,20 +76,32 @@
         status_code: [200]
       register: power_state_check
       delegate_to: "{{ bmc_delegate_host }}"
-      retries: 5
-      delay: 60
+      retries: "{{ max_retries }}"
+      delay: "{{ delay_power_on }}"
       until: >
         power_state_check.json.PowerState is defined and
         power_state_check.json.PowerState == "On"
       failed_when: false
 
-    - name: Verify system state
-      fail:
-        msg: "BMC status failed, check for hardware errors. Power state: {{ power_state_check.json.PowerState | default('Unknown') }}"
-      when: >
-        power_state_check.json.PowerState is not defined or
-        power_state_check.json.PowerState == "Unknown"
-    
+    - name: Wait for storage controller discovery
+      uri:
+        url: "{{ bmc_storage_url }}"
+        method: GET
+        user: "{{ bmc_user }}"
+        password: "{{ bmc_password }}"
+        validate_certs: no
+      register: storage_list
+      retries: "{{ max_retries }}"
+      delay: "{{ delay_power_on }}"
+      until:
+        - storage_list.status == 200
+        - storage_list.json.Members | length > 0
+      delegate_to: "{{ bmc_delegate_host }}"
+
+    - name: Wait before retring volume creation
+      pause:
+        seconds: "{{ power_on_wait_time }}"
+        
     - name: Retry volume creation after power cycle
       uri:
         url: "{{ bmc_storage_url }}/{{ storage_config.storage_controller_id }}/Volumes"
@@ -128,15 +114,14 @@
         body:
           RAIDType: "{{ raid_config.raid_level | upper }}"
         status_code: [200, 201, 202, 204]
-      register: volume_create_retry
+      register: volume_create
       delegate_to: "{{ bmc_delegate_host }}"
       retries: "{{ max_retries }}"
-      delay: 30
-      until: volume_create_retry.status in [200, 201, 202, 204]
+      delay: "{{ delay_power_on }}"
+      until: volume_create.status in [200, 201, 202, 204]
       failed_when: false
 
   when: 
-    - volume_create.status not in [200, 201, 202, 204]
     - need_uefi_boot | default(false)
 
 - name: Verify volume creation

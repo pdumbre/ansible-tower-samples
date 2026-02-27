@@ -3,7 +3,7 @@
 
 - name: Get storage collection
   uri:
-    url: "https://{{ bmc_ip }}/redfish/v1/Systems/{{ system_id }}/Storage"
+    url: "{{ bmc_storage_url }}"
     method: GET
     user: "{{ bmc_user }}"
     password: "{{ bmc_pass }}"

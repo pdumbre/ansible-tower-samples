@@ -49,6 +49,14 @@
         status_code: [200, 204]
       register: ufi_result
       delegate_to: "{{ bmc_delegate_host }}"
+
+    - debug:
+        msg: "{{ ufi_result }}"
+
+    - name: Store ufi as workflow artifact
+      set_stats:
+        data:
+          ufi_result: "{{ ufi_result }}"
       
     - name: Power off server
       uri:
@@ -66,7 +74,7 @@
 
     - name: Wait after power off
       pause:
-        seconds: {{ wait
+        seconds: "{{ power_off_wait_time }}"
 
     - name: Power on server
       uri:
@@ -81,35 +89,6 @@
           ResetType: "On"
         status_code: [200, 204]
       delegate_to: "{{ bmc_delegate_host }}"
-
-    - name: Set boot to UEFI mode
-      uri:
-        url: "{{ bmc_bios_url }}/{{ bios_config.url_suffix }}"
-        method: PATCH
-        user: "{{ bmc_user }}"
-        password: "{{ bmc_password }}"
-        validate_certs: no
-        force_basic_auth: yes
-        body_format: json
-        body:
-          Attributes:
-            BootMode: Uefi
-        status_code: [200, 204]
-      register: ufi_result
-      delegate_to: "{{ bmc_delegate_host }}"
-
-    - debug:
-        msg: "{{ ufi_result }}"
-
-    - name: Store ufi as workflow artifact
-      set_stats:
-        data:
-          ufi_result: "{{ ufi_result }}"
-        
-    - name: Wait for UEFI boot
-      pause:
-        seconds: 15
-
 
     - name: Wait for system to reach setup state
       uri:
@@ -136,10 +115,6 @@
       when: >
         power_state_check.json.PowerState is not defined or
         power_state_check.json.PowerState == "Unknown"
-
-    - name: Wait after reaching setup
-      pause:
-        seconds: 120
     
     - name: Retry volume creation after power cycle
       uri:

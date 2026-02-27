@@ -68,7 +68,7 @@
 
     - name: Set boot to UEFI mode
       uri:
-        url: "{{ bmc_bios_url }}/Settings"
+        url: "{{ bmc_bios_url }}/{{ bios_config.url_suffix }}"
         method: PATCH
         user: "{{ bmc_user }}"
         password: "{{ bmc_password }}"

@@ -1,6 +1,16 @@
 
 # Check and verify storage controller (vendor-agnostic)
 
+- name: Get storage collection
+  uri:
+    url: "https://{{ bmc_ip }}/redfish/v1/Systems/{{ system_id }}/Storage"
+    method: GET
+    user: "{{ bmc_user }}"
+    password: "{{ bmc_pass }}"
+    validate_certs: no
+  register: storage_collection
+
+  
 - name: Retrieve storage controllers
   uri:
     url: "{{ bmc_storage_url}}/{{ storage_config.storage_controller_id }}"

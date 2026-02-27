@@ -86,7 +86,7 @@
       delegate_to: "{{ bmc_delegate_host }}"
       retries: "{{ max_retries }}"
       delay: 30
-      until: volume_create_retry.status in [200, 201, 202, 204]
+      until: volume_create.status in [200, 201, 202, 204]
       failed_when: false
 
   when: 

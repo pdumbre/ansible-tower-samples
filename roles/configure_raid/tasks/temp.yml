@@ -83,6 +83,7 @@
       until:
         - storage_list.status == 200
         - storage_list.json.Members | length > 0
+      delegate_to: "{{ bmc_delegate_host }}"
     
     - name: Retry volume creation after power cycle
       uri:

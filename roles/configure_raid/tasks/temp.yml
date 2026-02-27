@@ -7,7 +7,7 @@
   block: 
     - name: Set next boot to UEFI Setup (one-time)
       uri:
-        url: "{{ bmc_systems_url }}
+        url: "{{ bmc_systems_url }}"
         method: PATCH
         user: "{{ bmc_user }}"
         password: "{{ bmc_password }}"

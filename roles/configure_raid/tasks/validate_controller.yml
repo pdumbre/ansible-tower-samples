@@ -6,9 +6,10 @@
     url: "{{ bmc_storage_url }}"
     method: GET
     user: "{{ bmc_user }}"
-    password: "{{ bmc_pass }}"
+    password: "{{ bmc_password }}"
     validate_certs: no
   register: storage_collection
+  delegate_to: "{{ bmc_delegate_host }}"
 
 - name: Extract storage controller id
   set_fact:

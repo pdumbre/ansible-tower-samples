@@ -12,6 +12,9 @@
 - debug:
     msg: "{{ drives }}"
 
+- debug:
+    var: drives | type_debug
+
 - name: Create RAID volume
   uri:
     url: "{{ bmc_storage_url}}/{{ controller_name }}/Volumes"
@@ -23,7 +26,7 @@
     body_format: json
     body:
       RAIDType: "{{ raid_config.raid_level | upper }}"
-      Drives: drives_array
+      Drives: "{{ drives }}"
     status_code: [200, 201, 202, 204]
   register: volume_create
   delegate_to: "{{ bmc_delegate_host }}"
@@ -124,7 +127,7 @@
         body_format: json
         body:
           RAIDType: "{{ raid_config.raid_level | upper }}"
-          Drives: drives_array
+          Drives: "{{ drives }}"
         status_code: [200, 201, 202, 204]
       register: volume_create
       delegate_to: "{{ bmc_delegate_host }}"

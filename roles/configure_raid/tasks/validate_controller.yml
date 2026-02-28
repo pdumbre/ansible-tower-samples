@@ -14,12 +14,18 @@
 - debug:
     msg: "{{ storage_collection.json.Members }}"
 
-- name: Extract storage controller path
+- name: Build controller list
+  set_fact:
+    controller_list: "{{ storage_collection.json | json_query('Members[].\"@odata.id\"') }}"
+    
+- debug:
+    msg: "{{ controller_list }}"
+
+- name: Retrieve storage controller
   set_fact:
     storage_controller_id: >-
-      {{ storage_collection.json.Members
-         | selectattr('@odata.id', 'search', storage_config.storage_controller_name)
-         | map(attribute='@odata.id')
+      {{ controller_list
+         | select('search', storage_config.storage_controller_name)
          | list
          | first
          | default('') }}
@@ -27,9 +33,10 @@
 - debug:
     msg: "{{ storage_controller_id }}"
 
+    
 - name: Fail if Storage controller not present
   fail:
-    msg: "Boot Optimized Storage Subsystem (BOSS) not found on this Dell system."
+    msg: "Boot Optimized Storage Subsystem not found."
   when: storage_controller_id is not defined
   
 - debug:

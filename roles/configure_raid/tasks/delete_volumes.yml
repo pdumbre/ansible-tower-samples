@@ -1,3 +1,4 @@
+---
 - name: Extract volume ID
   set_fact:
     volume_id: "{{ (volumes.json.Members | default([]) | first | default({})).get('@odata.id','').split('/')[-1] }}"
@@ -17,8 +18,43 @@
     bmc_ip: "{{ bmc_ip | regex_replace('/$', '') }}"
 
 - debug:
-    msg: "https://{{ bmc_ip }}"   
-    
+    msg: "https://{{ bmc_ip }}"
+
+- name: Send graceful shutdown command
+  uri:
+    url: "{{ bmc_systems_url }}{{ power_config.url_suffix }}"
+    method: POST
+    user: "{{ bmc_user }}"
+    password: "{{ bmc_password }}"
+    validate_certs: false
+    force_basic_auth: true
+    body_format: json
+    body:
+      ResetType: "GracefulShutdown"
+    status_code: [200, 202, 204]
+  delegate_to: localhost
+  register: power_off_result
+  ignore_errors: true
+
+- name: Force power off if graceful shutdown fails
+  uri:
+    url: "{{ bmc_systems_url }}{{ power_config.url_suffix }}"
+    method: POST
+    user: "{{ bmc_user }}"
+    password: "{{ bmc_password }}"
+    validate_certs: false
+    force_basic_auth: true
+    body_format: json
+    body:
+      ResetType: "ForceOff"
+    status_code: [200, 202, 204]
+  delegate_to: localhost
+  when: power_off_result is failed
+
+- name: Wait for system to power off
+  pause:
+    seconds: 60
+
 - name: Delete existing RAID volumes
   uri:
     url: "https://{{ bmc_ip }}{{ item }}"
@@ -69,29 +105,28 @@
 - debug:
     msg: "{{ task_status }}"
 
-  
 - name: Delete the selected volume
   uri:
-    url: "{{ bmc_storage_url}}/{{ storage_config.storage_controller_id }}/Volumes/{{ volume_id }}"
+    url: "{{ bmc_storage_url }}/{{ storage_config.storage_controller_id }}/Volumes/{{ volume_id }}"
     method: DELETE
     user: "{{ bmc_user }}"
     password: "{{ bmc_password }}"
     force_basic_auth: yes
     validate_certs: no
-    status_code: 200,204
+    status_code: [200, 204]
   register: delete_response
   delegate_to: "{{ bmc_delegate_host }}"
   when: volume_id != ""
 
 - name: Check deleted volume
   uri:
-    url: "{{ bmc_storage_url}}/{{ storage_config.storage_controller_id }}/Volumes"
+    url: "{{ bmc_storage_url }}/{{ storage_config.storage_controller_id }}/Volumes"
     method: GET
     user: "{{ bmc_user }}"
     password: "{{ bmc_password }}"
     force_basic_auth: yes
     validate_certs: no
-    status_code: 200,204
+    status_code: [200, 204]
   register: volume_response
   delegate_to: "{{ bmc_delegate_host }}"
 

@@ -33,18 +33,24 @@
 - debug:
     msg: "{{ storage_controller_id }}"
 
+- name: Extract controller name
+  set_fact:
+    controller_name: "{{ storage_controller_id | basename }}"
+
+- debug:
+    msg: "{{ controller_name }}"
     
 - name: Fail if Storage controller not present
   fail:
     msg: "Boot Optimized Storage Subsystem not found."
-  when: storage_controller_id is not defined
+  when: controller_name is not defined
   
 - debug:
-    msg: "{{ bmc_ip}}/{{ storage_controller_id }}"
+    msg: "{{ bmc_systems_url}}/{{ controller_name }}"
 
 - name: Retrieve storage controllers
   uri:
-    url: "{{ bmc_ip}}/{{ storage_controller_id }}"
+    url: "{{ bmc_systems_url}}/{{ controller_name }}"
     method: GET
     user: "{{ bmc_user }}"
     password: "{{ bmc_password }}"

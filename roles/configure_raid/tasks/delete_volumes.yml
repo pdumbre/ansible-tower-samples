@@ -33,7 +33,7 @@
     force_basic_auth: yes
     body_format: json
     body:
-      ResetType: "PowerOn"
+      ResetType: "On"
     status_code: [200, 204]
   delegate_to: "{{ bmc_delegate_host }}"
 

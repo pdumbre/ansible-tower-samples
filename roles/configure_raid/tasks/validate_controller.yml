@@ -46,11 +46,11 @@
   when: controller_name is not defined
   
 - debug:
-    msg: "{{ bmc_systems_url}}/{{ controller_name }}"
+    msg: "{{ bmc_storage_url}}/{{ controller_name }}"
 
 - name: Retrieve storage controllers
   uri:
-    url: "{{ bmc_systems_url}}/{{ controller_name }}"
+    url: "{{ bmc_storage_url}}/{{ controller_name }}"
     method: GET
     user: "{{ bmc_user }}"
     password: "{{ bmc_password }}"

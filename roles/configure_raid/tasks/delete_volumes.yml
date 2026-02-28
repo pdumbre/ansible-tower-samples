@@ -34,6 +34,7 @@
     status_code: [200, 202, 204]
   delegate_to: localhost
   register: power_off_result
+  delegate_to: "{{ bmc_delegate_host }}"
   ignore_errors: true
 
 - name: Force power off if graceful shutdown fails
@@ -49,6 +50,7 @@
       ResetType: "ForceOff"
     status_code: [200, 202, 204]
   delegate_to: localhost
+  delegate_to: "{{ bmc_delegate_host }}"
   when: power_off_result is failed
 
 - name: Wait for system to power off

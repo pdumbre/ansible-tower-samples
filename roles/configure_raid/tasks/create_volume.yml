@@ -35,15 +35,15 @@
   #until: volume_create.status in [200, 201, 202, 204]
   failed_when: false
 
+- debug:
+    msg: "{{ volume_create }}"
+
 - name: Check if RAID creation failed with UEFI POST message
   set_fact:
     need_uefi_boot: true
   when: >
     (volume_create.status not in [200, 201, 202]) and
     (volume_create.json.error is defined)
-
-- debug:
-    msg: "{{ volume_create.json }}"
     
 - name: Handle volume creation requiring system reboot
   block: 

@@ -2,6 +2,28 @@
   set_fact:
     volume_id: "{{ (volumes.json.Members | default([]) | first | default({})).get('@odata.id','').split('/')[-1] }}"
 
+- name: Build volume list
+  set_fact:
+    volume_list: "{{ volumes_response.json | default({}) | json_query('Members[].\"@odata.id\"') | default([]) }}"
+
+- debug:
+    msg: "{{ volume_list }}"
+
+- name: Delete existing RAID volumes
+  uri:
+    url: "https://{{ bmc_ip }}{{ item }}"
+    method: DELETE
+    user: "{{ bmc_user }}"
+    password: "{{ bmc_password }}"
+    validate_certs: no
+    status_code: [200, 202, 204]
+  loop: "{{ volume_list }}"
+  register: delete_results
+  when: volume_list | length > 0
+
+- debug:
+    msg: "{{ delete_results }}"
+
 - name: Delete the selected volume
   uri:
     url: "{{ bmc_storage_url}}/{{ storage_config.storage_controller_id }}/Volumes/{{ volume_id }}"

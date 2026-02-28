@@ -10,6 +10,7 @@ power_config:
 
 delay_power_on: 60 # Delay between power on attempts (seconds)
 max_retries: 10
+retry_delay: 5  # Delay between retries (seconds)
 
   # RAID Configuration Parameters
 raid_config:

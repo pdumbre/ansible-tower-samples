@@ -27,7 +27,10 @@
   fail:
     msg: "Boot Optimized Storage Subsystem (BOSS) not found on this Dell system."
   when: storage_controller_id is not defined
-    
+  
+- debug:
+    msg: "{{ bmc_storage_url}}/{{ storage_controller_id }}"
+
 - name: Retrieve storage controllers
   uri:
     url: "{{ bmc_storage_url}}/{{ storage_controller_id }}"

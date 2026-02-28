@@ -14,11 +14,12 @@
     user: "{{ bmc_user }}"
     password: "{{ bmc_password }}"
     validate_certs: no
-    status_code: [200, 202, 204]
+    status_code: [200, 202, 204, 400]
   loop: "{{ volume_list }}"
   register: delete_results
   delegate_to: "{{ bmc_delegate_host }}"
   when: volume_list | length > 0
+  failed_when: false
 
 - name: Restart Server
   uri:

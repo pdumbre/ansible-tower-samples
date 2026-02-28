@@ -118,7 +118,7 @@
         
     - name: Retry volume creation after power cycle
       uri:
-        url: "{{ bmc_storage_url }}/{{ storage_config.storage_controller_id }}/Volumes"
+        url: "{{ bmc_storage_url}}/{{ controller_name }}/Volumes"
         method: POST
         user: "{{ bmc_user }}"
         password: "{{ bmc_password }}"

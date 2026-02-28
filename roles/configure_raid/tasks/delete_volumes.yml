@@ -1,27 +1,24 @@
----
-- name: Extract volume ID
-  set_fact:
-    volume_id: "{{ (volumes.json.Members | default([]) | first | default({})).get('@odata.id','').split('/')[-1] }}"
 
 - name: Build volume list
   set_fact:
     volume_list: "{{ volumes_response.json | default({}) | json_query('Members[].\"@odata.id\"') | default([]) }}"
 
-- name: Debug volume list
-  debug:
-    msg: "{{ volume_list }}"
-
-- name: Debug BMC IP before cleanup
-  debug:
-    msg: "https://{{ bmc_ip }}"
-
 - name: Configure BMC endpoint
   set_fact:
     bmc_ip: "{{ bmc_ip | regex_replace('/$', '') }}"
 
-- name: Debug BMC IP after cleanup
-  debug:
-    msg: "https://{{ bmc_ip }}"
+- name: Delete existing RAID volumes
+  uri:
+    url: "https://{{ bmc_ip }}{{ item }}"
+    method: DELETE
+    user: "{{ bmc_user }}"
+    password: "{{ bmc_password }}"
+    validate_certs: no
+    status_code: [200, 202, 204]
+  loop: "{{ volume_list }}"
+  register: delete_results
+  delegate_to: "{{ bmc_delegate_host }}"
+  when: volume_list | length > 0
 
 - name: Restart Server
   uri:
@@ -33,7 +30,7 @@
     force_basic_auth: yes
     body_format: json
     body:
-      ResetType: "On"
+      ResetType: "ForceRestart"
     status_code: [200, 204]
   delegate_to: "{{ bmc_delegate_host }}"
 
@@ -87,4 +84,4 @@
 
 - name: Confirm deletion success
   debug:
-    msg: "Volume {{ volume_id }} successfully deleted."
+    msg: "Volumes successfully deleted."

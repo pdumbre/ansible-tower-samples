@@ -90,7 +90,7 @@
 
 - name: Verify all RAID volumes are deleted
   uri:
-    url: "{{ bmc_storage_url }}{{ controller_id }}/Volumes"
+    url: "{{ bmc_storage_url}}/{{ controller_name }}/Volumes"
     method: GET
     user: "{{ bmc_user }}"
     password: "{{ bmc_password }}"

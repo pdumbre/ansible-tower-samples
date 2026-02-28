@@ -10,3 +10,12 @@ power_config:
 
 delay_power_on: 60 # Delay between power on attempts (seconds)
 max_retries: 10
+
+  # RAID Configuration Parameters
+raid_config:
+  raid_level: "RAID1"  # RAID level: r0, r1, r5, r10
+  volume_name: "VD0"  # Virtual disk name
+  stripe_size: 65536  # Stripe size
+  write_policy: "wt"  # Write policy: wt (write-through), wb (write-back)
+  disk_cache_policy: "default"  # Disk cache policy
+  drive_capacity: "480GB"  # Expected drive capacity

@@ -88,35 +88,18 @@
     - storage_list.json.Members | length > 0
   delegate_to: "{{ bmc_delegate_host }}"
 
-- name: Delete the selected volume
+- name: Verify all RAID volumes are deleted
   uri:
-    url: "{{ bmc_storage_url }}/{{ storage_config.storage_controller_id }}/Volumes/{{ volume_id }}"
-    method: DELETE
-    user: "{{ bmc_user }}"
-    password: "{{ bmc_password }}"
-    force_basic_auth: yes
-    validate_certs: no
-    status_code: [200, 204]
-  register: delete_response
-  delegate_to: "{{ bmc_delegate_host }}"
-  when: volume_id != ""
-
-- name: Check deleted volume
-  uri:
-    url: "{{ bmc_storage_url }}/{{ storage_config.storage_controller_id }}/Volumes"
+    url: "{{ bmc_storage_url }}{{ controller_id }}/Volumes"
     method: GET
     user: "{{ bmc_user }}"
     password: "{{ bmc_password }}"
     force_basic_auth: yes
     validate_certs: no
-    status_code: [200, 204]
-  register: volume_response
-  delegate_to: "{{ bmc_delegate_host }}"
-
-- name: Fail if volume still exists
-  fail:
-    msg: "Volume {{ volume_id }} was not deleted!"
-  when: "'/Volumes/' ~ volume_id in (volume_response.json.Members | map(attribute='@odata.id') | list)"
+  register: volumes_check
+  retries: 20
+  delay: 15
+  until: volumes_check.json.Members | length == 0
 
 - name: Confirm deletion success
   debug:

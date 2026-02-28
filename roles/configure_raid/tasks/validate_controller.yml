@@ -13,18 +13,11 @@
 
 - debug:
     msg: "{{ storage_collection.json.Members }}"
-    
-- name: Build controller list
-  set_fact:
-    controller_list: >-
-      {{ storage_collection.json.Members
-         | map('extract', '@odata.id')
-         | list }}
 
 - name: Extract storage controller path
   set_fact:
     boss_path: >-
-      {{ controller_list
+      {{ storage_collection.json.Members
          | select('search', storage_config.storage_controller_name)
          | list
          | first

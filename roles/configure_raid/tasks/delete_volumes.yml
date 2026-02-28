@@ -23,41 +23,6 @@
   debug:
     msg: "https://{{ bmc_ip }}"
 
-- name: Send graceful shutdown command
-  uri:
-    url: "{{ bmc_systems_url }}{{ power_config.url_suffix }}"
-    method: POST
-    user: "{{ bmc_user }}"
-    password: "{{ bmc_password }}"
-    validate_certs: false
-    force_basic_auth: true
-    body_format: json
-    body:
-      ResetType: "GracefulShutdown"
-    status_code: [200, 202, 204]
-  delegate_to: localhost
-  register: power_off_result
-  ignore_errors: true
-
-- name: Force power off if graceful shutdown fails
-  uri:
-    url: "{{ bmc_systems_url }}{{ power_config.url_suffix }}"
-    method: POST
-    user: "{{ bmc_user }}"
-    password: "{{ bmc_password }}"
-    validate_certs: false
-    force_basic_auth: true
-    body_format: json
-    body:
-      ResetType: "ForceOff"
-    status_code: [200, 202, 204]
-  delegate_to: localhost
-  when: power_off_result is failed
-
-- name: Wait for system to power off
-  pause:
-    seconds: 30
-
 - name: Delete existing RAID volumes
   uri:
     url: "https://{{ bmc_ip }}{{ item }}"
@@ -75,41 +40,53 @@
   debug:
     msg: "{{ delete_results }}"
 
-- name: Collect task URIs from delete response
-  set_fact:
-    delete_task_uris: >-
-      {{
-        delete_results.results
-        | selectattr('status', 'equalto', 202)
-        | map(attribute='location')
-        | list
-      }}
-  when: delete_results is defined
-
-- name: Debug delete task URIs
-  debug:
-    msg: "{{ delete_task_uris }}"
-
-- name: Wait for delete tasks to complete
+- name: Restart Server
   uri:
-    url: "https://{{ bmc_ip }}{{ item }}"
+    url: "{{ bmc_systems_url }}/Actions/ComputerSystem.Reset"
+    method: POST
+    user: "{{ bmc_user }}"
+    password: "{{ bmc_password }}"
+    validate_certs: no
+    force_basic_auth: yes
+    body_format: json
+    body:
+      ResetType: "ForceRestart"
+    status_code: [200, 204]
+  delegate_to: "{{ bmc_delegate_host }}"
+
+- name: Wait for system to reach setup state
+  uri:
+    url: "{{ bmc_systems_url }}"
     method: GET
     user: "{{ bmc_user }}"
     password: "{{ bmc_password }}"
     validate_certs: no
-  register: task_status
-  until: >
-    task_status.json.TaskState == "Completed"
-    and (task_status.json.TaskStatus | default('OK')) in ['OK', 'Completed', 'Success']
-  retries: 60
-  delay: 10
-  loop: "{{ delete_task_uris }}"
+    force_basic_auth: yes
+    return_content: yes
+    status_code: [200]
+  register: power_state_check
   delegate_to: "{{ bmc_delegate_host }}"
-  when: delete_task_uris | length > 0
+  retries: "{{ max_retries }}"
+  delay: "{{ delay_power_on }}"
+  until: >
+    power_state_check.json.PowerState is defined and
+    power_state_check.json.PowerState == "On"
+  failed_when: false
 
-- name: Debug task status
-  debug:
-    msg: "{{ task_status }}"
+- name: Wait for storage controller discovery
+  uri:
+    url: "{{ bmc_storage_url }}"
+    method: GET
+    user: "{{ bmc_user }}"
+    password: "{{ bmc_password }}"
+    validate_certs: no
+  register: storage_list
+  retries: "{{ max_retries }}"
+  delay: "{{ delay_power_on }}"
+  until:
+    - storage_list.status == 200
+    - storage_list.json.Members | length > 0
+  delegate_to: "{{ bmc_delegate_host }}"
 
 - name: Delete the selected volume
   uri:

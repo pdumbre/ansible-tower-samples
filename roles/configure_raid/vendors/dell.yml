@@ -7,3 +7,5 @@ storage_config:
 power_config:
   url_suffix:  /Actions/ComputerSystem.Reset
   desired_power_state: "on"
+
+delay_power_on: 60 # Delay between power on attempts (seconds)

@@ -19,7 +19,7 @@
   set_fact:
     boss_path: >-
       {{ storage_collection.json.Members
-         | map(attribute='@data.id')
+         | map(attribute='@odata.id')
          | select('search', storage_config.storage_controller_name | lower)
          | list
          | first | default(omit) }}

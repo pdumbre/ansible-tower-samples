@@ -31,6 +31,9 @@
     (volume_create.status not in [200, 201, 202]) and
     (volume_create.json.error is defined)
 
+- debug:
+    msg: "{{ volume_create.json }}"
+    
 - name: Handle volume creation requiring system reboot
   block: 
     - name: Set next boot to UEFI Setup (one-time)

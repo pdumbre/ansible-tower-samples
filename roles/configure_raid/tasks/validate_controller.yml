@@ -11,19 +11,22 @@
   register: storage_collection
   delegate_to: "{{ bmc_delegate_host }}"
 
-
-- name: Search for storage controller
+- name: Extract storage controller path
   set_fact:
-    storage_controller_id: "{{ item['@odata.id'] }}"
-  loop: "{{ controller_list }}"
-  when:
-    - item['@odata.id'] is defined
-    - storage_config.storage_controller_name in item['@odata.id']
-  loop_control:
-    label: "{{ item['@odata.id'] | default('Unknown') }}"
+    boss_path: >-
+      {{ storage_collection.json.Members
+         | map(attribute='@odata.id')
+         | select('search', storage_config.storage_controller_name | lower)
+         | list
+         | first | default(omit) }}
+
+- name: Fail if BOSS not present
+  fail:
+    msg: "Boot Optimized Storage Subsystem (BOSS) not found on this Dell system."
+  when: boss_path is not defined
     
 - debug:
-    msg: "{{ storage_controller_id }}"
+    msg: "{{ boss_path }}"
     
 - name: Retrieve storage controllers
   uri:

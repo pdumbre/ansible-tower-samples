@@ -18,11 +18,15 @@
   set_fact:
     storage_controller_id: >-
       {{ storage_collection.json.Members
-         | select('search', storage_config.storage_controller_name)
+         | selectattr('@odata.id', 'search', storage_config.storage_controller_name)
+         | map(attribute='@odata.id')
          | list
          | first
          | default('') }}
-        
+
+- debug:
+    msg: "{{ storage_controller_id }}"
+
 - name: Fail if Storage controller not present
   fail:
     msg: "Boot Optimized Storage Subsystem (BOSS) not found on this Dell system."

@@ -7,17 +7,20 @@
   set_fact:
     volume_list: "{{ volumes_response.json | default({}) | json_query('Members[].\"@odata.id\"') | default([]) }}"
 
-- debug:
+- name: Debug volume list
+  debug:
     msg: "{{ volume_list }}"
 
-- debug:
+- name: Debug BMC IP before cleanup
+  debug:
     msg: "https://{{ bmc_ip }}"
 
 - name: Configure BMC endpoint
   set_fact:
     bmc_ip: "{{ bmc_ip | regex_replace('/$', '') }}"
 
-- debug:
+- name: Debug BMC IP after cleanup
+  debug:
     msg: "https://{{ bmc_ip }}"
 
 - name: Send graceful shutdown command
@@ -34,7 +37,6 @@
     status_code: [200, 202, 204]
   delegate_to: localhost
   register: power_off_result
-  delegate_to: "{{ bmc_delegate_host }}"
   ignore_errors: true
 
 - name: Force power off if graceful shutdown fails
@@ -50,12 +52,11 @@
       ResetType: "ForceOff"
     status_code: [200, 202, 204]
   delegate_to: localhost
-  delegate_to: "{{ bmc_delegate_host }}"
   when: power_off_result is failed
 
 - name: Wait for system to power off
   pause:
-    seconds: 60
+    seconds: 30
 
 - name: Delete existing RAID volumes
   uri:
@@ -70,7 +71,8 @@
   delegate_to: "{{ bmc_delegate_host }}"
   when: volume_list | length > 0
 
-- debug:
+- name: Debug delete results
+  debug:
     msg: "{{ delete_results }}"
 
 - name: Collect task URIs from delete response
@@ -78,13 +80,14 @@
     delete_task_uris: >-
       {{
         delete_results.results
-        | selectattr('status','equalto',202)
+        | selectattr('status', 'equalto', 202)
         | map(attribute='location')
         | list
       }}
   when: delete_results is defined
 
-- debug:
+- name: Debug delete task URIs
+  debug:
     msg: "{{ delete_task_uris }}"
 
 - name: Wait for delete tasks to complete
@@ -97,14 +100,15 @@
   register: task_status
   until: >
     task_status.json.TaskState == "Completed"
-    and (task_status.json.TaskStatus | default('OK')) in ['OK','Completed','Success']
+    and (task_status.json.TaskStatus | default('OK')) in ['OK', 'Completed', 'Success']
   retries: 60
   delay: 10
   loop: "{{ delete_task_uris }}"
   delegate_to: "{{ bmc_delegate_host }}"
   when: delete_task_uris | length > 0
 
-- debug:
+- name: Debug task status
+  debug:
     msg: "{{ task_status }}"
 
 - name: Delete the selected volume

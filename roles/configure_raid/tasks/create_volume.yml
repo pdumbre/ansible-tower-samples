@@ -24,9 +24,9 @@
     status_code: [200, 201, 202, 204]
   register: volume_create
   delegate_to: "{{ bmc_delegate_host }}"
-  retries: "{{ max_retries }}"
-  delay: "{{ retry_delay }}"
-  until: volume_create.status in [200, 201, 202, 204]
+  #retries: "{{ max_retries }}"
+  #delay: "{{ retry_delay }}"
+  #until: volume_create.status in [200, 201, 202, 204]
   failed_when: false
 
 - name: Check if RAID creation failed with UEFI POST message

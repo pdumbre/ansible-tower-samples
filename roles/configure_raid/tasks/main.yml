@@ -13,11 +13,11 @@
 - name: Validate Storage Controller
   include_tasks: validate_controller.yml
 
-#- name: Validate disks
- # include_tasks: validate_disks.yml
+- name: Validate disks
+  include_tasks: validate_disks.yml
 
-#- name: Validate volume
- # include_tasks: validate_volumes.yml
+- name: Validate volume
+  include_tasks: validate_volumes.yml
   
 #- name: Delete volume
  # include_tasks: delete_volumes.yml

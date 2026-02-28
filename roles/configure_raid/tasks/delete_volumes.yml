@@ -53,6 +53,7 @@
   retries: 60
   delay: 10
   loop: "{{ delete_task_uris }}"
+  delegate_to: "{{ bmc_delegate_host }}"
   when: delete_task_uris | length > 0
 
 - debug:

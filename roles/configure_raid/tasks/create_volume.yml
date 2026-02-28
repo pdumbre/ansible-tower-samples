@@ -9,21 +9,8 @@
   set_fact:
     drives: "{{ drive_urls | map('community.general.dict_kv', '@odata.id') | list }}"
 
-- name: Build proper Redfish Drives array
-  set_fact:
-    drives_array: >-
-      {{
-        drive_urls
-        | map('regex_replace', '^(.*)$', '{"@odata.id":"\\1"}')
-        | map('from_yaml')
-        | list
-      }}
-
 - debug:
     msg: "{{ drives }}"
-
-- debug:
-    msg: "{{ drives_array }}"
 
 - name: Create RAID volume
   uri:

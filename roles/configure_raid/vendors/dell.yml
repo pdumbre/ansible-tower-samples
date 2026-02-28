@@ -11,6 +11,14 @@ power_config:
 delay_power_on: 60 # Delay between power on attempts (seconds)
 max_retries: 10
 retry_delay: 5  # Delay between retries (seconds)
+delay_power_on: 60 # Delay between power on attempts (seconds)
+job_completion_retries: 10  # Retries for job completion checks
+job_completion_delay: 120  # Delay between job status checks (seconds)
+power_on_wait_time: 180  # Wait time after power on (seconds)
+power_off_wait_time: 60 # Wait time after power off (seconds)
+volume_create_wait_time: 30 # Wait time after raid volume creation (seconds)
+raid_config_wait_time: 60 # Wait time for raid config (seconds)
+post_deletion_wait_time: 60  # Wait time after volume deletion (seconds)
 
   # RAID Configuration Parameters
 raid_config:

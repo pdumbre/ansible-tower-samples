@@ -16,7 +16,7 @@
   set_fact:
     bmc_ip: "{{ bmc_ip | regex_replace('/$', '') }}"
 
- - debug:
+- debug:
     msg: "https://{{ bmc_ip }}"   
     
 - name: Delete existing RAID volumes

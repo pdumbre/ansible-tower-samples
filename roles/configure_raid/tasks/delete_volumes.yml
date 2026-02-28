@@ -9,6 +9,9 @@
 - debug:
     msg: "{{ volume_list }}"
 
+- debug:
+    msg: "https://{{ bmc_ip }}{{ item }}"
+
 - name: Delete existing RAID volumes
   uri:
     url: "https://{{ bmc_ip }}{{ item }}"

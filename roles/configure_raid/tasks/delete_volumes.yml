@@ -23,23 +23,6 @@
   debug:
     msg: "https://{{ bmc_ip }}"
 
-- name: Delete existing RAID volumes
-  uri:
-    url: "https://{{ bmc_ip }}{{ item }}"
-    method: DELETE
-    user: "{{ bmc_user }}"
-    password: "{{ bmc_password }}"
-    validate_certs: no
-    status_code: [200, 202, 204]
-  loop: "{{ volume_list }}"
-  register: delete_results
-  delegate_to: "{{ bmc_delegate_host }}"
-  when: volume_list | length > 0
-
-- name: Debug delete results
-  debug:
-    msg: "{{ delete_results }}"
-
 - name: Restart Server
   uri:
     url: "{{ bmc_systems_url }}/Actions/ComputerSystem.Reset"

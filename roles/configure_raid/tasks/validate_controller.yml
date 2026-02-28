@@ -11,11 +11,15 @@
   register: storage_collection
   delegate_to: "{{ bmc_delegate_host }}"
 
+- debug:
+    msg: "{{ storage_collection.json.Members }}"
+
+    
 - name: Extract storage controller path
   set_fact:
     boss_path: >-
       {{ storage_collection.json.Members
-         | map(attribute='@odata.id')
+         | map(attribute='@data.id')
          | select('search', storage_config.storage_controller_name | lower)
          | list
          | first | default(omit) }}

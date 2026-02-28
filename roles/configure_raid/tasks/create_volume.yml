@@ -9,8 +9,21 @@
   set_fact:
     drives: "{{ drive_urls | map('community.general.dict_kv', '@odata.id') | list }}"
 
+- name: Build proper Redfish Drives array
+  set_fact:
+    drives_array: >-
+      {{
+        drive_urls
+        | map('regex_replace', '^(.*)$', '{"@odata.id":"\\1"}')
+        | map('from_yaml')
+        | list
+      }}
+
 - debug:
     msg: "{{ drives }}"
+
+- debug:
+    msg: "{{ drives_array }}"
 
 - name: Create RAID volume
   uri:
@@ -23,7 +36,7 @@
     body_format: json
     body:
       RAIDType: "{{ raid_config.raid_level | upper }}"
-      Drives: drives
+      Drives: drives_array
     status_code: [200, 201, 202, 204]
   register: volume_create
   delegate_to: "{{ bmc_delegate_host }}"
@@ -124,7 +137,7 @@
         body_format: json
         body:
           RAIDType: "{{ raid_config.raid_level | upper }}"
-          Drives: drives
+          Drives: drives_array
         status_code: [200, 201, 202, 204]
       register: volume_create
       delegate_to: "{{ bmc_delegate_host }}"

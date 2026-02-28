@@ -1,7 +1,7 @@
 
 - name: Build volume list
   set_fact:
-    volume_list: "{{ volumes_response.json | default({}) | json_query('Members[].\"@odata.id\"') | default([]) }}"
+    volume_list: "{{ volumes.json | default({}) | json_query('Members[].\"@odata.id\"') | default([]) }}"
 
 - name: Configure BMC endpoint
   set_fact:

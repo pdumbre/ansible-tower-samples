@@ -5,6 +5,10 @@
     drive_urls: "{{ m2_storage.json.Drives | json_query('[*].\"@odata.id\"') }}"
   when: m2_storage.json.Drives is defined
 
+- name: Convert drive URLs to Redfish object array
+  set_fact:
+    drives: "{{ drive_urls | map('community.general.dict_kv', '@odata.id') | list }}"
+
 - name: Create RAID volume
   uri:
     url: "{{ bmc_storage_url}}/{{ controller_name }}/Volumes"
@@ -16,7 +20,7 @@
     body_format: json
     body:
       RAIDType: "{{ raid_config.raid_level | upper }}"
-      Drives: drive_urls
+      Drives: drives
     status_code: [200, 201, 202, 204]
   register: volume_create
   delegate_to: "{{ bmc_delegate_host }}"
@@ -117,7 +121,7 @@
         body_format: json
         body:
           RAIDType: "{{ raid_config.raid_level | upper }}"
-          Drives: drive_urls
+          Drives: drives
         status_code: [200, 201, 202, 204]
       register: volume_create
       delegate_to: "{{ bmc_delegate_host }}"

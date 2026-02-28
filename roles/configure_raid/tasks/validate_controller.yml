@@ -11,15 +11,11 @@
   register: storage_collection
   delegate_to: "{{ bmc_delegate_host }}"
 
-- debug:
-    msg: "{{ storage_collection.json.Members }}"
 
 - name: Build controller list
   set_fact:
     controller_list: "{{ storage_collection.json | json_query('Members[].\"@odata.id\"') }}"
-    
-- debug:
-    msg: "{{ controller_list }}"
+
 
 - name: Retrieve storage controller
   set_fact:
@@ -30,24 +26,16 @@
          | first
          | default('') }}
 
-- debug:
-    msg: "{{ storage_controller_id }}"
 
 - name: Extract controller name
   set_fact:
     controller_name: "{{ storage_controller_id | basename }}"
-
-- debug:
-    msg: "{{ controller_name }}"
     
 - name: Fail if Storage controller not present
   fail:
     msg: "Boot Optimized Storage Subsystem not found."
   when: controller_name is not defined
   
-- debug:
-    msg: "{{ bmc_storage_url}}/{{ controller_name }}"
-
 - name: Retrieve storage controllers
   uri:
     url: "{{ bmc_storage_url}}/{{ controller_name }}"

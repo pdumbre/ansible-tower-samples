@@ -9,6 +9,9 @@
   set_fact:
     drives: "{{ drive_urls | map('community.general.dict_kv', '@odata.id') | list }}"
 
+- debug:
+    msg: "{{ drives }}"
+
 - name: Create RAID volume
   uri:
     url: "{{ bmc_storage_url}}/{{ controller_name }}/Volumes"

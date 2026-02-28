@@ -10,8 +10,15 @@
     msg: "{{ volume_list }}"
 
 - debug:
-    msg: "https://{{ bmc_ip }}{{ item }}"
+    msg: "https://{{ bmc_ip }}"
 
+- name: Configure BMC endpoint
+  set_fact:
+    bmc_ip: "{{ bmc_ip | regex_replace('/$', '') }}"
+
+ - debug:
+    msg: "https://{{ bmc_ip }}"   
+    
 - name: Delete existing RAID volumes
   uri:
     url: "https://{{ bmc_ip }}{{ item }}"

@@ -104,34 +104,35 @@
        register: job_queue_status
        delegate_to: "{{ bmc_delegate_host }}"
 
-    - debug:
-        msg: "{{ job_queue_status.json.Members }}"
+     - debug:
+         msg: "{{ job_queue_status.json.Members }}"
         
-    - name: Check for pending or running jobs
-      set_fact:
-        has_pending_jobs: "{{ job_queue_status.json.Members | default([]) | selectattr('JobState', 'in', ['Pending', 'Running']) | list | length > 0 }}"
+     - name: Check for pending or running jobs
+       set_fact:
+         has_pending_jobs: "{{ job_queue_status.json.Members | default([]) | selectattr('JobState', 'in', ['Pending', 'Running']) | list | length > 0 }}"
 
-    - name: Clean up pending jobs if detected
-      debug:
-        msg: "Existing job detected. Attempting cleanup before creating a new job..."
-      when: has_pending_jobs | bool
+     - name: Clean up pending jobs if detected
+       debug:
+         msg: "Existing job detected. Attempting cleanup before creating a new job..."
+       when: has_pending_jobs | bool
 
-    - name: Wait for pending jobs to complete
-      uri:
-        url: "{{ bmc_manager_url }}/Jobs"
-        method: GET
-        user: "{{ bmc_user }}"
-        password: "{{ bmc_password }}"
-        validate_certs: no
-        force_basic_auth: yes
-        return_content: yes
-        status_code: [200]
-      register: job_wait
-      until: job_wait.json.Members | default([]) | selectattr('JobState', 'in', ['Pending', 'Running']) | list | length == 0
-      retries: 10
-      delay: 5
-      delegate_to: "{{ bmc_delegate_host }}"
-      when: has_pending_jobs | bool
+     - name: Wait for pending jobs to complete
+       uri:
+         url: "{{ bmc_manager_url }}/Jobs"
+         method: GET
+         user: "{{ bmc_user }}"
+         password: "{{ bmc_password }}"
+         validate_certs: no
+         force_basic_auth: yes
+         return_content: yes
+         status_code: [200]
+       register: job_wait
+       until: job_wait.json.Members | default([]) | selectattr('JobState', 'in', ['Pending', 'Running']) | list | length == 0
+       retries: 10
+       delay: 5
+       delegate_to: "{{ bmc_delegate_host }}"
+       when: has_pending_jobs | bool
+       
   when:
     - bmc_config.requires_job_cleanup | default(false) | bool
   delegate_to: "{{ bmc_delegate_host }}"

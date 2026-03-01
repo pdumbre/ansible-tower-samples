@@ -1,1 +1,180 @@
+---
+# Dell iDRAC specific RAID volume deletion
+# Equivalent to NodesRaidConfig.groovy lines 93-175
 
+- name: Delete Dell iDRAC RAID volumes with retry logic
+  block:
+    - name: Initialize retry variables
+      set_fact:
+        max_retries: 3
+        retry_count: 0
+        volume_deleted: false
+
+    - name: Delete each virtual volume with retry
+      include_tasks: delete_single_volume_dell.yml
+      loop: "{{ volume_list }}"
+      loop_control:
+        loop_var: volume_item
+        label: "{{ volume_item['@odata.id'] | default('Unknown volume') }}"
+
+    - name: Check job queue status (get member list)
+      uri:
+        url: "{{ bmc_base_url }}/redfish/v1/Managers/iDRAC.Embedded.1/Jobs"
+        method: GET
+        user: "{{ bmc_user }}"
+        password: "{{ bmc_password }}"
+        validate_certs: no
+        force_basic_auth: yes
+        return_content: yes
+        status_code: [200]
+      register: job_queue_status
+      delegate_to: "{{ bmc_delegate_host }}"
+
+    - name: Fetch full details for each job
+      uri:
+        url: "{{ bmc_base_url }}{{ item['@odata.id'] }}"
+        method: GET
+        user: "{{ bmc_user }}"
+        password: "{{ bmc_password }}"
+        validate_certs: no
+        force_basic_auth: yes
+        return_content: yes
+        status_code: [200]
+      register: job_details_results
+      loop: "{{ job_queue_status.json.Members | default([]) }}"
+      loop_control:
+        label: "{{ item['@odata.id'] }}"
+      delegate_to: "{{ bmc_delegate_host }}"
+
+    - name: Check for pending or running jobs
+      set_fact:
+        has_pending_jobs: "{{ job_details_results.results | default([]) | map(attribute='json') | selectattr('JobState', 'defined') | selectattr('JobState', 'in', ['Pending', 'Running', 'New', 'Scheduled']) | list | length > 0 }}"
+
+    - name: Clean up pending jobs if detected
+      debug:
+        msg: "Existing job detected. Attempting cleanup before creating a new job..."
+      when: has_pending_jobs | bool
+
+    - name: Wait for pending jobs to complete
+      block:
+        - name: Re-fetch job details to check completion
+          uri:
+            url: "{{ bmc_base_url }}{{ item['@odata.id'] }}"
+            method: GET
+            user: "{{ bmc_user }}"
+            password: "{{ bmc_password }}"
+            validate_certs: no
+            force_basic_auth: yes
+            return_content: yes
+            status_code: [200]
+          register: job_wait_details
+          loop: "{{ job_queue_status.json.Members | default([]) }}"
+          loop_control:
+            label: "{{ item['@odata.id'] }}"
+          delegate_to: "{{ bmc_delegate_host }}"
+
+        - name: Assert no pending or running jobs remain
+          assert:
+            that:
+              - job_wait_details.results | default([]) | map(attribute='json') | selectattr('JobState', 'defined') | selectattr('JobState', 'in', ['Pending', 'Running', 'New', 'Scheduled']) | list | length == 0
+            fail_msg: "Jobs still pending or running"
+          retries: 10
+          delay: 5
+      when: has_pending_jobs | bool
+
+    - name: Create storage configuration job for deletion
+      uri:
+        url: "{{ bmc_base_url }}/redfish/v1/Managers/iDRAC.Embedded.1/Jobs"
+        method: POST
+        user: "{{ bmc_user }}"
+        password: "{{ bmc_password }}"
+        validate_certs: no
+        force_basic_auth: yes
+        body_format: json
+        body:
+          TargetSettingsURI: "/redfish/v1/Systems/System.Embedded.1/Storage/{{ storage_controller_id }}"
+          RebootJobType: "ForceRestart"
+          ScheduledStartTime: "TIME_NOW"
+        status_code: [200, 201, 202]
+      register: delete_job
+      delegate_to: "{{ bmc_delegate_host }}"
+
+    - name: Extract job ID from response
+      set_fact:
+        delete_reboot_job_id: "{{ delete_job.json.Id | default('') }}"
+        delete_apply_job_id: "{{ delete_job.json.Id | default('') }}"
+
+    - name: Display deletion job IDs
+      debug:
+        msg:
+          - "Reboot Job ID for deletion: {{ delete_reboot_job_id }}"
+          - "Apply Job ID for deletion: {{ delete_apply_job_id }}"
+
+    - name: Fail if job IDs not obtained
+      fail:
+        msg: "Reboot Job ID not obtained"
+      when: delete_reboot_job_id == ''
+
+    - name: Wait for reboot job to complete
+      uri:
+        url: "{{ bmc_base_url }}/redfish/v1/Managers/iDRAC.Embedded.1/Jobs/{{ delete_reboot_job_id }}"
+        method: GET
+        user: "{{ bmc_user }}"
+        password: "{{ bmc_password }}"
+        validate_certs: no
+        force_basic_auth: yes
+        return_content: yes
+        status_code: [200]
+      register: reboot_job_status
+      until: >
+        reboot_job_status.json.JobState == 'Completed' or
+        reboot_job_status.json.JobState == 'Failed' or
+        (reboot_job_status.json.Message is defined and 'Reboot Completed' in reboot_job_status.json.Message)
+      retries: 10
+      delay: 120
+      delegate_to: "{{ bmc_delegate_host }}"
+
+    - name: Display reboot job status
+      debug:
+        msg: "Job ID Status: {{ reboot_job_status.json.JobState | default('Unknown') }}"
+
+    - name: Fail if reboot job failed
+      fail:
+        msg: "Failed to complete the job"
+      when: 
+        - reboot_job_status.json.JobState is defined
+        - "'Failed' in reboot_job_status.json.JobState"
+
+    - name: Wait for apply job to complete
+      uri:
+        url: "{{ bmc_base_url }}/redfish/v1/Managers/iDRAC.Embedded.1/Jobs/{{ delete_apply_job_id }}"
+        method: GET
+        user: "{{ bmc_user }}"
+        password: "{{ bmc_password }}"
+        validate_certs: no
+        force_basic_auth: yes
+        return_content: yes
+        status_code: [200]
+      register: apply_job_status
+      until: >
+        apply_job_status.json.JobState == 'Completed' or
+        apply_job_status.json.JobState == 'Failed'
+      retries: 10
+      delay: 120
+      delegate_to: "{{ bmc_delegate_host }}"
+
+    - name: Display apply job status
+      debug:
+        msg: "Job ID Status: {{ apply_job_status.json.JobState | default('Unknown') }}"
+
+    - name: Fail if apply job failed
+      fail:
+        msg: "Failed to complete the job"
+      when: 
+        - apply_job_status.json.JobState is defined
+        - "'Failed' in apply_job_status.json.JobState"
+
+    - name: Wait for RAID configuration to take effect
+      pause:
+        seconds: 60
+        prompt: "Sleeping for 1 minute extra to let raid configuration take effect"

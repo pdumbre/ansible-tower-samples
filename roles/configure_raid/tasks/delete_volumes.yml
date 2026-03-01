@@ -7,6 +7,19 @@
   set_fact:
     bmc_ip: "{{ bmc_ip | regex_replace('/$', '') }}"
 
+- name: Filter volumes safe for deletion
+  set_fact:
+    volumes_to_delete: >-
+      {{
+        volumes_response.json.Members
+        | rejectattr(
+            'Oem.Dell.PendingOperations',
+            'contains',
+            'Delete'
+          )
+        | list
+      }}
+      
 - name: Delete existing RAID volumes
   uri:
     url: "https://{{ bmc_ip }}{{ item }}"

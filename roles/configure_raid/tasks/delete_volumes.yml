@@ -27,6 +27,13 @@
 - debug:
     msg: "{{ volume_list }}"
 
+- name: Delete RAID volumes sequentially
+  include_tasks: delete_single_volume.yml
+  loop: "{{ volume_list }}"
+  loop_control:
+    loop_var: volume_uri
+  when: volume_list | length > 0
+  
 - name: Delete existing RAID volumes
   uri:
     url: "https://{{ bmc_ip }}{{ item }}"

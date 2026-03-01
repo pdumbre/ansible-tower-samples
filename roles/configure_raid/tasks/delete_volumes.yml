@@ -89,9 +89,12 @@
     - storage_list.json.Members | length > 0
   delegate_to: "{{ bmc_delegate_host }}"
 
+- debug:
+    msg: "{{ bmc_manager_url }}/{{job_config.url_suffix}}"
+    
 - name: Wait for Dell Lifecycle jobs to complete
   uri:
-    url: "{{ bmc_manager_url }}/job_config.url_suffix"
+    url: "{{ bmc_manager_url }}/{{job_config.url_suffix}}"
     method: GET
     user: "{{ bmc_user }}"
     password: "{{ bmc_password }}"

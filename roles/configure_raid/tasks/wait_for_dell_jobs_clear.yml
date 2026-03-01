@@ -1,5 +1,5 @@
 
-- name: Fetch Dell job queue
+- name: Fetch Dell job collection
   uri:
     url: "https://{{ bmc_ip }}/redfish/v1/Managers/iDRAC.Embedded.1/Oem/Dell/Jobs"
     method: GET
@@ -7,18 +7,50 @@
     password: "{{ bmc_password }}"
     validate_certs: no
     return_content: yes
-  register: dell_jobs_initial
+  register: dell_job_collection
   delegate_to: "{{ bmc_delegate_host }}"
 
+- name: Extract job URIs
+  set_fact:
+    dell_job_uris: >-
+      {{
+        dell_job_collection.json.Members | default([])
+        | map(attribute='@odata.id')
+        | list
+      }}
 
-- name: Extract scheduled jobs
+- name: Fetch Dell job details
+  uri:
+    url: "https://{{ bmc_ip }}{{ item }}"
+    method: GET
+    user: "{{ bmc_user }}"
+    password: "{{ bmc_password }}"
+    validate_certs: no
+    return_content: yes
+  loop: "{{ dell_job_uris }}"
+  register: dell_job_details
+  delegate_to: "{{ bmc_delegate_host }}"
+  when: dell_job_uris | length > 0
+
+- name: Build active job list
+  set_fact:
+    active_dell_jobs: >-
+      {{
+        (dell_job_details.results | default([]))
+        | map(attribute='json')
+        | selectattr('JobState','in',['New','Running','Scheduled'])
+        | list
+      }}
+
+- name: Detect scheduled jobs
   set_fact:
     scheduled_dell_jobs: >-
       {{
-        dell_jobs_initial.json.Members | default([])
+        active_dell_jobs
         | selectattr('JobState','equalto','Scheduled')
         | list
       }}
+
 
 - name: Reboot server if scheduled jobs exist
   uri:
@@ -30,11 +62,11 @@
     user: "{{ bmc_user }}"
     password: "{{ bmc_password }}"
     validate_certs: no
-    status_code: [200, 204]
+    status_code: [200,204]
   when: scheduled_dell_jobs | length > 0
   delegate_to: "{{ bmc_delegate_host }}"
 
-- name: Wait for iDRAC to become reachable after reboot
+- name: Wait for iDRAC after reboot
   wait_for:
     host: "{{ bmc_ip }}"
     port: 443
@@ -42,27 +74,7 @@
     timeout: 600
   when: scheduled_dell_jobs | length > 0
 
-- name: Wait for Dell job queue to clear completely
-  uri:
-    url: "https://{{ bmc_ip }}/redfish/v1/Managers/iDRAC.Embedded.1/Oem/Dell/Jobs"
-    method: GET
-    user: "{{ bmc_user }}"
-    password: "{{ bmc_password }}"
-    validate_certs: no
-    return_content: yes
-  register: dell_jobs
-  delegate_to: "{{ bmc_delegate_host }}"
-  until: >
-    (
-      dell_jobs.json.Members | default([])
-      | selectattr('JobState','in',['New','Running','Scheduled'])
-      | list
-      | length
-    ) == 0
-  retries: 30
-  delay: 20
-
-
-- name: Confirm Dell job queue is clear
-  debug:
-    msg: "Dell Lifecycle Controller job queue is clear. Safe to proceed."
+- name: Fail if active jobs still present
+  fail:
+    msg: "Dell job queue still contains active jobs: {{ active_dell_jobs }}"
+  when: active_dell_jobs | length > 0

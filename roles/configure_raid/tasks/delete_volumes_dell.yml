@@ -19,7 +19,7 @@
       loop: "{{ volume_list }}"
       loop_control:
         loop_var: volume_uri
-
+      when: volume_list | length > 0
 
     - name: Check job queue status (get member list)
       uri:

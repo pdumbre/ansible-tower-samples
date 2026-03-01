@@ -72,7 +72,6 @@
         seconds: 20
       when: active_dell_jobs | length > 0
 
-  register: dell_job_wait_block
   until: active_dell_jobs | length == 0
   retries: 20
   delay: 15

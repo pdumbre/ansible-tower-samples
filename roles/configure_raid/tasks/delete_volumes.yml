@@ -94,14 +94,16 @@
 
 - name: Wait until no active Dell Lifecycle jobs exist
   uri:
-    url: "{{ bmc_manager_url }}/Oem/Dell/Jobs"
+    url: >-
+      {{ bmc_manager_url }}/Oem/Dell/Jobs?$filter={{
+        "JobState eq Running or JobState eq Scheduled or JobState eq New"
+        | urlencode
+      }}
     method: GET
     user: "{{ bmc_user }}"
     password: "{{ bmc_password }}"
     force_basic_auth: yes
     validate_certs: no
-    params:
-      $filter: "JobState eq Running or JobState eq Scheduled or JobState eq New"
   register: job_result
   until: (job_result.json.Members | default([])) | length == 0
   retries: "{{ job_config.retries | int }}"
@@ -109,7 +111,7 @@
   delegate_to: "{{ bmc_delegate_host }}"
   changed_when: false
   when: bmc_config.requires_job_cleanup | default(false) | bool
-
+  
 - debug:
     msg: "{{ job_result }}"
     

@@ -96,11 +96,14 @@
         force_basic_auth: yes
         body_format: json
         body:
-          TargetSettingsURI: "/redfish/v1/Systems/System.Embedded.1/Storage/{{ controller_name }}"
-          RebootJobType: "GracefulRestart"
-        status_code: [200, 201, 202]
+          TargetSettingsURI: "{{ item }}"   
+        status_code: [200, 201, 202, 400]
       register: delete_job
+      loop: "{{ volume_list }}"
+      loop_control:
+        label: "{{ item }}"
       delegate_to: "{{ bmc_delegate_host }}"
+      failed_when: false
 
     - name: Extract job ID from response
       set_fact:

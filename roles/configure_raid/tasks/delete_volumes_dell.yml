@@ -40,7 +40,7 @@
       delegate_to: "{{ bmc_delegate_host }}"
       failed_when: false
 
-     - name: Check job queue status (get member list)
+    - name: Check job queue status (get member list)
       uri:
         url: "{{ bmc_base_url }}/redfish/v1/Managers/iDRAC.Embedded.1/Jobs"
         method: GET

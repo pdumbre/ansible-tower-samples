@@ -145,7 +145,7 @@
 
 - name: Verify volume was created successfully
   uri:
-    url: "{{ bmc_storage_url}}/{{ storage_config.storage_controller_id }}/Volumes"
+    url: "{{ bmc_storage_url}}/{{ storage_config.storage_controller_name }}/Volumes"
     method: GET
     user: "{{ bmc_user }}"
     password: "{{ bmc_password }}"

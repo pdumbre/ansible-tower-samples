@@ -47,6 +47,8 @@
         | list
       }}
 
+- debug:
+    msg: "{{ scheduled_jobs }}"
 
 - name: Reboot server if scheduled jobs exist
   uri:

@@ -156,8 +156,8 @@
       loop_control:
         label: "{{ item['@odata.id'] }}"
       delegate_to: "{{ bmc_delegate_host }}"
-      retries: 10
-      delay: 5
+      retries: 20
+      delay: 30
       until: >
         job_wait_details.json.JobState is not defined or
         job_wait_details.json.JobState not in ['Pending', 'Running', 'New', 'Scheduled']

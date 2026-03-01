@@ -99,8 +99,8 @@
     validate_certs: no
   register: job_result
   until: job_result.json.Members | length == 0
-  retries: job_config.retry
-  delay: job_config.delay
+  retries: "{{ job_config.retries }}"
+  delay: "{{ job_config.delay }}"
   delegate_to: "{{ bmc_delegate_host }}"
   changed_when: false
   when: bmc_config.requires_job_cleanup is defined and (bmc_config.requires_job_cleanup | bool)

@@ -1,5 +1,5 @@
 
-- name: Fetch Dell job collection
+- name: Fetch jobs collection
   uri:
     url: "{{ bmc_manager_url }}/Jobs"
     method: GET
@@ -68,9 +68,9 @@
     port: 443
     delay: 20
     timeout: 600
-  when: scheduled_dell_jobs | length > 0
+  when: scheduled_jobs | length > 0
 
 - name: Fail if active jobs still present
   fail:
-    msg: "Dell job queue still contains active jobs: {{ active_dell_jobs }}"
-  when: active_dell_jobs | length > 0
+    msg: "Job queue still contains active jobs: {{ active_jobs }}"
+  when: active_jobs | length > 0

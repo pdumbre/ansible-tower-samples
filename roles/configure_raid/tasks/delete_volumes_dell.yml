@@ -78,15 +78,6 @@
         msg: "Existing job detected. Attempting cleanup before creating a new job..."
       when: has_pending_jobs | bool
 
-    - name: Extract active jobs
-      set_fact:
-        active_jobs: >-
-          {{
-            dell_jobs.json.Members | default([])
-            | map('extract_job_state') | selectattr('JobState', 'in', ['New', 'Running', 'Scheduled'])
-            | list
-          }}
-
     - name: Reboot server if any scheduled jobs were applied
       uri:
         url: "https://{{ bmc_ip }}/redfish/v1/Systems/System.Embedded.1/Actions/ComputerSystem.Reset"
@@ -98,7 +89,7 @@
         password: "{{ bmc_password }}"
         validate_certs: no
         status_code: [200, 204]
-      when: active_dell_jobs | selectattr('JobState', 'equalto', 'Scheduled') | list | length > 0
+      when: has_pending_jobs | selectattr('JobState', 'equalto', 'Scheduled') | list | length > 0
       delegate_to: "{{ bmc_delegate_host }}"
 
     - name: Wait for power cycle to complete

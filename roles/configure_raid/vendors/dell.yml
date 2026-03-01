@@ -28,3 +28,9 @@ raid_config:
   write_policy: "wt"  # Write policy: wt (write-through), wb (write-back)
   disk_cache_policy: "default"  # Disk cache policy
   drive_capacity: "480GB"  # Expected drive capacity
+  
+job_config:
+  url_suffix: "/Jobs"
+  retries: 20
+  delay: 60
+  

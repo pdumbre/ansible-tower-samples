@@ -23,7 +23,7 @@
  # include_tasks: t.yml
   
 - name: Delete volume
-  include_tasks: delete_volumes.yml
+  include_tasks: delete_volumes_dell.yml
 
 #- name: Create volume
  # include_tasks: create_volume.yml

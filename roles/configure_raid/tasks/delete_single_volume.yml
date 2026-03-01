@@ -2,17 +2,23 @@
 # Delete single volume
 ###############################################################################
 
-- name: Delete volume {{ volume_uri }}
+- name: Delete volume
   uri:
     url: "https://{{ bmc_ip }}{{ volume_uri }}"
     method: DELETE
     user: "{{ bmc_user }}"
     password: "{{ bmc_password }}"
     validate_certs: no
-    status_code: [200,202,204]
+    status_code: [200,202,204,400]    # include 400
+    return_content: yes
   register: delete_result
   delegate_to: "{{ bmc_delegate_host }}"
-
+  failed_when: >
+    delete_result.status not in [200,202,204] and
+    (
+      delete_result.json.error['@Message.ExtendedInfo'][0].MessageId
+      not in ["IDRAC.2.9.STOR023","IDRAC.2.9.STOR026"]
+    )
 ###############################################################################
 # Capture job URI if returned
 ###############################################################################

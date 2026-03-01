@@ -94,10 +94,13 @@
     force_basic_auth: yes
     validate_certs: no
   register: volumes_check
-  retries: 20
-  delay: 15
-  until: volumes_check.json.Members | length == 0
+  #retries: 20
+  #delay: 15
+  #until: volumes_check.json.Members | length == 0
   delegate_to: "{{ bmc_delegate_host }}"
+
+- debug:
+    msg: "{{ volumes_check }}"
 
 - name: Confirm deletion success
   debug:

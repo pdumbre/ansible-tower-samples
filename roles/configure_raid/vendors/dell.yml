@@ -7,6 +7,10 @@ storage_config:
 power_config:
   url_suffix:  /Actions/ComputerSystem.Reset
   desired_power_state: "on"
+  
+#BMC Configuration
+bmc_config:
+  requires_job_cleanup: true
 
 bmc_requires_job_cleanup: true
 delay_power_on: 60 # Delay between power on attempts (seconds)

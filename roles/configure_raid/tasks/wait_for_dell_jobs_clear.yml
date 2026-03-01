@@ -1,7 +1,9 @@
+---
+# Wait for Dell job queue to clear before proceeding
 
 - name: Wait until Dell job queue is empty
   block:
-  
+
     - name: Fetch Dell job queue
       uri:
         url: "https://{{ bmc_ip }}/redfish/v1/Managers/iDRAC.Embedded.1/Oem/Dell/Jobs"
@@ -22,7 +24,7 @@
         active_dell_jobs: >-
           {{
             dell_jobs.json.Members
-            | selectattr('JobState','in',['New','Running','Scheduled'])
+            | selectattr('JobState', 'in', ['New', 'Running', 'Scheduled'])
             | list
           }}
 
@@ -31,7 +33,7 @@
         scheduled_dell_jobs: >-
           {{
             active_dell_jobs
-            | selectattr('JobState','equalto','Scheduled')
+            | selectattr('JobState', 'equalto', 'Scheduled')
             | list
           }}
 
@@ -49,7 +51,7 @@
         user: "{{ bmc_user }}"
         password: "{{ bmc_password }}"
         validate_certs: no
-        status_code: [200,204]
+        status_code: [200, 204]
       when: scheduled_dell_jobs | length > 0
       delegate_to: "{{ bmc_delegate_host }}"
 
@@ -83,3 +85,5 @@
 - name: Confirm Dell job queue is clear
   debug:
     msg: "Dell Lifecycle job queue is clear. Safe to continue."
+
+# Made with Bob

@@ -83,7 +83,7 @@
   delay: job_config.delay
   delegate_to: "{{ bmc_delegate_host }}"
   changed_when: false
-  when bmc_requires_job_cleanup is defined and (bmc_requires_job_cleanup | bool)
+  when bmc_config.requires_job_cleanup is defined and (bmc_config.requires_job_cleanup | bool)
   
 - name: Verify all RAID volumes are deleted
   uri:

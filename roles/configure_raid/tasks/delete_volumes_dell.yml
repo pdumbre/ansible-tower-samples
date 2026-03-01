@@ -101,6 +101,10 @@
       when: active_dell_jobs | selectattr('JobState', 'equalto', 'Scheduled') | list | length > 0
       delegate_to: "{{ bmc_delegate_host }}"
 
+    - name: Wait for power cycle to complete
+      pause:
+        seconds: 60
+        
     - name: Verify all RAID volumes are deleted
       uri:
         url: "{{ bmc_storage_url }}/{{ controller_name }}/Volumes"

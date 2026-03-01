@@ -1,0 +1,32 @@
+---
+# Delete a single Dell RAID volume with retry logic
+# Equivalent to the retry logic in NodesRaidConfig.groovy lines 100-119
+
+- name: Attempt to delete Dell virtual volume (with retry)
+  uri:
+    url: "{{ bmc_base_url }}{{ volume_item['@odata.id'] }}"
+    method: DELETE
+    user: "{{ bmc_user }}"
+    password: "{{ bmc_password }}"
+    validate_certs: no
+    force_basic_auth: yes
+    status_code: [200, 202, 204]
+  register: delete_result
+  delegate_to: "{{ bmc_delegate_host }}"
+  retries: 3
+  delay: 5
+  until: delete_result.status in [200, 202, 204]
+  ignore_errors: yes
+
+- name: Check deletion result
+  set_fact:
+    volume_deleted: "{{ delete_result.status in [200, 202, 204] }}"
+
+- name: Display deletion status
+  debug:
+    msg: "{{ 'Volume deleted successfully' if volume_deleted else 'Volume deletion failed - Error: STOR099 or similar' }}"
+
+- name: Fail if volume deletion unsuccessful after retries
+  fail:
+    msg: "Failed to delete volume {{ volume_item['@odata.id'] }} after 3 attempts. Aborting."
+  when: not volume_deleted

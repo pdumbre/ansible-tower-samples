@@ -96,9 +96,8 @@
         force_basic_auth: yes
         body_format: json
         body:
-          TargetSettingsURI: "/redfish/v1/Systems/System.Embedded.1/Storage/{{ storage_controller_id }}"
+          TargetSettingsURI: "/redfish/v1/Systems/System.Embedded.1/Storage/{{ controller_name }}"
           RebootJobType: "ForceRestart"
-          ScheduledStartTime: "TIME_NOW"
         status_code: [200, 201, 202]
       register: delete_job
       delegate_to: "{{ bmc_delegate_host }}"

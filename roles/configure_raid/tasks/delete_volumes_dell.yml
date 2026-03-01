@@ -2,6 +2,10 @@
 # Dell iDRAC specific RAID volume deletion
 # Equivalent to NodesRaidConfig.groovy lines 93-175
 
+- name: Build volume list
+  set_fact:
+    volume_list: "{{ volumes.json | default({}) | json_query('Members[].\"@odata.id\"') | default([]) }}"
+    
 - name: Delete Dell iDRAC RAID volumes with retry logic
   block:
     - name: Initialize retry variables

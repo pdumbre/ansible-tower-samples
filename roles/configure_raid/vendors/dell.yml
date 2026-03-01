@@ -11,6 +11,7 @@ power_config:
 #BMC Configuration
 bmc_config:
   requires_job_cleanup: true
+  support_deletion_job: true
 
 delay_power_on: 60 # Delay between power on attempts (seconds)
 max_retries: 10

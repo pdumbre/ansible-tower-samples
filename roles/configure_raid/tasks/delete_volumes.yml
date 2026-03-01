@@ -154,8 +154,8 @@
             that:
               - job_wait_details.results | default([]) | map(attribute='json') | selectattr('JobState', 'defined') | selectattr('JobState', 'in', ['Pending', 'Running', 'New', 'Scheduled']) | list | length == 0
             fail_msg: "Jobs still pending or running"
-          retries: 10
-          delay: 5
+          retries: 20
+          delay: 30
       when: has_pending_jobs | bool
   when:
     - bmc_config.requires_job_cleanup | default(false) | bool

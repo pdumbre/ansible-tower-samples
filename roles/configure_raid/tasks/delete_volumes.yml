@@ -3,15 +3,18 @@
   set_fact:
     volume_list: "{{ volumes.json | default({}) | json_query('Members[].\"@odata.id\"') | default([]) }}"
 
+- debug:
+    msg: "{{ volume_list }}"
+
 - name: Configure BMC endpoint
   set_fact:
     bmc_ip: "{{ bmc_ip | regex_replace('/$', '') }}"
 
 - name: Filter volumes safe for deletion
   set_fact:
-    volumes_to_delete: >-
+    volume_list: >-
       {{
-        volumes_response.json.Members
+        volumes.json.Members
         | rejectattr(
             'Oem.Dell.PendingOperations',
             'contains',
@@ -19,6 +22,10 @@
           )
         | list
       }}
+  when: bmc_config.support_deletion_job is defined
+
+- debug:
+    msg: "{{ volume_list }}"
       
 - name: Delete existing RAID volumes
   uri:

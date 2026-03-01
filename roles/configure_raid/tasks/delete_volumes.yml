@@ -102,14 +102,19 @@
       register: job_collection
       changed_when: false
 
+    - debug:
+        msg: "{{ job_collection }}"
+        
     - name: Extract Dell job URIs
       set_fact:
         dell_job_uris: >-
           {{
             job_collection.json.Members | default([]) |
-            map(attribute='@odata.id') |
-            list
+            json_query('[]."@odata.id"')
           }}
+
+    - debug:
+        msg: "{{ dell_job_uris }}"
 
     - name: Poll Dell jobs until no active jobs remain
       uri:

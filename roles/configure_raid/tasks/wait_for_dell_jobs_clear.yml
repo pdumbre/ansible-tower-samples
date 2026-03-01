@@ -1,52 +1,48 @@
 
 - name: Fetch Dell job collection
   uri:
-    url: "https://{{ bmc_ip }}/redfish/v1/Managers/iDRAC.Embedded.1/Oem/Dell/Jobs"
+    url: "{{ bmc_manager_url }}/Jobs"
     method: GET
     user: "{{ bmc_user }}"
     password: "{{ bmc_password }}"
     validate_certs: no
     return_content: yes
-  register: dell_job_collection
+    status_code: [200]
+  register: job_queue_status
   delegate_to: "{{ bmc_delegate_host }}"
 
-- name: Extract job URIs
-  set_fact:
-    dell_job_uris: >-
-      {{
-        dell_job_collection.json.Members | default([])
-        | map(attribute='@odata.id')
-        | list
-      }}
-
-- name: Fetch Dell job details
+- debug:
+    msg: "{{ job_queue_status.json.Members }}"
+    
+- name: Fetch full details for each job
   uri:
-    url: "https://{{ bmc_ip }}{{ item }}"
+    url: "{{ bmc_base_url }}{{ item['@odata.id'] }}"
     method: GET
     user: "{{ bmc_user }}"
     password: "{{ bmc_password }}"
     validate_certs: no
     return_content: yes
-  loop: "{{ dell_job_uris }}"
-  register: dell_job_details
+  loop: "{{ job_queue_status.json.Members | default([]) }}"
+  register: job_details_results
   delegate_to: "{{ bmc_delegate_host }}"
-  when: dell_job_uris | length > 0
+  loop_control:
+    label: "{{ item['@odata.id'] }}"  
 
 - name: Build active job list
   set_fact:
-    active_dell_jobs: >-
+    active_jobs: >-
       {{
-        (dell_job_details.results | default([]))
+        (job_details_results.results | default([]))
         | map(attribute='json')
-        | selectattr('JobState','in',['New','Running','Scheduled'])
+        | selectattr('JobState','in',['Pending', 'New','Running','Scheduled'])
         | list
       }}
 
 - name: Detect scheduled jobs
   set_fact:
-    scheduled_dell_jobs: >-
+    scheduled_jobs: >-
       {{
-        active_dell_jobs
+        active_jobs
         | selectattr('JobState','equalto','Scheduled')
         | list
       }}
@@ -63,7 +59,7 @@
     password: "{{ bmc_password }}"
     validate_certs: no
     status_code: [200,204]
-  when: scheduled_dell_jobs | length > 0
+  when: scheduled_jobs | length > 0
   delegate_to: "{{ bmc_delegate_host }}"
 
 - name: Wait for iDRAC after reboot

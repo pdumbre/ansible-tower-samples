@@ -10,27 +10,9 @@
   set_fact:
     bmc_ip: "{{ bmc_ip | regex_replace('/$', '') }}"
 
-- name: Filter volumes safe for deletion
-  set_fact:
-    volume_list: >-
-      {{
-        volumes.json.Members
-        | rejectattr(
-            'Oem.Dell.PendingOperations',
-            'contains',
-            'Delete'
-          )
-        | list
-      }}
-  when: bmc_config.support_deletion_job is defined
-
-- debug:
-    msg: "{{ volume_list }}"
-
 - name: Wait for job queues to be clear
   include_tasks: wait_for_dell_jobs_clear.yml
   when: bmc_config.requires_job_cleanup | default(false) | bool
-
   
 - name: Delete RAID volumes sequentially
   include_tasks: delete_single_volume.yml

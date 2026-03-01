@@ -18,8 +18,8 @@
       include_tasks: delete_single_volume_dell.yml
       loop: "{{ volume_list }}"
       loop_control:
-        loop_var: volume_item
-        label: "{{ volume_item['@odata.id'] | default('Unknown volume') }}"
+        loop_var: volume_uri
+
 
     - name: Check job queue status (get member list)
       uri:

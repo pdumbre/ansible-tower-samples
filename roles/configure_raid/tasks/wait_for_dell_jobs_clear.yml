@@ -1,0 +1,85 @@
+
+- name: Wait until Dell job queue is empty
+  block:
+  
+    - name: Fetch Dell job queue
+      uri:
+        url: "https://{{ bmc_ip }}/redfish/v1/Managers/iDRAC.Embedded.1/Oem/Dell/Jobs"
+        method: GET
+        user: "{{ bmc_user }}"
+        password: "{{ bmc_password }}"
+        validate_certs: no
+        return_content: yes
+      register: dell_jobs
+      delegate_to: "{{ bmc_delegate_host }}"
+
+    ###########################################################################
+    # Build active job list
+    ###########################################################################
+
+    - name: Extract active jobs
+      set_fact:
+        active_dell_jobs: >-
+          {{
+            dell_jobs.json.Members
+            | selectattr('JobState','in',['New','Running','Scheduled'])
+            | list
+          }}
+
+    - name: Extract scheduled jobs
+      set_fact:
+        scheduled_dell_jobs: >-
+          {{
+            active_dell_jobs
+            | selectattr('JobState','equalto','Scheduled')
+            | list
+          }}
+
+    ###########################################################################
+    # Reboot if Scheduled jobs found
+    ###########################################################################
+
+    - name: Reboot server if scheduled jobs exist
+      uri:
+        url: "https://{{ bmc_ip }}/redfish/v1/Systems/System.Embedded.1/Actions/ComputerSystem.Reset"
+        method: POST
+        body:
+          ResetType: ForceRestart
+        body_format: json
+        user: "{{ bmc_user }}"
+        password: "{{ bmc_password }}"
+        validate_certs: no
+        status_code: [200,204]
+      when: scheduled_dell_jobs | length > 0
+      delegate_to: "{{ bmc_delegate_host }}"
+
+    - name: Wait for iDRAC to become reachable after reboot
+      wait_for:
+        host: "{{ bmc_ip }}"
+        port: 443
+        delay: 20
+        timeout: 600
+      when: scheduled_dell_jobs | length > 0
+
+    ###########################################################################
+    # Pause before next check
+    ###########################################################################
+
+    - name: Pause before re-checking job queue
+      pause:
+        seconds: 20
+      when: active_dell_jobs | length > 0
+
+  register: dell_job_wait_block
+  until: active_dell_jobs | length == 0
+  retries: 20
+  delay: 15
+  delegate_to: "{{ bmc_delegate_host }}"
+
+###############################################################################
+# Final confirmation
+###############################################################################
+
+- name: Confirm Dell job queue is clear
+  debug:
+    msg: "Dell Lifecycle job queue is clear. Safe to continue."

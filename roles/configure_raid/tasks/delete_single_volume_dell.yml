@@ -4,7 +4,7 @@
 
 - name: Attempt to delete Dell virtual volume (with retry)
   uri:
-    url: "{{ bmc_base_url }}{{ volume_item['@odata.id'] }}"
+    url: "https://{{ bmc_ip }}{{ volume_uri }}"
     method: DELETE
     user: "{{ bmc_user }}"
     password: "{{ bmc_password }}"

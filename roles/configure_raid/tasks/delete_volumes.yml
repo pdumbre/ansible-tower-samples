@@ -91,7 +91,7 @@
 
 - name: Wait for Dell Lifecycle jobs to complete
   block:
-    - name: Retrieve Dell Lifecycle jobs
+    - name: Get Dell job collection
       uri:
         url: "{{ bmc_manager_url }}/Oem/Dell/Jobs"
         method: GET
@@ -99,31 +99,42 @@
         password: "{{ bmc_password }}"
         force_basic_auth: yes
         validate_certs: no
-      register: job_result
+      register: job_collection
       changed_when: false
 
-    - name: Wait until no active Dell jobs remain
+    - name: Extract Dell job URIs
+      set_fact:
+        dell_job_uris: >-
+          {{
+            job_collection.json.Members | default([]) |
+            map(attribute='@odata.id') |
+            list
+          }}
+
+    - name: Poll Dell jobs until no active jobs remain
       uri:
-        url: "{{ bmc_manager_url }}/Oem/Dell/Jobs"
+        url: "https://{{ bmc_ip }}{{ item }}"
         method: GET
         user: "{{ bmc_user }}"
         password: "{{ bmc_password }}"
         force_basic_auth: yes
         validate_certs: no
-      register: job_poll
+      loop: "{{ dell_job_uris }}"
+      register: job_details
       until: >
         (
-          job_poll.json.Members | default([]) |
-          selectattr('JobState', 'in', ['New','Scheduled','Running']) |
+          job_details.results |
+          selectattr('json.JobState', 'defined') |
+          selectattr('json.JobState', 'in', ['New','Scheduled','Running']) |
           list
         ) | length == 0
       retries: "{{ job_config.retries | default(30) }}"
       delay: "{{ job_config.delay | default(20) }}"
       changed_when: false
-
   when:
     - bmc_config.requires_job_cleanup | default(false) | bool
   delegate_to: "{{ bmc_delegate_host }}"
+
   
 - name: Verify all RAID volumes are deleted
   uri:

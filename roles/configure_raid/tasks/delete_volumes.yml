@@ -1,3 +1,4 @@
+---
 - name: Build volume list
   set_fact:
     volume_list: "{{ volumes.json | default({}) | json_query('Members[].\"@odata.id\"') | default([]) }}"
@@ -124,55 +125,59 @@
 
     - name: Check for pending or running jobs
       set_fact:
-        has_pending_jobs: "{{ job_details_results.results | default([]) | map(attribute='json') | selectattr('JobState', 'defined') | selectattr('JobState', 'in', ['Pending', 'Running', 'New', 'Scheduled']) | list | length > 0 }}"
+        has_pending_jobs: >-
+          {{
+            job_details_results.results
+            | default([])
+            | map(attribute='json')
+            | selectattr('JobState', 'defined')
+            | selectattr('JobState', 'in', ['Pending', 'Running', 'New', 'Scheduled'])
+            | list
+            | length > 0
+          }}
 
     - name: Clean up pending jobs if detected
       debug:
         msg: "Existing job detected. Attempting cleanup before creating a new job..."
       when: has_pending_jobs | bool
 
-    - name: Wait for pending jobs to complete
-      block:
-        - name: Re-fetch job details to check completion
-          uri:
-            url: "{{ bmc_base_url }}{{ item['@odata.id'] }}"
-            method: GET
-            user: "{{ bmc_user }}"
-            password: "{{ bmc_password }}"
-            validate_certs: no
-            force_basic_auth: yes
-            return_content: yes
-            status_code: [200]
-          register: job_wait_details
-          loop: "{{ job_queue_status.json.Members | default([]) }}"
-          loop_control:
-            label: "{{ item['@odata.id'] }}"
-          delegate_to: "{{ bmc_delegate_host }}"
-
-        - name: Assert no pending or running jobs remain
-          assert:
-            that:
-              - job_wait_details.results | default([]) | map(attribute='json') | selectattr('JobState', 'defined') | selectattr('JobState', 'in', ['Pending', 'Running', 'New', 'Scheduled']) | list | length == 0
-            fail_msg: "Jobs still pending or running"
-          retries: 20
-          delay: 30
+    - name: Wait for pending jobs to complete - poll each job until done
+      uri:
+        url: "{{ bmc_base_url }}{{ item['@odata.id'] }}"
+        method: GET
+        user: "{{ bmc_user }}"
+        password: "{{ bmc_password }}"
+        validate_certs: no
+        force_basic_auth: yes
+        return_content: yes
+        status_code: [200]
+      register: job_wait_details
+      loop: "{{ job_queue_status.json.Members | default([]) }}"
+      loop_control:
+        label: "{{ item['@odata.id'] }}"
+      delegate_to: "{{ bmc_delegate_host }}"
+      retries: 10
+      delay: 5
+      until: >
+        job_wait_details.json.JobState is not defined or
+        job_wait_details.json.JobState not in ['Pending', 'Running', 'New', 'Scheduled']
       when: has_pending_jobs | bool
+
   when:
     - bmc_config.requires_job_cleanup | default(false) | bool
-  delegate_to: "{{ bmc_delegate_host }}"
 
 - name: Verify all RAID volumes are deleted
   uri:
-    url: "{{ bmc_storage_url}}/{{ controller_name }}/Volumes"
+    url: "{{ bmc_storage_url }}/{{ controller_name }}/Volumes"
     method: GET
     user: "{{ bmc_user }}"
     password: "{{ bmc_password }}"
     force_basic_auth: yes
     validate_certs: no
   register: volumes_check
-  #retries: 20
-  #delay: 15
-  #until: volumes_check.json.Members | length == 0
+  retries: 20
+  delay: 15
+  until: volumes_check.json.Members | length == 0
   delegate_to: "{{ bmc_delegate_host }}"
 
 - debug:

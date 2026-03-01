@@ -89,47 +89,41 @@
     - storage_list.json.Members | length > 0
   delegate_to: "{{ bmc_delegate_host }}"
 
-- debug:
-    msg: "{{ bmc_manager_url }}/{{job_config.url_suffix}}"
-
-- name: Wait until no active Dell Lifecycle jobs exist
-  uri:
-    url: >-
-      {{ bmc_manager_url }}/Oem/Dell/Jobs?$filter={{
-        "JobState eq Running or JobState eq Scheduled or JobState eq New"
-        | urlencode
-      }}
-    method: GET
-    user: "{{ bmc_user }}"
-    password: "{{ bmc_password }}"
-    force_basic_auth: yes
-    validate_certs: no
-  register: job_result
-  until: (job_result.json.Members | default([])) | length == 0
-  retries: "{{ job_config.retries | int }}"
-  delay: "{{ job_config.delay | int }}"
-  delegate_to: "{{ bmc_delegate_host }}"
-  changed_when: false
-  when: bmc_config.requires_job_cleanup | default(false) | bool
-  
-- debug:
-    msg: "{{ job_result }}"
-    
 - name: Wait for Dell Lifecycle jobs to complete
-  uri:
-    url: "{{ bmc_manager_url }}/{{job_config.url_suffix}}"
-    method: GET
-    user: "{{ bmc_user }}"
-    password: "{{ bmc_password }}"
-    force_basic_auth: yes
-    validate_certs: no
-  register: job_result
-  until: job_result.json.Members | length == 0
-  retries: "{{ job_config.retries }}"
-  delay: "{{ job_config.delay }}"
+  block:
+    - name: Retrieve Dell Lifecycle jobs
+      uri:
+        url: "{{ bmc_manager_url }}/Oem/Dell/Jobs"
+        method: GET
+        user: "{{ bmc_user }}"
+        password: "{{ bmc_password }}"
+        force_basic_auth: yes
+        validate_certs: no
+      register: job_result
+      changed_when: false
+
+    - name: Wait until no active Dell jobs remain
+      uri:
+        url: "{{ bmc_manager_url }}/Oem/Dell/Jobs"
+        method: GET
+        user: "{{ bmc_user }}"
+        password: "{{ bmc_password }}"
+        force_basic_auth: yes
+        validate_certs: no
+      register: job_poll
+      until: >
+        (
+          job_poll.json.Members | default([]) |
+          selectattr('JobState', 'in', ['New','Scheduled','Running']) |
+          list
+        ) | length == 0
+      retries: "{{ job_config.retries | default(30) }}"
+      delay: "{{ job_config.delay | default(20) }}"
+      changed_when: false
+
+  when:
+    - bmc_config.requires_job_cleanup | default(false) | bool
   delegate_to: "{{ bmc_delegate_host }}"
-  changed_when: false
-  when: bmc_config.requires_job_cleanup is defined and (bmc_config.requires_job_cleanup | bool)
   
 - name: Verify all RAID volumes are deleted
   uri:

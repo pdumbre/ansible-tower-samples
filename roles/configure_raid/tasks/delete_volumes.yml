@@ -27,6 +27,11 @@
 - debug:
     msg: "{{ volume_list }}"
 
+- name: Wait for job queues to be clear
+  include_tasks: wait_for_dell_jobs_clear.yml
+  when: bmc_config.requires_job_cleanup | default(false) | bool
+
+  
 - name: Delete RAID volumes sequentially
   include_tasks: delete_single_volume.yml
   loop: "{{ volume_list }}"

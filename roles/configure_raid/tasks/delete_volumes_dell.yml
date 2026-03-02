@@ -91,6 +91,7 @@
         user: "{{ bmc_user }}"
         password: "{{ bmc_password }}"
         validate_certs: no
+        register: reboot_result
         status_code: [200, 204]
       when: has_pending_jobs | selectattr('JobState', 'equalto', 'Scheduled') | list | length > 0
       delegate_to: "{{ bmc_delegate_host }}"
@@ -98,6 +99,7 @@
     - name: Wait for power cycle to complete
       pause:
         seconds: 60
+      when: reboot_result is defined
         
     - name: Verify all RAID volumes are deleted
       uri:

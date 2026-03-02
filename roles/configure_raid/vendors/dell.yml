@@ -38,4 +38,10 @@ job_config:
   url_suffix: "/Jobs"
   retries: 20
   delay: 60
-  
+
+volume_delete_failed_when: >
+  delete_result.status not in [200,202,204] and
+  (
+    delete_result.json.error['@Message.ExtendedInfo'][0].MessageId
+    not in ['IDRAC.2.9.STOR023','IDRAC.2.9.STOR026']
+  )

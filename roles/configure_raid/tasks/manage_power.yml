@@ -14,8 +14,13 @@
   set_fact:
     power_update_required: "{{ current_power_state != power_config.desired_power_state }}"
 
+- name: Debug current power state
+  debug:
+    msg: "Current power state: {{ current_power_state }}"
+
 - name: Power on system if needed
   block:
+  
     - name: Send power on command
       uri:
         url: "{{ bmc_systems_url }}{{ power_config.url_suffix }}"
@@ -56,7 +61,7 @@
         msg: "System powered on successfully. Current state: {{ verify_power.json.PowerState }}"
 
   when: 
-    - power_update_required
+    - power_update_required | bool
     - power_config.desired_power_state == "On"
 
 - name: Power off system if needed
@@ -115,7 +120,7 @@
         msg: "System powered off successfully. Current state: {{ verify_power_off.json.PowerState }}"
 
   when:
-    - power_update_required
+    - power_update_required | bool
     - power_config.desired_power_state == "Off"
 
 - name: Power cycle system if needed

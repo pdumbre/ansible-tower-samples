@@ -6,21 +6,18 @@
   set_fact:
     volume_list: "{{ volumes.json | default({}) | json_query('Members[].\"@odata.id\"') | default([]) }}"
 
+- name: Delete each virtual volume with retry
+  include_tasks: delete_single_volume.yml
+  loop: "{{ volume_list }}"
+  loop_control:
+    loop_var: volume_uri
+  when: volume_list | length > 0
 
-
-- name: Delete Dell iDRAC RAID volumes with retry logic
+- name: Delete iDRAC RAID volumes with retry logic
   block:
-  
-    - name: Delete each virtual volume with retry
-      include_tasks: delete_single_volume_dell.yml
-      loop: "{{ volume_list }}"
-      loop_control:
-        loop_var: volume_uri
-      when: volume_list | length > 0
-
     - name: Create storage configuration job for deletion
       uri:
-        url: "{{ bmc_manager_url}}{{ bmc_create_job_url }}"
+        url: "{{ bmc_manager_url }}{{ bmc_create_job_url }}"
         method: POST
         user: "{{ bmc_user }}"
         password: "{{ bmc_password }}"
@@ -39,7 +36,6 @@
 
     - name: Check job queue status (get member list)
       uri:
-        url: "{{ bmc_base_url }}/redfish/v1/Managers/iDRAC.Embedded.1/Jobs"
         url: "{{ bmc_manager_url }}{{ job_config.url_suffix }}"
         method: GET
         user: "{{ bmc_user }}"
@@ -66,7 +62,7 @@
       loop_control:
         label: "{{ item['@odata.id'] }}"
       delegate_to: "{{ bmc_delegate_host }}"
-        
+
     - name: Check for pending or running jobs
       set_fact:
         has_pending_jobs: "{{ job_details_results.results | default([]) | map(attribute='json') | selectattr('JobState', 'defined') | selectattr('JobState', 'in', ['Pending', 'Running', 'New', 'Scheduled']) | list | length > 0 }}"
@@ -75,10 +71,10 @@
       debug:
         msg: "Existing job detected. Attempting cleanup before creating a new job..."
       when: has_pending_jobs | bool
-     
+
     - name: Reboot server if any scheduled jobs were applied
       uri:
-        url: {{ bmc_reset_url }}"
+        url: "{{ bmc_reset_url }}"
         method: POST
         body:
           ResetType: ForceRestart
@@ -86,8 +82,8 @@
         user: "{{ bmc_user }}"
         password: "{{ bmc_password }}"
         validate_certs: no
-        register: reboot_result
         status_code: [200, 204]
+      register: reboot_result
       when: has_pending_jobs | selectattr('JobState', 'equalto', 'Scheduled') | list | length > 0
       delegate_to: "{{ bmc_delegate_host }}"
 
@@ -95,21 +91,26 @@
       pause:
         seconds: 60
       when: reboot_result is defined
-        
-    - name: Verify all RAID volumes are deleted
-      uri:
-        url: "{{ bmc_storage_url }}/{{ controller_name }}/Volumes"
-        method: GET
-        user: "{{ bmc_user }}"
-        password: "{{ bmc_password }}"
-        force_basic_auth: yes
-        validate_certs: no
-      register: volumes_check
-      retries: 20
-      delay: 15
-      until: volumes_check.json.Members | length == 0
-      delegate_to: "{{ bmc_delegate_host }}"
 
-    - name: Confirm deletion success
-      debug:
-        msg: "All Dell RAID volumes successfully deleted."
+  when:
+    - bmc_config.requires_job_cleanup is defined
+    - bmc_config.requires_job_cleanup | bool
+
+- name: Verify all RAID volumes are deleted
+  uri:
+    url: "{{ bmc_storage_url }}/{{ controller_name }}/Volumes"
+    method: GET
+    user: "{{ bmc_user }}"
+    password: "{{ bmc_password }}"
+    force_basic_auth: yes
+    validate_certs: no
+  register: volumes_check
+  retries: 20
+  delay: 15
+  until: volumes_check.json.Members | length == 0
+  delegate_to: "{{ bmc_delegate_host }}"
+
+- name: Confirm deletion success
+  debug:
+    msg: "All Dell RAID volumes successfully deleted."
+

@@ -40,6 +40,9 @@
       delegate_to: "{{ bmc_delegate_host }}"
       failed_when: false
 
+    - debug:
+        msg: "{{ delete_job }}"
+        
     - name: Check job queue status (get member list)
       uri:
         url: "{{ bmc_base_url }}/redfish/v1/Managers/iDRAC.Embedded.1/Jobs"
@@ -69,6 +72,10 @@
         label: "{{ item['@odata.id'] }}"
       delegate_to: "{{ bmc_delegate_host }}"
 
+
+    - debug:
+        msg: "{{ job_details_results.results }}"
+        
     - name: Check for pending or running jobs
       set_fact:
         has_pending_jobs: "{{ job_details_results.results | default([]) | map(attribute='json') | selectattr('JobState', 'defined') | selectattr('JobState', 'in', ['Pending', 'Running', 'New', 'Scheduled']) | list | length > 0 }}"
@@ -78,6 +85,22 @@
         msg: "Existing job detected. Attempting cleanup before creating a new job..."
       when: has_pending_jobs | bool
 
+    - name: Check dell job queue status (get member list)
+      uri:
+        url: "{{ bmc_base_url }}/redfish/v1/Managers/iDRAC.Embedded.1/Oem/Dell/Jobs"
+        method: GET
+        user: "{{ bmc_user }}"
+        password: "{{ bmc_password }}"
+        validate_certs: no
+        force_basic_auth: yes
+        return_content: yes
+        status_code: [200]
+      register: job_queue_status
+      delegate_to: "{{ bmc_delegate_host }}"
+
+    - debug:
+        msg: "{{ job_queue_status }}"
+     
     - name: Reboot server if any scheduled jobs were applied
       uri:
         url: "https://{{ bmc_ip }}/redfish/v1/Systems/System.Embedded.1/Actions/ComputerSystem.Reset"

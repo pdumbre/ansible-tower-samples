@@ -20,8 +20,8 @@
     status_code: [204]
     
 - name: Wait for power cycle to complete
-    pause:
-      seconds: 120
+  pause:
+    seconds: 120
 
 - name: Delete each virtual volume with retry
   include_tasks: delete_single_volume_dell.yml

@@ -34,6 +34,9 @@
       delegate_to: "{{ bmc_delegate_host }}"
       failed_when: false
 
+    - debug:
+        msg: "{{ delete_job }}"
+
     - name: Check job queue status (get member list)
       uri:
         url: "{{ bmc_manager_url }}{{ job_config.url_suffix }}"

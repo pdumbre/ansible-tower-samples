@@ -8,7 +8,7 @@
 
 - name: Check job queue status (get member list)
   uri:
-    url: "{{ bmc_base_url }}/redfish/v1/Managers/iDRAC.Embedded.1/Jobs"
+    url: "{{ bmc_base_url }}/redfish/v1/Managers/iDRAC.Embedded.1/Oem/Dell/Jobs"
     method: GET
     user: "{{ bmc_user }}"
     password: "{{ bmc_password }}"
@@ -80,7 +80,7 @@
 
 - name: Check job queue status (get member list)
   uri:
-    url: "{{ bmc_base_url }}/redfish/v1/Managers/iDRAC.Embedded.1/Jobs"
+    url: "{{ bmc_base_url }}/redfish/v1/Managers/iDRAC.Embedded.1/Oem/Dell/Jobs"
     method: GET
     user: "{{ bmc_user }}"
     password: "{{ bmc_password }}"

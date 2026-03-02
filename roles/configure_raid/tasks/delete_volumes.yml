@@ -154,7 +154,7 @@
     password: "{{ bmc_password }}"
     validate_certs: no
     status_code: [200, 204]
-  when: active_dell_jobs | selectattr('JobState', 'equalto', 'Scheduled') | list | length > 0
+  when: has_pending_jobs | bool
   delegate_to: "{{ bmc_delegate_host }}"
 
 - name: Verify all RAID volumes are deleted

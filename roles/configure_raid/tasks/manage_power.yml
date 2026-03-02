@@ -41,6 +41,7 @@
         host: "{{ bmc_ip }}"
         port: 22
         timeout: 300
+      delegate_to: "{{ bmc_delegate_host }}"
 
     - name: Verify power state
       uri:

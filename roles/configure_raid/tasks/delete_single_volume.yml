@@ -1,93 +1,21 @@
-###############################################################################
-# Delete single volume
-###############################################################################
+---
+# Delete a single volume with retry logic
 
-- name: Delete volume
+- name: Attempt to delete Dell virtual volume 
   uri:
     url: "https://{{ bmc_ip }}{{ volume_uri }}"
     method: DELETE
     user: "{{ bmc_user }}"
     password: "{{ bmc_password }}"
     validate_certs: no
-    status_code: [200,202,204,400]    # include 400
-    return_content: yes
+    force_basic_auth: yes
+    status_code: [200, 202, 204, 400]
   register: delete_result
   delegate_to: "{{ bmc_delegate_host }}"
   failed_when: >
     delete_result.status not in [200,202,204] and
     (
       delete_result.json.error['@Message.ExtendedInfo'][0].MessageId
-      not in ["IDRAC.2.9.STOR023","IDRAC.2.9.STOR026"]
+      not in ['IDRAC.2.9.STOR023','IDRAC.2.9.STOR026']
     )
-###############################################################################
-# Capture job URI if returned
-###############################################################################
-
-- name: Capture job URI
-  set_fact:
-    job_uri: "{{ delete_result.location | default(None) }}"
-
-###############################################################################
-# Poll job if async (Dell / Lenovo async case)
-###############################################################################
-
-- name: Poll job until completed
-  uri:
-    url: "https://{{ bmc_ip }}{{ job_uri }}"
-    method: GET
-    user: "{{ bmc_user }}"
-    password: "{{ bmc_password }}"
-    validate_certs: no
-    return_content: yes
-  register: job_status
-  delegate_to: "{{ bmc_delegate_host }}"
-  retries: 60
-  delay: 15
-  until: >
-    job_status.json.JobState is defined and
-    job_status.json.JobState in ['Completed','Failed','Scheduled']
-  when: job_uri is not none
-
-###############################################################################
-# Dell: Reboot immediately if Scheduled
-###############################################################################
-
-- name: Reboot server if Dell job scheduled
-  uri:
-    url: "{{ bmc_systems_url }}/Actions/ComputerSystem.Reset"
-    method: POST
-    user: "{{ bmc_user }}"
-    password: "{{ bmc_password }}"
-    validate_certs: no
-    force_basic_auth: yes
-    body_format: json
-    body:
-      ResetType: "ForceRestart"
-    status_code: [200,204]
-  when:
-    - job_uri is not none
-    - job_status.json.JobState == "Scheduled"
-  delegate_to: "{{ bmc_delegate_host }}"
-
-###############################################################################
-# Wait for system after reboot (Dell only if reboot happened)
-###############################################################################
-
-- name: Wait for system to power on
-  uri:
-    url: "{{ bmc_systems_url }}"
-    method: GET
-    user: "{{ bmc_user }}"
-    password: "{{ bmc_password }}"
-    validate_certs: no
-    return_content: yes
-  register: power_state_check
-  retries: "{{ max_retries }}"
-  delay: "{{ delay_power_on }}"
-  until:
-    - power_state_check.json.PowerState is defined
-    - power_state_check.json.PowerState == "On"
-  when:
-    - job_uri is not none
-    - job_status.json.JobState == "Scheduled"
-  delegate_to: "{{ bmc_delegate_host }}"
+    

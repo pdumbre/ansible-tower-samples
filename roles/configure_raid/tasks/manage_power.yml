@@ -30,10 +30,12 @@
         status_code: [200, 202, 204]
       delegate_to: localhost
       register: power_on_result
-
-    - name: Wait for system to power on
-      pause:
-        seconds: 5
+        
+    - name: Wait for server to come back online
+      wait_for:
+        host: "{{ bmc_ip }}"
+        port: 22
+        timeout: 300
 
     - name: Verify power state
       uri:

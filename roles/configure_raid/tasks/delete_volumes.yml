@@ -6,6 +6,23 @@
   set_fact:
     volume_list: "{{ volumes.json | default({}) | json_query('Members[].\"@odata.id\"') | default([]) }}"
 
+- name: Reset iDRAC to clear stale Redfish sessions
+  uri:
+    url: "https://{{ bmc_ip }}/redfish/v1/Managers/iDRAC.Embedded.1/Actions/Manager.Reset"
+    method: POST
+    user: "{{ bmc_user }}"
+    password: "{{ bmc_password }}"
+    force_basic_auth: yes
+    validate_certs: no
+    body_format: json
+    body:
+      ResetType: "GracefulRestart"
+    status_code: [204]
+    
+ - name: Wait for power cycle to complete
+   pause:
+     seconds: 120
+
 - name: Delete each virtual volume with retry
   include_tasks: delete_single_volume_dell.yml
   loop: "{{ volume_list }}"

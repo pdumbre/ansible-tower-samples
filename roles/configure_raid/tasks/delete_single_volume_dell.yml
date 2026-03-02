@@ -3,6 +3,10 @@
 # Equivalent to the retry logic in NodesRaidConfig.groovy lines 100-119
 
 
+- debug:
+    msg: "https://{{ bmc_ip }}/redfish/v1/Systems/System.Embedded.1/Storage/BOSS.SL.12-1/Volumes/Disk.Virtual.0:BOSS.SL.12-1"
+
+
 - name: Stage BOSS volume deletion
   uri:
     url: "https://{{ bmc_ip }}/redfish/v1/Systems/System.Embedded.1/Storage/BOSS.SL.12-1/Volumes/Disk.Virtual.0:BOSS.SL.12-1"
@@ -11,12 +15,9 @@
     password: "{{ bmc_password }}"
     force_basic_auth: yes
     validate_certs: no
-    status_code: [202, 204]
+    status_code: [202, 204, 400]
   delegate_to: "{{ bmc_delegate_host }}"
   register: stage_result
-
-- debug:
-    msg: "https://{{ bmc_ip }}/redfish/v1/Systems/System.Embedded.1/Storage/BOSS.SL.12-1/Volumes/Disk.Virtual.0:BOSS.SL.12-1"
 
 - debug:
     msg: "{{ stage_result }}"

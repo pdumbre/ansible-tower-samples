@@ -2,7 +2,7 @@
 #Power Configuration
 power_config:
   url_suffix:  "/Actions/ComputerSystem.Reset"
-  desired_power_state: "on"
+  desired_power_state: "On"
 
 #BIOS Configuration
 bios_config:

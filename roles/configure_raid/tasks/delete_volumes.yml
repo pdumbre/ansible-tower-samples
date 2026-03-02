@@ -91,7 +91,6 @@
     body_format: json
     body:
       RebootJobType: "ForceRestart"
-      ScheduledStartTime: "TIME_NOW"
     status_code: [200, 201, 202]
   register: delete_job
   delegate_to: "{{ bmc_delegate_host }}"

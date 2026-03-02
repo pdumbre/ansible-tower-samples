@@ -92,6 +92,7 @@
         host: "{{ bmc_ip }}"
         port: 22
         timeout: 300
+      delegate_to: "{{ bmc_delegate_host }}"
   when:
     - bmc_config.requires_job_cleanup is defined
     - bmc_config.requires_job_cleanup | bool

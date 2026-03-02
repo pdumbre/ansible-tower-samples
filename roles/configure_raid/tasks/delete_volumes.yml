@@ -143,85 +143,19 @@
       delay: 5
   when: has_pending_jobs | bool
 
-- name: Delete Dell RAID volumes safely
-  block:
-
-    - name: Stage volume deletion via config job
-      uri:
-        url: "https://{{ bmc_ip }}/redfish/v1/Managers/iDRAC.Embedded.1/Oem/EID_674_Manager.CreateConfigJob"
-        method: POST
-        user: "{{ bmc_user }}"
-        password: "{{ bmc_password }}"
-        validate_certs: no
-        return_content: yes
-        body_format: json
-        body:
-          TargetSettingsURI: "{{ item }}"
-      register: stage_delete
-      delegate_to: "{{ bmc_delegate_host }}"
-      loop: "{{ volume_list }}"
-      loop_control:
-        label: "{{ item }}"
-      failed_when: >
-        stage_delete.status not in [200,202,204,400] and
-        (stage_delete.json.error['@Message.ExtendedInfo'][0].MessageId
-          not in ['IDRAC.2.9.STOR023','IDRAC.2.9.STOR026'])
-
-    - name: Debug job result
-      debug:
-        msg: "{{ stage_delete }}"
-
-
-    - name: Fetch Dell job collection
-      uri:
-        url: "https://{{ bmc_ip }}/redfish/v1/Managers/iDRAC.Embedded.1/Oem/Dell/Jobs"
-        method: GET
-        user: "{{ bmc_user }}"
-        password: "{{ bmc_password }}"
-        validate_certs: no
-        return_content: yes
-      register: dell_jobs
-      delegate_to: "{{ bmc_delegate_host }}"
-      until: >-
-        dell_jobs.json.Members | default([])
-        | map(attribute='JobState', default='')
-        | select('in', ['New', 'Running', 'Scheduled'])
-        | list | length == 0
-      retries: 20
-      delay: 30
-
-    - name: Extract job URIs
-      set_fact:
-        dell_job_uris: >-
-          {{
-            dell_jobs.json.Members | default([])
-            | map(attribute='@odata.id', default=None)
-            | list
-          }}
-
-    - name: Build active job list
-      set_fact:
-        active_dell_jobs: >-
-          {{
-            dell_jobs.json.Members | default([])
-            | selectattr('JobState', 'in', ['New', 'Running', 'Scheduled'])
-            | list
-          }}
-
-  
-    - name: Reboot server if required
-      uri:
-        url: "https://{{ bmc_ip }}/redfish/v1/Systems/System.Embedded.1/Actions/ComputerSystem.Reset"
-        method: POST
-        body:
-          ResetType: ForceRestart
-        body_format: json
-        user: "{{ bmc_user }}"
-        password: "{{ bmc_password }}"
-        validate_certs: no
-        status_code: [200, 204]
-      when: active_dell_jobs | selectattr('JobState', 'equalto', 'Scheduled') | list | length > 0
-      delegate_to: "{{ bmc_delegate_host }}"
+- name: Reboot server if required
+  uri:
+    url: "https://{{ bmc_ip }}/redfish/v1/Systems/System.Embedded.1/Actions/ComputerSystem.Reset"
+    method: POST
+    body:
+      ResetType: ForceRestart
+    body_format: json
+    user: "{{ bmc_user }}"
+    password: "{{ bmc_password }}"
+    validate_certs: no
+    status_code: [200, 204]
+  when: active_dell_jobs | selectattr('JobState', 'equalto', 'Scheduled') | list | length > 0
+  delegate_to: "{{ bmc_delegate_host }}"
 
 - name: Verify all RAID volumes are deleted
   uri:
@@ -240,5 +174,3 @@
 - name: Confirm deletion success
   debug:
     msg: "All Dell RAID volumes successfully deleted."
-
-# Made with Bob

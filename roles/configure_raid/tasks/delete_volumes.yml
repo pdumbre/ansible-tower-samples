@@ -78,6 +78,28 @@
       delay: 5
   when: has_pending_jobs | bool
 
+- name: Create job to apply BOSS deletion via JobService
+  uri:
+    url: "https://{{ bmc_ip }}/redfish/v1/JobService/Actions/JobService.CreateJobAndRun"
+    method: POST
+    user: "{{ bmc_user }}"
+    password: "{{ bmc_password }}"
+    force_basic_auth: yes
+    validate_certs: no
+    body_format: json
+    body:
+      ScheduledStartTime: "Now"
+      # Target the Storage Controller directly (not /Settings or /Volumes)
+      Targets: ["/redfish/v1/Systems/System.Embedded.1/Storage/BOSS.SL.12-1"]
+      # Valid values for this endpoint: "Forced" or "Graceful"
+      RebootJobType: "Forced" 
+    status_code: [200, 201, 202]
+  register: job_result
+  delegate_to: "{{ bmc_delegate_host }}"
+
+- debug:
+    msg: job_result
+
 - name: Create reboot job to apply pending storage deletion
   # Dell iDRAC: volume DELETE stages the change; a reboot job applies all pending changes.
   # TargetSettingsURI is NOT used here - iDRAC rejects volume URIs (SWC0283).

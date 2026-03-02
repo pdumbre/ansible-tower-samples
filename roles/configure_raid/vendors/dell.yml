@@ -38,7 +38,7 @@ job_config:
   url_suffix: "/Jobs"
   retries: 20
   delay: 60
-  create_job_url: "Actions/Oem/EID_674_Manager.CreateConfigJob"
+  create_job_url: "Actions/Oem/DellManager.CreateConfigJob"
 
 volume_delete_failed_when: >
   delete_result.status not in [200,202,204] and

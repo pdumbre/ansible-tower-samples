@@ -14,9 +14,9 @@
   set_fact:
     power_update_required: "{{ current_power_state != power_config.desired_power_state }}"
 
-- name: Debug current power state
+- name: Debug power_update_required
   debug:
-    msg: "Current power state: {{ current_power_state }}"
+    msg: "Current power state: {{ power_update_required }}"
 
 - name: Power on system if needed
   block:

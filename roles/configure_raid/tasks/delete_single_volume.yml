@@ -11,4 +11,4 @@
     force_basic_auth: yes
   register: delete_result
   delegate_to: "{{ bmc_delegate_host }}"
-  failed_when: "{{ volume_delete_failed_when }}
+  failed_when: "{{ volume_delete_failed_when }}"

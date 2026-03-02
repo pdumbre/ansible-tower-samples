@@ -87,11 +87,11 @@
       when: has_pending_jobs | selectattr('JobState', 'equalto', 'Scheduled') | list | length > 0
       delegate_to: "{{ bmc_delegate_host }}"
 
-    - name: Wait for power cycle to complete
-      pause:
-        seconds: 60
-      when: reboot_result is defined
-
+    - name: Wait for server to come back online
+      wait_for:
+        host: "{{ bmc_ip }}"
+        port: 22
+        timeout: 300
   when:
     - bmc_config.requires_job_cleanup is defined
     - bmc_config.requires_job_cleanup | bool

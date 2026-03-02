@@ -7,7 +7,7 @@
     volume_list: "{{ volumes.json | default({}) | json_query('Members[].\"@odata.id\"') | default([]) }}"
 
 - name: Delete each virtual volume with retry
-  include_tasks: delete_single_volume.yml
+  include_tasks: delete_single_volume_dell.yml
   loop: "{{ volume_list }}"
   loop_control:
     loop_var: volume_uri

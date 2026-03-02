@@ -90,7 +90,8 @@
     force_basic_auth: yes
     body_format: json
     body:
-      RebootJobType: "ForceRestart"
+      TargetSettingsURI: "/redfish/v1/Systems/System.Embedded.1/Storage/BOSS.SL.12-1/Settings"
+      RebootJobType: "Forced"
     status_code: [200, 201, 202]
   register: delete_job
   delegate_to: "{{ bmc_delegate_host }}"

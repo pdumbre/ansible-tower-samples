@@ -87,10 +87,20 @@
       when: has_pending_jobs | bool
       delegate_to: "{{ bmc_delegate_host }}"
 
+    - debug:
+        msg: "{{ bmc_ip }}"
+
+   - name: Wait for server to come back
+      wait_for:
+        host: "{{ bmc_ip }}"
+        port: 443
+        timeout: 300
+      delegate_to: "{{ bmc_delegate_host }}"
+        
     - name: Wait for server to come back online
       wait_for:
         host: "{{ bmc_ip }}"
-        port: 22
+        port: 422
         timeout: 300
       delegate_to: "{{ bmc_delegate_host }}"
   when:

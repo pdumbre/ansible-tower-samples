@@ -92,7 +92,7 @@
         password: "{{ bmc_password }}"
         validate_certs: no
         status_code: [200, 204]
-      #when: has_pending_jobs | selectattr('JobState', 'equalto', 'Scheduled') | list | length > 0
+      when: has_pending_jobs | selectattr('JobState', 'equalto', 'Scheduled') | list | length > 0
       delegate_to: "{{ bmc_delegate_host }}"
 
     - name: Wait for power cycle to complete

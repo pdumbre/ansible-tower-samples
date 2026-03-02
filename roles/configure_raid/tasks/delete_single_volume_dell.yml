@@ -9,9 +9,6 @@
     user: "{{ bmc_user }}"
     password: "{{ bmc_password }}"
     validate_certs: no
-    headers:
-      # This header replaces the need for a separate CreateConfigJob task
-      "@Redfish.SettingsApplyTime": "Immediate"
     force_basic_auth: yes
     status_code: [200, 202, 204, 400]
   register: delete_result

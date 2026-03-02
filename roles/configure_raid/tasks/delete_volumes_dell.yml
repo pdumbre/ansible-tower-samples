@@ -90,7 +90,7 @@
     - debug:
         msg: "{{ bmc_ip }}"
 
-   - name: Wait for server to come back
+    - name: Wait for server to come back
       wait_for:
         host: "{{ bmc_ip }}"
         port: 443

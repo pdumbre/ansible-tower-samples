@@ -64,7 +64,7 @@
 
 - name: Restart Server
   uri:
-    url: "{{ bmc_systems_url }}/Actions/ComputerSystem.Reset"
+    url: "{{ bmc_reset_url }}"
     method: POST
     user: "{{ bmc_user }}"
     password: "{{ bmc_password }}"

@@ -44,7 +44,18 @@
   when: >
     (volume_create.status not in [200, 201, 202]) and
     (volume_create.json.error is defined)
-    
+
+- name: Get current boot override settings
+  uri:
+    url: "{{ bmc_systems_url }}"
+    method: GET
+    user: "{{ bmc_user }}"
+    password: "{{ bmc_password }}"
+    validate_certs: no
+    force_basic_auth: yes
+  register: current_boot
+  delegate_to: "{{ bmc_delegate_host }}"
+
 - name: Set next boot to UEFI Setup (one-time)
   uri:
     url: "{{ bmc_systems_url }}"
@@ -59,9 +70,19 @@
         BootSourceOverrideTarget: BiosSetup
         BootSourceOverrideEnabled: Once
     status_code: [200, 204]
-  register: ufi_result
+  register: uefi_result
   delegate_to: "{{ bmc_delegate_host }}"
+  when: >
+    current_boot.json.Boot.BootSourceOverrideTarget != "BiosSetup" or
+    current_boot.json.Boot.BootSourceOverrideEnabled != "Once"
 
+- name: UEFI boot already set
+  debug:
+    msg: "UEFI one-time boot is already configured."
+  when: >
+    current_boot.json.Boot.BootSourceOverrideTarget == "BiosSetup" and
+    current_boot.json.Boot.BootSourceOverrideEnabled == "Once"
+    
 - name: Restart Server
   uri:
     url: "{{ bmc_reset_url }}"

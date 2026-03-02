@@ -17,7 +17,8 @@
   block:
     - name: Create storage configuration job for deletion
       uri:
-        url: "{{ bmc_manager_url }}/Actions/Oem/EID_674_Manager.CreateConfigJob"
+        #url: "https://{{ bmc_ip }}/redfish/v1/Managers/iDRAC.Embedded.1/Actions/Oem/EID_674_Manager.CreateConfigJob"
+        url: "https://{{ bmc_ip }}/redfish/v1/Managers/iDRAC.Embedded.1/Oem/EID_674_Manager.CreateConfigJob"
         method: POST
         user: "{{ bmc_user }}"
         password: "{{ bmc_password }}"

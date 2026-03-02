@@ -4,46 +4,28 @@
 
 
 - debug:
-    msg: "https://{{ bmc_ip }}/redfish/v1/Systems/System.Embedded.1/Storage/BOSS.SL.12-1/Volumes/Disk.Virtual.0:BOSS.SL.12-1"
+    msg: "https://{{ bmc_ip }}{{ volume_uri }}"
 
-
-- name: Stage BOSS volume deletion
-  uri:
-    url: "https://{{ bmc_ip }}/redfish/v1/Systems/System.Embedded.1/Storage/BOSS.SL.12-1/Volumes/Disk.Virtual.0:BOSS.SL.12-1"
-    method: DELETE
-    user: "{{ bmc_user }}"
-    password: "{{ bmc_password }}"
-    force_basic_auth: yes
-    validate_certs: no
-    status_code: [202, 204, 400]
-  delegate_to: "{{ bmc_delegate_host }}"
-  register: stage_result
-
-- debug:
-    msg: "{{ stage_result }}"
-    
-
-- name: Attempt to delete Dell virtual volume 
+- name: Retry delete until iDRAC allows it
   uri:
     url: "https://{{ bmc_ip }}{{ volume_uri }}"
     method: DELETE
     user: "{{ bmc_user }}"
     password: "{{ bmc_password }}"
     validate_certs: no
-    force_basic_auth: yes
-    status_code: [200, 202, 204, 400]
+    status_code: [200,202,204,400]
+    return_content: yes
   register: delete_result
+  retries: 10
+  delay: 20
+  until: >
+    delete_result.status in [200,202,204] or
+    (delete_result.json.error['@Message.ExtendedInfo'][0].MessageId == "IDRAC.2.9.STOR026")
+  failed_when: >
+    delete_result.status not in [200,202,204] and
+    delete_result.json.error['@Message.ExtendedInfo'][0].MessageId not in ["IDRAC.2.9.STOR023","IDRAC.2.9.STOR026"]
   delegate_to: "{{ bmc_delegate_host }}"
 
 - debug:
-    msg: "https://{{ bmc_ip }}{{ volume_uri }}"
-
-- debug:
     msg: "{{ delete_result }}"
-
-- name: Capture job URI if returned
-  set_fact:
-    job_uri: "{{ delete_result.location | default(None) }}"
     
-- debug:
-    msg: "{{ job_uri }}"

@@ -50,3 +50,6 @@ enable_uefi_boot: true  # Enable UEFI boot mode for Lenovo systems
 # Logging and Debug
 debug_mode: false  # Enable debug output
 log_command_output: true  # Log command outputs
+
+# Lenovo-specific variables
+volume_delete_failed_when: "delete_result.status not in [200,202,204]"

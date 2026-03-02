@@ -18,6 +18,7 @@
     body:
       ResetType: "GracefulRestart"
     status_code: [204]
+  delegate_to: "{{ bmc_delegate_host }}"
     
 - name: Wait for power cycle to complete
   pause:

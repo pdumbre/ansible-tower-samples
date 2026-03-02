@@ -32,7 +32,7 @@
         body_format: json
         body:
           TargetSettingsURI: "{{ item }}/Settings"
-        status_code: [200, 201, 202, 400]
+        status_code: [200, 201, 202]
       register: delete_job
       loop: "{{ volume_list }}"
       loop_control:
@@ -71,10 +71,6 @@
       loop_control:
         label: "{{ item['@odata.id'] }}"
       delegate_to: "{{ bmc_delegate_host }}"
-
-
-    - debug:
-        msg: "{{ job_details_results.results }}"
         
     - name: Check for pending or running jobs
       set_fact:
@@ -84,22 +80,6 @@
       debug:
         msg: "Existing job detected. Attempting cleanup before creating a new job..."
       when: has_pending_jobs | bool
-
-    - name: Check dell job queue status (get member list)
-      uri:
-        url: "{{ bmc_base_url }}/redfish/v1/Managers/iDRAC.Embedded.1/Oem/Dell/Jobs"
-        method: GET
-        user: "{{ bmc_user }}"
-        password: "{{ bmc_password }}"
-        validate_certs: no
-        force_basic_auth: yes
-        return_content: yes
-        status_code: [200]
-      register: job_queue_status
-      delegate_to: "{{ bmc_delegate_host }}"
-
-    - debug:
-        msg: "{{ job_queue_status }}"
      
     - name: Reboot server if any scheduled jobs were applied
       uri:
@@ -112,7 +92,7 @@
         password: "{{ bmc_password }}"
         validate_certs: no
         status_code: [200, 204]
-      when: has_pending_jobs | selectattr('JobState', 'equalto', 'Scheduled') | list | length > 0
+      #when: has_pending_jobs | selectattr('JobState', 'equalto', 'Scheduled') | list | length > 0
       delegate_to: "{{ bmc_delegate_host }}"
 
     - name: Wait for power cycle to complete

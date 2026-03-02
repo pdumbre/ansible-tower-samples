@@ -6,46 +6,38 @@
   set_fact:
     volume_list: "{{ volumes.json | default({}) | json_query('Members[].\"@odata.id\"') | default([]) }}"
 
-- name: Pre-Deletion Cleanup Block
-  block:
-    - name: Get current Job Queue status
-      uri:
-        url: "https://{{ bmc_ip }}/redfish/v1/JobService/Jobs"
-        method: GET
-        user: "{{ bmc_user }}"
-        password: "{{ bmc_password }}"
-        force_basic_auth: yes
-        validate_certs: no
-      register: initial_jobs
-      delegate_to: "{{ bmc_delegate_host }}"
+- name: Check Dell job queue status
+  uri:
+    url: "{{ bmc_manager_url }}/Jobs"
+    method: GET
+    user: "{{ bmc_user }}"
+    password: "{{ bmc_password }}"
+    validate_certs: no
+    force_basic_auth: yes
+    return_content: yes
+    status_code: [200]
+  register: dell_job_queue
+  delegate_to: "{{ bmc_delegate_host }}"
+  when: clean_pending_jobs | bool
 
-    - name: Clear Queue if jobs exist (Scheduled or Failed)
-      uri:
-        url: "https://{{ bmc_ip }}/redfish/v1/Managers/iDRAC.Embedded.1/JobService/Actions/JobService.DeleteJobQueue"
-        method: POST
-        user: "{{ bmc_user }}"
-        password: "{{ bmc_password }}"
-        force_basic_auth: yes
-        validate_certs: no
-        body_format: json
-        body:
-          JobID: "JID_CLEARALL"
-      delegate_to: "{{ bmc_delegate_host }}"
-      when: initial_jobs.json['Members@odata.count'] | int > 0
-
-    - name: Wait for Job Queue to reach Zero
-      uri:
-        url: "https://{{ bmc_ip }}/redfish/v1/JobService/Jobs"
-        method: GET
-        user: "{{ bmc_user }}"
-        password: "{{ bmc_password }}"
-        force_basic_auth: yes
-        validate_certs: no
-      register: job_check
-      delegate_to: "{{ bmc_delegate_host }}"
-      until: job_check.json['Members@odata.count'] | int == 0
-      retries: 10
-      delay: 10
+- name: Wait for pending Dell jobs to complete
+  uri:
+    url: "{{ bmc_manager_url }}/Jobs"
+    method: GET
+    user: "{{ bmc_user }}"
+    password: "{{ bmc_password }}"
+    validate_certs: no
+    force_basic_auth: yes
+    return_content: yes
+    status_code: [200]
+  register: dell_job_wait
+  until: dell_job_wait.json.Members | default([]) | selectattr('JobState', 'in', ['Pending', 'Running']) | list | length == 0
+  retries: 10
+  delay: 5
+  delegate_to: "{{ bmc_delegate_host }}"
+  when:
+    - clean_pending_jobs | bool
+    - dell_job_queue.json.Members | default([]) | selectattr('JobState', 'in', ['Pending', 'Running']) | list | length > 0
 
 - name: Delete each virtual volume with retry
   include_tasks: delete_single_volume_dell.yml
@@ -160,3 +152,4 @@
   debug:
     msg: "All Dell RAID volumes successfully deleted."
 
+# Made with Bob

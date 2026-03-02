@@ -10,7 +10,7 @@
     password: "{{ bmc_password }}"
     validate_certs: no
     force_basic_auth: yes
-    status_code: [200, 202, 204]
+    status_code: [200, 202, 204, 400]
   register: delete_result
   delegate_to: "{{ bmc_delegate_host }}"
 

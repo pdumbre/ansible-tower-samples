@@ -84,7 +84,7 @@
         validate_certs: no
         status_code: [200, 204]
       register: reboot_result
-      when: has_pending_jobs | selectattr('JobState', 'equalto', 'Scheduled') | list | length > 0
+      when: has_pending_jobs | bool
       delegate_to: "{{ bmc_delegate_host }}"
 
     - name: Wait for server to come back online

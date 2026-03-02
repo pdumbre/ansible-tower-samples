@@ -9,6 +9,9 @@
     password: "{{ bmc_password }}"
     validate_certs: no
     force_basic_auth: yes
+    headers:
+      # This header replaces the need for a separate CreateConfigJob task
+      "@Redfish.SettingsApplyTime": "Immediate"
   register: delete_result
   delegate_to: "{{ bmc_delegate_host }}"
   failed_when: "{{ volume_delete_failed_when }}"

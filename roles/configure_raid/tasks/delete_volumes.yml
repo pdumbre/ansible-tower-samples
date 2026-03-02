@@ -17,7 +17,7 @@
   block:
     - name: Create storage configuration job for deletion
       uri:
-        url: "{{ bmc_manager_url }}{{ bmc_create_job_url }}"
+        url: "{{ bmc_manager_url }}{{ job_config.create_job_url }}"
         method: POST
         user: "{{ bmc_user }}"
         password: "{{ bmc_password }}"

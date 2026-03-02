@@ -157,6 +157,10 @@
   when: has_pending_jobs | bool
   delegate_to: "{{ bmc_delegate_host }}"
 
+- name: Wait for RAID configuration to stabilize
+  pause:
+    seconds: "{{ raid_config_wait_time }}"
+    
 - name: Verify all RAID volumes are deleted
   uri:
     url: "{{ bmc_storage_url }}/{{ controller_name }}/Volumes"

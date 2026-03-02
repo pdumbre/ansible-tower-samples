@@ -31,7 +31,7 @@
         force_basic_auth: yes
         body_format: json
         body:
-          TargetSettingsURI: "{{ item }}"
+          TargetSettingsURI: "{{ item }}/Settings"
         status_code: [200, 201, 202, 400]
       register: delete_job
       loop: "{{ volume_list }}"

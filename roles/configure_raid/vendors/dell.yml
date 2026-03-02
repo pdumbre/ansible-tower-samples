@@ -6,7 +6,7 @@ storage_config:
 #Power Configuration
 power_config:
   url_suffix:  /Actions/ComputerSystem.Reset
-  desired_power_state: "on"
+  desired_power_state: "On"
   
 #BMC Configuration
 bmc_config:

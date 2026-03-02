@@ -16,3 +16,10 @@
 
 - debug:
     msg: "{{ delete_result }}"
+
+- name: Capture job URI if returned
+  set_fact:
+    job_uri: "{{ delete_result.location | default(None) }}"
+    
+- debug:
+    msg: "{{ job_uri }}"

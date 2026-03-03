@@ -154,8 +154,7 @@
     - need_boot is defined
     - need_boot | bool
     
-
-- name: Wait for RAID volume creation
+- name: Wait for RAID configuration jobs to complete
   include_tasks: wait_for_raid_config_job.yml
 
 - name: Verify volume was created successfully

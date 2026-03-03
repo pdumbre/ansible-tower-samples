@@ -5,6 +5,9 @@
 - name: Build volume list
   set_fact:
     volume_list: "{{ volumes.json | default({}) | json_query('Members[].\"@odata.id\"') | default([]) }}"
+    
+- set_fact:
+    has_configure_jobs: false
 
 # Retrieve job queue status and create list of volumes need to be deleted.
 
@@ -39,50 +42,16 @@
         label: "{{ item['@odata.id'] }}"
       delegate_to: "{{ bmc_delegate_host }}"
 
-    - debug:
-        msg: "job details: {{ job_details_results.results }}"
-
-    - name: Check for pending or running jobs
+    - name: Check for Configure jobs in pending jobs
       set_fact:
-        has_pending_jobs: "{{ job_details_results.results | default([]) | map(attribute='json') | selectattr('JobState', 'defined') | selectattr('JobState', 'in', ['Pending', 'Running', 'New', 'Scheduled']) | list | length > 0 }}"
-                  
-    - name: Extract volumes with pending jobs
-      set_fact:
-        volumes_with_pending_jobs: >-
+        has_configure_jobs: >-
           {{ job_details_results.results | default([])
              | map(attribute='json')
-             | selectattr('JobState', 'in', ['New', 'Scheduled', 'Running', 'Pending'])
-             | map(attribute='Target', default='')
-             | select('string')
-             | list }}
-
-    - name: Filter volumes without pending jobs
-      set_fact:
-        safe_volumes_to_delete: >-
-          {{ volume_list | default([])
-             | reject('search', volumes_with_pending_jobs | join('|'))
-             | list
-             if volumes_with_pending_jobs | length > 0
-             else volume_list | default([]) }}
-
-    - name: Debug volume filtering
-      debug:
-        msg:
-          - "Total volumes: {{ volume_list | default([]) | length }}"
-          - "Volumes with pending jobs: {{ volumes_with_pending_jobs | length }}"
-          - "Pending job targets: {{ volumes_with_pending_jobs }}"
-          - "Safe volumes to delete: {{ safe_volumes_to_delete | length }}"
-          - "Safe volume URIs: {{ safe_volumes_to_delete }}"
-
-
-    - name: Debug safe volumes to delete
-      debug:
-        msg:
-          - "safe_volumes_to_delete: {{ safe_volumes_to_delete }}"
- 
-    - name: Update volume list with safe volumes
-      set_fact:
-        volume_list: "{{ safe_volumes_to_delete }}"
+             | selectattr('JobState', 'in', ['Pending', 'Running', 'New', 'Scheduled'])
+             | selectattr('Name', 'defined')
+             | selectattr('Name', 'match', '^Configure:')
+             | list | length > 0 }}
+                  
   when:
     - bmc_config.requires_job_cleanup is defined
     - bmc_config.requires_job_cleanup | bool
@@ -94,7 +63,7 @@
   loop: "{{ volume_list }}"
   loop_control:
     loop_var: volume_uri
-  when: volume_list | length > 0
+  when: not has_configure_jobs
 
 # Create configuration job for deletion of volume, reboot and wait for completion.
 - name: Delete iDRAC RAID volumes with retry logic
@@ -116,7 +85,7 @@
       loop_control:
         label: "{{ item }}"
       delegate_to: "{{ bmc_delegate_host }}"
-      when: safe_volumes_to_delete | length > 0
+      when: not has_configure_jobs
 
     - name: Reboot server if any scheduled jobs were applied
       uri:
@@ -130,8 +99,6 @@
         validate_certs: no
         status_code: [200, 204]
       register: reboot_result
-      when: 
-        - ( has_pending_jobs | bool )or ( safe_volumes_to_delete | length > 0 )
       delegate_to: "{{ bmc_delegate_host }}"
 
     - name: Wait for system to come online
@@ -155,36 +122,35 @@
             label: "{{ item['@odata.id'] }}"
           delegate_to: "{{ bmc_delegate_host }}"
 
-        - name: Filter volume-related jobs only
+        - name: Filter raid-configuration related jobs only
           set_fact:
-            volume_related_jobs: >-
-              {{ job_wait_details.results | default([])
-                 | map(attribute='json')
-                 | selectattr('JobState', 'defined')
-                 | selectattr('Target', 'defined')
-                 | selectattr('Target', 'search', '(Storage|Volume|Disk|RAID)')
-                 | selectattr('JobState', 'in', ['Pending', 'Running', 'New', 'Scheduled'])
-                 | list }}
+            raid_configure_jobs: >-
+            {{ job_details_results.results | default([])
+             | map(attribute='json')
+             | selectattr('JobState', 'in', ['Pending', 'Running', 'New', 'Scheduled'])
+             | selectattr('Name', 'defined')
+             | selectattr('Name', 'match', '^Configure:')
+             | list }}
 
-        - name: Debug volume-related pending jobs
+        - name: Debug raid configuration related pending jobs
           debug:
             msg:
               - "Total jobs checked: {{ job_wait_details.results | default([]) | length }}"
-              - "Volume-related pending jobs: {{ volume_related_jobs | length }}"
-              - "Job targets: {{ volume_related_jobs | map(attribute='Target') | list }}"
+              - "RAID configuration related pending jobs: {{ raid_configure_jobs | length }}"
 
-        - name: Assert no volume-related pending or running jobs remain
+        - name: Assert no raid configuration pending or running jobs remain
           assert:
             that:
-              - volume_related_jobs | length == 0
-            fail_msg: "Volume-related jobs still pending or running: {{ volume_related_jobs | map(attribute='Target') | list }}"
+              - raid_configure_jobs | length == 0
+            fail_msg: "RAID configuration jobs still pending or running: {{ raid_configure_jobs | map(attribute='Target') | list }}"
           retries: 10
           delay: 5
 
   when:
     - bmc_config.requires_job_cleanup is defined
     - bmc_config.requires_job_cleanup | bool
-    - ( has_pending_jobs | bool )or ( safe_volumes_to_delete | length > 0 )
+    - has_configure_jobs or ( volume_list | length > 0 )
+    
 
 - name: Verify all RAID volumes are deleted
   uri:

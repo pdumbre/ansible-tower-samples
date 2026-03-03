@@ -19,7 +19,7 @@
         retry_delay: 60
 
     - name: Wait for RAID configuration jobs to complete
-      include_tasks: wait_for_configure_jobs.yml
+      include_tasks: poll_configure_jobs.yml
       loop: "{{ range(0, max_retries | int) | list }}"
       loop_control:
         loop_var: retry_index

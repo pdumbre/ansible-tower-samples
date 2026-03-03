@@ -1,0 +1,43 @@
+---
+# Wait for Configure jobs to complete - called with retry logic
+
+- name: Fetch job details for all jobs
+  uri:
+    url: "{{ bmc_base_url }}{{ item['@odata.id'] }}"
+    method: GET
+    user: "{{ bmc_user }}"
+    password: "{{ bmc_password }}"
+    validate_certs: no
+    force_basic_auth: yes
+    return_content: yes
+    status_code: [200]
+  register: job_details_check
+  loop: "{{ job_queue_status.json.Members | default([]) }}"
+  loop_control:
+    label: "{{ item['@odata.id'] }}"
+  delegate_to: "{{ bmc_delegate_host }}"
+
+- name: Check for pending Configure jobs
+  set_fact:
+    has_pending_configure_jobs: >-
+      {{ (job_details_check.results | default([])
+         | map(attribute='json')
+         | selectattr('JobState', 'in', ['Pending','Running','New','Scheduled'])
+         | selectattr('Name', 'defined')
+         | selectattr('Name', 'match', '^Configure:')
+         | list
+         | length) > 0 }}
+
+- name: Wait before next check
+  pause:
+    seconds: "{{ retry_delay }}"
+  when:
+    - has_pending_configure_jobs | bool
+    - retry_index < (max_retries | int - 1)
+
+- name: Fail if max retries exceeded
+  fail:
+    msg: "RAID configuration jobs still pending after {{ max_retries }} retries"
+  when:
+    - has_pending_configure_jobs | bool
+    - retry_index == (max_retries | int - 1)

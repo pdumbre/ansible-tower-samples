@@ -1,52 +1,29 @@
 ---
-# Dell iDRAC specific RAID volume deletion
-# Equivalent to NodesRaidConfig.groovy lines 93-175
+# RAID volume deletion
 
+# Build volume list
 - name: Build volume list
   set_fact:
     volume_list: "{{ volumes.json | default({}) | json_query('Members[].\"@odata.id\"') | default([]) }}"
 
+# Retrieve job queue status and create list of volumes need to be deleted.
+
 - name: Check job queue status (get member list)
-  uri:
-    url: "{{ bmc_base_url }}/redfish/v1/Managers/iDRAC.Embedded.1/Oem/Dell/Jobs"
-    method: GET
-    user: "{{ bmc_user }}"
-    password: "{{ bmc_password }}"
-    validate_certs: no
-    force_basic_auth: yes
-    return_content: yes
-    status_code: [200]
-  register: job_queue_status
-  delegate_to: "{{ bmc_delegate_host }}"
-
-- name: Fetch full details for each job
-  uri:
-    url: "{{ bmc_base_url }}{{ item['@odata.id'] }}"
-    method: GET
-    user: "{{ bmc_user }}"
-    password: "{{ bmc_password }}"
-    validate_certs: no
-    force_basic_auth: yes
-    return_content: yes
-    status_code: [200]
-  register: job_details_results
-  loop: "{{ job_queue_status.json.Members | default([]) }}"
-  loop_control:
-    label: "{{ item['@odata.id'] }}"
-  delegate_to: "{{ bmc_delegate_host }}"
-
-- name: Check for pending or running jobs
-  set_fact:
-    has_pending_jobs: "{{ job_details_results.results | default([]) | map(attribute='json') | selectattr('JobState', 'defined') | selectattr('JobState', 'in', ['Pending', 'Running', 'New', 'Scheduled']) | list | length > 0 }}"
-
-- name: Clean up pending jobs if detected
-  debug:
-    msg: "Existing job detected. Attempting cleanup before creating a new job..."
-  when: has_pending_jobs | bool
-
-- name: Wait for pending jobs to complete
   block:
-    - name: Re-fetch job details to check completion
+    - name: Get job queue status
+      uri:
+        url: "{{ bmc_manager_url }}{{ job_config.url_suffix }}"
+        method: GET
+        user: "{{ bmc_user }}"
+        password: "{{ bmc_password }}"
+        validate_certs: no
+        force_basic_auth: yes
+        return_content: yes
+        status_code: [200]
+      register: job_queue_status
+      delegate_to: "{{ bmc_delegate_host }}"
+
+    - name: Fetch full details for each job
       uri:
         url: "{{ bmc_base_url }}{{ item['@odata.id'] }}"
         method: GET
@@ -56,20 +33,39 @@
         force_basic_auth: yes
         return_content: yes
         status_code: [200]
-      register: job_wait_details
+      register: job_details_results
       loop: "{{ job_queue_status.json.Members | default([]) }}"
       loop_control:
         label: "{{ item['@odata.id'] }}"
       delegate_to: "{{ bmc_delegate_host }}"
 
-    - name: Assert no pending or running jobs remain
-      assert:
-        that:
-          - job_wait_details.results | default([]) | map(attribute='json') | selectattr('JobState', 'defined') | selectattr('JobState', 'in', ['Pending', 'Running', 'New', 'Scheduled']) | list | length == 0
-        fail_msg: "Jobs still pending or running"
-      retries: 20
-      delay: 30
-  when: has_pending_jobs | bool
+    - name: Filter volumes without pending jobs
+      set_fact:
+        safe_volumes_to_delete: >-
+          {{ volumes_list
+             | selectattr('Name', 'not in',
+               all_jobs.json.Members
+               | selectattr('JobState','in',['New','Scheduled','Running'])
+               | map(attribute='Target')
+               | map('regex_search','/Volumes/([^/]+)/Settings')
+               | map('first')
+               | list
+             )
+             | list }}
+
+    - name: Debug safe volumes to delete
+      debug:
+        msg:
+          - "safe_volumes_to_delete: {{ safe_volumes_to_delete }}"
+
+    - name: Update volume list with safe volumes
+      set_fact:
+        volume_list: "{{ safe_volumes_to_delete }}"
+  when:
+    - bmc_config.requires_job_cleanup is defined
+    - bmc_config.requires_job_cleanup | bool
+
+# Delete volumes
 
 - name: Delete each virtual volume with retry
   include_tasks: delete_single_volume_dell.yml
@@ -78,89 +74,82 @@
     loop_var: volume_uri
   when: volume_list | length > 0
 
-- name: Check job queue status (get member list)
-  uri:
-    url: "{{ bmc_base_url }}/redfish/v1/Managers/iDRAC.Embedded.1/Oem/Dell/Jobs"
-    method: GET
-    user: "{{ bmc_user }}"
-    password: "{{ bmc_password }}"
-    validate_certs: no
-    force_basic_auth: yes
-    return_content: yes
-    status_code: [200]
-  register: job_queue_status
-  delegate_to: "{{ bmc_delegate_host }}"
-
-- name: Fetch full details for each job
-  uri:
-    url: "{{ bmc_base_url }}{{ item['@odata.id'] }}"
-    method: GET
-    user: "{{ bmc_user }}"
-    password: "{{ bmc_password }}"
-    validate_certs: no
-    force_basic_auth: yes
-    return_content: yes
-    status_code: [200]
-  register: job_details_results
-  loop: "{{ job_queue_status.json.Members | default([]) }}"
-  loop_control:
-    label: "{{ item['@odata.id'] }}"
-  delegate_to: "{{ bmc_delegate_host }}"
-
-- name: Check for pending or running jobs
-  set_fact:
-    has_pending_jobs: "{{ job_details_results.results | default([]) | map(attribute='json') | selectattr('JobState', 'defined') | selectattr('JobState', 'in', ['Pending', 'Running', 'New', 'Scheduled']) | list | length > 0 }}"
-
-- name: Clean up pending jobs if detected
-  debug:
-    msg: "Existing job detected. Attempting cleanup before creating a new job..."
-  when: has_pending_jobs | bool
-
-- name: Wait for pending jobs to complete
+# Create configuration job for deletion of volume, reboot and wait for completion.
+- name: Delete iDRAC RAID volumes with retry logic
   block:
-    - name: Re-fetch job details to check completion
+    - name: Create storage configuration job for deletion
       uri:
-        url: "{{ bmc_base_url }}{{ item['@odata.id'] }}"
-        method: GET
+        url: "{{ bmc_manager_url }}{{ job_config.create_job_url }}"
+        method: POST
         user: "{{ bmc_user }}"
         password: "{{ bmc_password }}"
         validate_certs: no
         force_basic_auth: yes
-        return_content: yes
-        status_code: [200]
-      register: job_wait_details
-      loop: "{{ job_queue_status.json.Members | default([]) }}"
+        body_format: json
+        body:
+          TargetSettingsURI: "{{ item }}/Settings"
+        status_code: [200, 201, 202]
+      register: delete_job
+      loop: "{{ volume_list }}"
       loop_control:
-        label: "{{ item['@odata.id'] }}"
+        label: "{{ item }}"
+      delegate_to: "{{ bmc_delegate_host }}"
+      failed_when: false
+
+    - name: Reboot server if any scheduled jobs were applied
+      uri:
+        url: "{{ bmc_reset_url }}"
+        method: POST
+        body:
+          ResetType: ForceRestart
+        body_format: json
+        user: "{{ bmc_user }}"
+        password: "{{ bmc_password }}"
+        validate_certs: no
+        status_code: [200, 204]
+      register: reboot_result
+      when: has_pending_jobs | bool
       delegate_to: "{{ bmc_delegate_host }}"
 
-    - name: Assert no pending or running jobs remain
-      assert:
-        that:
-          - job_wait_details.results | default([]) | map(attribute='json') | selectattr('JobState', 'defined') | selectattr('JobState', 'in', ['Pending', 'Running', 'New', 'Scheduled']) | list | length == 0
-        fail_msg: "Jobs still pending or running"
-      retries: 10
-      delay: 5
-  when: has_pending_jobs | bool
+    - name: Wait for server to come back
+      wait_for:
+        host: "{{ bmc_ip }}"
+        port: 443
+        timeout: 300
+      delegate_to: "{{ bmc_delegate_host }}"
 
-- name: Reboot server if required
-  uri:
-    url: "https://{{ bmc_ip }}/redfish/v1/Systems/System.Embedded.1/Actions/ComputerSystem.Reset"
-    method: POST
-    body:
-      ResetType: ForceRestart
-    body_format: json
-    user: "{{ bmc_user }}"
-    password: "{{ bmc_password }}"
-    validate_certs: no
-    status_code: [200, 204]
-  when: has_pending_jobs | bool
-  delegate_to: "{{ bmc_delegate_host }}"
+    - name: Wait for pending jobs to complete
+      block:
+        - name: Re-fetch job details to check completion
+          uri:
+            url: "{{ bmc_base_url }}{{ item['@odata.id'] }}"
+            method: GET
+            user: "{{ bmc_user }}"
+            password: "{{ bmc_password }}"
+            validate_certs: no
+            force_basic_auth: yes
+            return_content: yes
+            status_code: [200]
+          register: job_wait_details
+          loop: "{{ job_queue_status.json.Members | default([]) }}"
+          loop_control:
+            label: "{{ item['@odata.id'] }}"
+          delegate_to: "{{ bmc_delegate_host }}"
 
-- name: Wait for RAID configuration to stabilize
-  pause:
-    seconds: "{{ raid_config_wait_time }}"
-    
+        - name: Assert no pending or running jobs remain
+          assert:
+            that:
+              - job_wait_details.results | default([]) | map(attribute='json') | selectattr('JobState', 'defined') | selectattr('JobState', 'in', ['Pending', 'Running', 'New', 'Scheduled']) | list | length == 0
+            fail_msg: "Jobs still pending or running"
+          retries: 10
+          delay: 5
+      when: has_pending_jobs | bool
+
+  when:
+    - bmc_config.requires_job_cleanup is defined
+    - bmc_config.requires_job_cleanup | bool
+    - safe_volumes_to_delete | length > 0
+
 - name: Verify all RAID volumes are deleted
   uri:
     url: "{{ bmc_storage_url }}/{{ controller_name }}/Volumes"
@@ -178,3 +167,5 @@
 - name: Confirm deletion success
   debug:
     msg: "All Dell RAID volumes successfully deleted."
+
+# Made with Bob

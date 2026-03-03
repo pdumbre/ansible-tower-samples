@@ -78,6 +78,7 @@
 
 - name: Wait for RAID configuration jobs to complete
   include_tasks: wait_for_raid_config_job.yml
+  when: bmc_config.requires_job_cleanup is defined
   
 - name: Verify whether volume was created successfully
   uri:

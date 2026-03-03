@@ -36,23 +36,11 @@
 
 - name: Wait for raid configuration job
   include_tasks: wait_for_raid_config_job.yml
-  when: bmc_config.requires_job_cleanup is defined
 
 - name: Create raid configuration job
   include_tasks: create_raid_config_job.yml
-  when: not has_configuration_job
-  
-- debug:
-    msg: "{{ volume_create }}"
 
-- name: Check if RAID creation failed
-  set_fact:
-    need_boot: true
-  when: >
-    (volume_create.status not in [200, 201, 202]) and
-    (volume_create.json.error is defined)
-
-- name: Get current boot override settings
+- name: Retrieve current boot override settings
   uri:
     url: "{{ bmc_systems_url }}"
     method: GET
@@ -83,13 +71,9 @@
     current_boot.json.Boot.BootSourceOverrideTarget != "BiosSetup" or
     current_boot.json.Boot.BootSourceOverrideEnabled != "Once"
 
-- name: UEFI boot already set
-  debug:
-    msg: "UEFI one-time boot is already configured."
-  when: >
-    current_boot.json.Boot.BootSourceOverrideTarget == "BiosSetup" and
-    current_boot.json.Boot.BootSourceOverrideEnabled == "Once"
-    
+- name: Create raid configuration job
+  include_tasks: wait_for_system_up.yml
+  
 - name: Restart Server
   uri:
     url: "{{ bmc_reset_url }}"
@@ -138,29 +122,7 @@
     - storage_list.json.Members | length > 0
   delegate_to: "{{ bmc_delegate_host }}"
 
-- name: Retry volume creation after power cycle
-  uri:
-    url: "{{ bmc_storage_url}}/{{ controller_name }}/Volumes"
-    method: POST
-    user: "{{ bmc_user }}"
-    password: "{{ bmc_password }}"
-    validate_certs: no
-    force_basic_auth: yes
-    body_format: json
-    body:
-      RAIDType: "{{ raid_config.raid_level | upper }}"
-      Drives: "{{ drives }}"
-    status_code: [200, 201, 202, 204]
-  register: retry_volume_create
-  delegate_to: "{{ bmc_delegate_host }}"
-  retries: "{{ max_retries }}"
-  delay: "{{ delay_power_on }}"
-  until: volume_create.status in [200, 201, 202, 204]
-  failed_when: false
-  when: 
-    - need_boot is defined
-    - need_boot | bool
-    
+
 - name: Verify volume was created successfully
   uri:
     url: "{{ bmc_storage_url }}/{{ controller_name }}/Volumes"

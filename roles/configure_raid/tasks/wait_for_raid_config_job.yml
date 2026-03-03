@@ -1,26 +1,24 @@
-- name: Check job queue status
-  block:
-    - name: Get job queue status
-      uri:
-        url: "{{ bmc_manager_url }}{{ job_config.url_suffix }}"
-        method: GET
-        user: "{{ bmc_user }}"
-        password: "{{ bmc_password }}"
-        validate_certs: no
-        force_basic_auth: yes
-        return_content: yes
-        status_code: [200]
-      register: job_queue_status
-      delegate_to: "{{ bmc_delegate_host }}"
+- name: Wait for RAID configuration jobs to complete
+  uri:
+    url: "{{ bmc_base_url }}{{ item['@odata.id'] }}"
+    method: GET
+    user: "{{ bmc_user }}"
+    password: "{{ bmc_password }}"
+    validate_certs: no
+    force_basic_auth: yes
+    return_content: yes
+    status_code: [200]
+  register: job_status_poll
+  loop: "{{ job_queue_status.json.Members | default([]) }}"
+  loop_control:
+    label: "{{ item['@odata.id'] }}"
+  delegate_to: "{{ bmc_delegate_host }}"
+  retries: 30
+  delay: 60
+  until: >-
+    (job_status_poll.json.Name is not defined) or
+    (job_status_poll.json.Name is not match('^Configure:')) or
+    (job_status_poll.json.JobState not in ['Pending', 'Running', 'New', 'Scheduled'])
 
-    - name: Initialize retry counter
-      set_fact:
-        max_retries: 30
-        retry_delay: 60
-
-    - name: Wait for RAID configuration jobs to complete
-      include_tasks: poll_configure_jobs.yml
-      loop: "{{ range(0, max_retries | int) | list }}"
-      loop_control:
-        loop_var: retry_index
-      when: has_pending_configure_jobs | default(true) | bool
+  failed_when: false
+  changed_when: false

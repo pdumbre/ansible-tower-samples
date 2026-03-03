@@ -42,13 +42,14 @@
     - name: Filter volumes without pending jobs
       set_fact:
         safe_volumes_to_delete: >-
-          {{ volumes_list
-             | selectattr('Name', 'not in',
-               job_details_results.results | default([]) | map(attribute='json')
-               | selectattr('JobState','in',['New','Scheduled','Running'])
-               | map(attribute='Target')
-               | map('regex_search','/Volumes/([^/]+)/Settings')
-               | map('first')
+          {{ volume_list | default([])
+             | reject('in',
+               job_details_results.results | default([])
+               | map(attribute='json')
+               | selectattr('JobState', 'in', ['New', 'Scheduled', 'Running', 'Pending'])
+               | map(attribute='Target', default='')
+               | map('regex_search', '/Volumes/([^/]+)')
+               | select('string')
                | list
              )
              | list }}
@@ -57,7 +58,7 @@
       debug:
         msg:
           - "safe_volumes_to_delete: {{ safe_volumes_to_delete }}"
-
+ 
     - name: Update volume list with safe volumes
       set_fact:
         volume_list: "{{ safe_volumes_to_delete }}"

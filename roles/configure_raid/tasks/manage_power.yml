@@ -35,13 +35,24 @@
         status_code: [200, 202, 204]
       delegate_to: "{{ bmc_delegate_host }}"
       register: power_on_result
-        
-    - name: Wait for server to come back online
-      wait_for:
-        host: "{{ bmc_ip }}"
-        port: 22
-        timeout: 300
+
+    - name: Wait for system to reach setup state
+      uri:
+        url: "{{ bmc_systems_url }}"
+        method: GET
+        user: "{{ bmc_user }}"
+        password: "{{ bmc_password }}"
+        validate_certs: no
+        force_basic_auth: yes
+        return_content: yes
+        status_code: [200]
+      register: power_state_check
       delegate_to: "{{ bmc_delegate_host }}"
+      retries: "{{ max_retries }}"
+      delay: "{{ delay_power_on }}"
+      until: >
+        power_state_check.json.PowerState is defined and
+        power_state_check.json.PowerState == "On"
 
     - name: Verify power state
       uri:
@@ -140,9 +151,23 @@
         status_code: [200, 202, 204]
       delegate_to: "{{ bmc_delegate_host }}"
 
-    - name: Wait for power cycle to complete
-      pause:
-        seconds: 60
+    - name: Wait for system to reach setup state
+      uri:
+        url: "{{ bmc_systems_url }}"
+        method: GET
+        user: "{{ bmc_user }}"
+        password: "{{ bmc_password }}"
+        validate_certs: no
+        force_basic_auth: yes
+        return_content: yes
+        status_code: [200]
+      register: power_state_check
+      delegate_to: "{{ bmc_delegate_host }}"
+      retries: "{{ max_retries }}"
+      delay: "{{ delay_power_on }}"
+      until: >
+        power_state_check.json.PowerState is defined and
+        power_state_check.json.PowerState == "On"
 
     - name: Log power cycle completion
       debug:

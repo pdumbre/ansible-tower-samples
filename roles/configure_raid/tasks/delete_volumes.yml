@@ -39,6 +39,9 @@
         label: "{{ item['@odata.id'] }}"
       delegate_to: "{{ bmc_delegate_host }}"
 
+    - debug:
+        msg: "job details: {{ job_details_results.results }}"
+        
     - name: Filter volumes without pending jobs
       set_fact:
         safe_volumes_to_delete: >-
@@ -53,6 +56,35 @@
                | list
              )
              | list }}
+             
+    - name: Extract volumes with pending jobs
+      set_fact:
+        volumes_with_pending_jobs: >-
+          {{ job_details_results.results | default([])
+             | map(attribute='json')
+             | selectattr('JobState', 'in', ['New', 'Scheduled', 'Running', 'Pending'])
+             | map(attribute='Target', default='')
+             | select('string')
+             | list }}
+
+    - name: Filter volumes without pending jobs
+      set_fact:
+        safe_volumes_to_delete: >-
+          {{ volume_list | default([])
+             | reject('search', volumes_with_pending_jobs | join('|'))
+             | list
+             if volumes_with_pending_jobs | length > 0
+             else volume_list | default([]) }}
+
+    - name: Debug volume filtering
+      debug:
+        msg:
+          - "Total volumes: {{ volume_list | default([]) | length }}"
+          - "Volumes with pending jobs: {{ volumes_with_pending_jobs | length }}"
+          - "Pending job targets: {{ volumes_with_pending_jobs }}"
+          - "Safe volumes to delete: {{ safe_volumes_to_delete | length }}"
+          - "Safe volume URIs: {{ safe_volumes_to_delete }}"
+
 
     - name: Debug safe volumes to delete
       debug:

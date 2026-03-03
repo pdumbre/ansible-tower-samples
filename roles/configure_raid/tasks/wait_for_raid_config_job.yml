@@ -1,40 +1,35 @@
-- name: Check job queue status
-  block:
-    - name: Get job queue status
-      uri:
-        url: "{{ bmc_manager_url }}{{ job_config.url_suffix }}"
-        method: GET
-        user: "{{ bmc_user }}"
-        password: "{{ bmc_password }}"
-        validate_certs: no
-        force_basic_auth: yes
-        return_content: yes
-        status_code: [200]
-      register: job_queue_status
-      delegate_to: "{{ bmc_delegate_host }}"
+- name: Get all jobs
+  uri:
+    url: "{{ bmc_manager_url }}/Jobs"
+    method: GET
+    user: "{{ bmc_user }}"
+    password: "{{ bmc_password }}"
+    validate_certs: no
+    force_basic_auth: yes
+  register: jobs_list
+  delegate_to: "{{ bmc_delegate_host }}"
 
-    - name: Fetch job details for all jobs
-      uri:
-        url: "{{ bmc_base_url }}{{ item['@odata.id'] }}"
-        method: GET
-        user: "{{ bmc_user }}"
-        password: "{{ bmc_password }}"
-        validate_certs: no
-        force_basic_auth: yes
-        return_content: yes
-        status_code: [200]
-      register: job_details_check
-      loop: "{{ job_queue_status.json.Members | default([]) }}"
-      loop_control:
-        label: "{{ item['@odata.id'] }}"
-      delegate_to: "{{ bmc_delegate_host }}"
-      retries: 30
-      delay: 60
-      until: >-
-        (job_details_check.results | default([])
-         | map(attribute='json')
-         | selectattr('JobState', 'in', ['Pending','Running','New','Scheduled'])
-         | selectattr('Name', 'defined')
-         | selectattr('Name', 'match', '^Configure:')
-         | list
-         | length) == 0
+- name: Get job details
+  uri:
+    url: "{{ bmc_base_url }}{{ item['@odata.id'] }}"
+    method: GET
+    user: "{{ bmc_user }}"
+    password: "{{ bmc_password }}"
+    validate_certs: no
+    force_basic_auth: yes
+  loop: "{{ jobs_list.json.Members | default([]) }}"
+  register: job_details_check
+  delegate_to: "{{ bmc_delegate_host }}"
+
+- name: Set active job flag
+  set_fact:
+    configure_jobs_active: >-
+      {{
+        job_details_check.results | default([])
+        | map(attribute='json')
+        | selectattr('JobState', 'in', ['Pending','Running','New','Scheduled'])
+        | selectattr('Name', 'defined')
+        | selectattr('Name', 'match', '^Configure:')
+        | list
+        | length > 0
+      }}

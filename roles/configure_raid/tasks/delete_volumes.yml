@@ -11,6 +11,9 @@
 
 # Retrieve job queue status and create list of volumes need to be deleted.
 
+- name: Check existing RAID Configuration Job
+  include_tasks: check_raid_config_job.yml
+
 - name: Check job queue status (get member list)
   block:
     - name: Get job queue status

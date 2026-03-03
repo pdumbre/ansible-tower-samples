@@ -34,10 +34,14 @@
   delay: "{{ retry_delay }}"
   until: volume_create.status in [200, 201, 202, 204]
 
-  wait for creation of jobs by dell
-  if not, create configuration job
-  reboot
+- name: Wait for raid configuration job
+  include_tasks: wait_for_raid_config_job.yml
+  when: bmc_config.requires_job_cleanup is defined
 
+- name: Create raid configuration job
+  include_tasks: create_raid_config_job.yml
+  when: not has_configuration_job
+  
 - debug:
     msg: "{{ volume_create }}"
 

@@ -154,9 +154,9 @@
     - need_boot is defined
     - need_boot | bool
     
-- name: Wait after volume creation
-  pause:
-    seconds: "{{ volume_create_wait_time }}"
+
+- name: Wait for RAID volume creation
+  include_tasks: wait_for_raid_config_job.yml
 
 - name: Verify volume was created successfully
   uri:
@@ -174,10 +174,6 @@
 - name: Display created volumes
   debug:
     msg: "Volumes created: {{ volumes_verify.json.Members | length }}"
-
-- name: Wait for RAID configuration to stabilize
-  pause:
-    seconds: "{{ raid_config_wait_time }}"
 
 - name: Volume creation completed
   debug:

@@ -27,7 +27,9 @@
 # Create configuration job for deletion of volume, reboot and wait for completion.
 - name: Delete RAID volumes with retry logic
   block:
-  
+    - name: Check existing RAID Configuration Job
+      include_tasks: check_raid_config_job.yml
+    
     - name: Create raid config job
       include_tasks: create_raid_config_job.yml
       when: not has_configure_jobs

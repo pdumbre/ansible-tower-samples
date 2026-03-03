@@ -29,7 +29,7 @@
   loop_control:
     label: "{{ item['@odata.id'] }}"
   delegate_to: "{{ bmc_delegate_host }}"
-  retries: 30
+  retries: 40
   delay: 60
   until: >-
     (job_status_poll.json.Name is not defined) or

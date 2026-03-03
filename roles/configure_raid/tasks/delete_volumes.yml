@@ -134,13 +134,9 @@
         - ( has_pending_jobs | bool )or ( safe_volumes_to_delete | length > 0 )
       delegate_to: "{{ bmc_delegate_host }}"
 
-    - name: Wait for server to come back
-      wait_for:
-        host: "{{ bmc_ip }}"
-        port: 443
-        timeout: 300
-      delegate_to: "{{ bmc_delegate_host }}"
-
+    - name: Wait for system to come online
+        include_tasks: wait_for_system_up.yml
+    
     - name: Wait for volumes specific pending jobs to complete
       block:
         - name: Re-fetch job details to check completion

@@ -1,41 +1,41 @@
 - name: Wait for raid configuration pending jobs to complete
-      block:
-        - name: Re-fetch job details to check completion
-          uri:
-            url: "{{ bmc_base_url }}{{ item['@odata.id'] }}"
-            method: GET
-            user: "{{ bmc_user }}"
-            password: "{{ bmc_password }}"
-            validate_certs: no
-            force_basic_auth: yes
-            return_content: yes
-            status_code: [200]
-          register: job_wait_details
-          loop: "{{ job_queue_status.json.Members | default([]) }}"
-          loop_control:
-            label: "{{ item['@odata.id'] }}"
-          delegate_to: "{{ bmc_delegate_host }}"
+  block:
+    - name: Re-fetch job details to check completion
+      uri:
+        url: "{{ bmc_base_url }}{{ item['@odata.id'] }}"
+        method: GET
+        user: "{{ bmc_user }}"
+        password: "{{ bmc_password }}"
+        validate_certs: no
+        force_basic_auth: yes
+        return_content: yes
+        status_code: [200]
+      register: job_wait_details
+      loop: "{{ job_queue_status.json.Members | default([]) }}"
+      loop_control:
+        label: "{{ item['@odata.id'] }}"
+      delegate_to: "{{ bmc_delegate_host }}"
 
-        - name: Filter raid-configuration related jobs only
-          set_fact:
-            raid_configure_jobs: >-
-              {{ job_details_results.results | default([])
-                 | map(attribute='json')
-                 | selectattr('JobState', 'in', ['Pending', 'Running', 'New', 'Scheduled'])
-                 | selectattr('Name', 'defined')
-                 | selectattr('Name', 'match', '^Configure:')
-                 | list }}
+    - name: Filter raid-configuration related jobs only
+      set_fact:
+        raid_configure_jobs: >-
+          {{ job_details_results.results | default([])
+             | map(attribute='json')
+             | selectattr('JobState', 'in', ['Pending', 'Running', 'New', 'Scheduled'])
+             | selectattr('Name', 'defined')
+             | selectattr('Name', 'match', '^Configure:')
+             | list }}
 
-        - name: Debug raid configuration related pending jobs
-          debug:
-            msg:
-              - "Total jobs checked: {{ job_wait_details.results | default([]) | length }}"
-              - "RAID configuration related pending jobs: {{ raid_configure_jobs | length }}"
+    - name: Debug raid configuration related pending jobs
+      debug:
+        msg:
+          - "Total jobs checked: {{ job_wait_details.results | default([]) | length }}"
+          - "RAID configuration related pending jobs: {{ raid_configure_jobs | length }}"
 
-        - name: Assert no raid configuration pending or running jobs remain
-          assert:
-            that:
-              - raid_configure_jobs | length == 0
-            fail_msg: "RAID configuration jobs still pending or running"
-          retries: 20
-          delay: 30
+    - name: Assert no raid configuration pending or running jobs remain
+      assert:
+        that:
+          - raid_configure_jobs | length == 0
+        fail_msg: "RAID configuration jobs still pending or running"
+      retries: 20
+      delay: 30

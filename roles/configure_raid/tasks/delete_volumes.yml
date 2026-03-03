@@ -51,6 +51,9 @@
              | selectattr('Name', 'defined')
              | selectattr('Name', 'match', '^Configure:')
              | list | length > 0 }}
+
+    - debug:
+        msg: "has_configure_jobs = {{ has_configure_jobs }}"
                   
   when:
     - bmc_config.requires_job_cleanup is defined

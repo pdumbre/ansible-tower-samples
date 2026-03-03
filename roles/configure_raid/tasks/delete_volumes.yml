@@ -29,6 +29,7 @@
   block:
     - name: Check existing RAID Configuration Job
       include_tasks: check_raid_config_job.yml
+      when: not has_configure_jobs
     
     - name: Create raid config job
       include_tasks: create_raid_config_job.yml

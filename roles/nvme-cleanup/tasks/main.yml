@@ -8,23 +8,22 @@
     msg: "Starting NVMe drive cleanup for {{ inventory_hostname }}"
 
 - name: Check if system has NVMe drives via Redfish
-  include_tasks: check_nvme_via_redfish.yml
-  when: use_redfish_check | default(true)
+  include_tasks: check_nvme.yml
 
-- name: Detect NVMe drives on target system
-  include_tasks: detect_nvme_drives.yml
+#- name: Detect NVMe drives on target system
+ # include_tasks: detect_nvme_drives.yml
 
-- name: Display detected NVMe drives
-  debug:
-    msg: "Found {{ nvme_drives_to_clean | default([]) | length }} NVMe drive(s) to clean"
+#- name: Display detected NVMe drives
+ # debug:
+  #  msg: "Found {{ nvme_drives_to_clean | default([]) | length }} NVMe drive(s) to clean"
 
-- name: Clean up NVMe drives
-  include_tasks: cleanup_nvme_drives.yml
-  when: 
-    - nvme_drives_to_clean is defined
-    - nvme_drives_to_clean | length > 0
-    - not dry_run | default(false)
+#- name: Clean up NVMe drives
+ # include_tasks: cleanup_nvme_drives.yml
+  #when: 
+   # - nvme_drives_to_clean is defined
+    #- nvme_drives_to_clean | length > 0
+    #- not dry_run | default(false)
 
-- name: Display cleanup completion
-  debug:
-    msg: "NVMe drive cleanup completed for {{ inventory_hostname }}"
+#- name: Display cleanup completion
+ # debug:
+  #  msg: "NVMe drive cleanup completed for {{ inventory_hostname }}"

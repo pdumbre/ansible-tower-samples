@@ -82,25 +82,23 @@
 - name: Wait until RAID configure jobs to complete
   include_tasks: wait_for_raid_config_job.yml
 
-- name: Wait for volume to appear
+- name: Verify whether volume was created successfully
   uri:
-    url: "{{ bmc_storage_url}}/{{ controller_name }}/Volumes"
+    url: "{{ bmc_storage_url }}/{{ controller_name }}/Volumes"
     method: GET
     user: "{{ bmc_user }}"
     password: "{{ bmc_password }}"
     validate_certs: no
     force_basic_auth: yes
+    return_content: yes
+    status_code: [200]
   register: volumes_verify
   delegate_to: "{{ bmc_delegate_host }}"
-  until: >
-  (
-    volumes_verify.json.Members | default([])
-    | selectattr('Status.Health', 'equalto', 'OK')
-    | list
-    | length
-  ) > 0
-  retries: 30
-  delay: 30
+
+- name: Fail if no volumes created
+  fail:
+    msg: "No RAID volumes were created!"
+  when: (volumes_verify.json.Members | default([]) | length) == 0
   
 - name: Volume creation completed
   debug:

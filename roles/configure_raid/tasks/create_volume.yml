@@ -28,6 +28,10 @@
   delay: "{{ retry_delay }}"
   until: volume_create.status in [200, 201, 202, 204]
 
+- name: Wait for creation of RAID volume
+  pause:
+    seconds: 30
+        
 - name: Wait for raid configuration job
   include_tasks: wait_for_raid_config_job.yml
 

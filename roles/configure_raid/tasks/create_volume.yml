@@ -81,7 +81,7 @@
 
 - name: Wait for volume to appear
   uri:
-    url: "{{ storage_controller_url }}/Volumes"
+    url: "{{ bmc_storage_url}}/{{ controller_name }}/Volumes"
     method: GET
     user: "{{ bmc_user }}"
     password: "{{ bmc_password }}"

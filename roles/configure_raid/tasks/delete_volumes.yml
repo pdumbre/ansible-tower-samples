@@ -44,7 +44,7 @@
         safe_volumes_to_delete: >-
           {{ volumes_list
              | selectattr('Name', 'not in',
-               all_jobs.json.Members
+               job_details_results.results
                | selectattr('JobState','in',['New','Scheduled','Running'])
                | map(attribute='Target')
                | map('regex_search','/Volumes/([^/]+)/Settings')

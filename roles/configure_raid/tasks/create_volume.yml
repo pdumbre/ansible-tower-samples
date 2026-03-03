@@ -170,9 +170,10 @@
   register: volumes_verify
   delegate_to: "{{ bmc_delegate_host }}"
 
-- name: Display created volumes
-  debug:
-    msg: "Volumes created: {{ volumes_verify.json.Members | length }}"
+- name: Fail if no volumes created
+  fail:
+    msg: "No RAID volumes were created!"
+  when: (volumes_verify.json.Members | default([]) | length) == 0
 
 - name: Volume creation completed
   debug:

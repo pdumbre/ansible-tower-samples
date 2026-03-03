@@ -30,7 +30,6 @@
   until: >
     power_state_check.json.PowerState is defined and
     power_state_check.json.PowerState == "On"
-  failed_when: false
 
 - name: Wait for storage controller discovery
   uri:

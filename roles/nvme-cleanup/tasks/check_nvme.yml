@@ -1,0 +1,42 @@
+---
+# Check if system has NVMe drives using Redfish API
+# This helps determine if cleanup is needed before connecting to the OS
+
+- name: Get storage controllers
+  uri:
+    url: "{{ bmc_systems_url }}/Storage"
+    method: GET
+    user: "{{ bmc_user }}"
+    password: "{{ bmc_password }}"
+    validate_certs: no
+    force_basic_auth: yes
+    return_content: yes
+    status_code: [200]
+  register: storage_controllers
+  delegate_to: "{{ bmc_delegate_host }}"
+
+- name: Get detailed storage information
+  uri:
+    url: "{{ bmc_base_url }}{{ item['@odata.id'] }}"
+    method: GET
+    user: "{{ bmc_user }}"
+    password: "{{ bmc_password }}"
+    validate_certs: no
+    force_basic_auth: yes
+    return_content: yes
+    status_code: [200]
+  register: storage_details
+  loop: "{{ storage_controllers.json.Members | default([]) }}"
+  delegate_to: "{{ bmc_delegate_host }}"
+  when: storage_controllers.json.Members is defined
+
+- name: Check for NVMe drives in storage
+  set_fact:
+    has_nvme_drives: true
+  when:
+    - storage_details.results is defined
+    - storage_details.results | selectattr('json.Drives', 'defined') | list | length > 0
+
+- name: Display NVMe drive detection result
+  debug:
+    msg: "System {{ 'has' if has_nvme_drives | default(false) else 'does not have' }} NVMe drives detected via Redfish"

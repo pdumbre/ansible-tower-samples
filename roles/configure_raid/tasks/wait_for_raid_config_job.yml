@@ -37,5 +37,5 @@
         that:
           - raid_configure_jobs | length == 0
         fail_msg: "RAID configuration jobs still pending or running"
-      retries: 20
-      delay: 30
+      retries: 30
+      delay: 60

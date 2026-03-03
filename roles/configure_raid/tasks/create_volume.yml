@@ -79,6 +79,9 @@
 - name: Reboot system and wait 
   include_tasks: wait_for_system_up.yml
 
+- name: Wait until RAID configure jobs to complete
+  include_tasks: wait_for_raid_config_job.yml
+
 - name: Wait for volume to appear
   uri:
     url: "{{ bmc_storage_url}}/{{ controller_name }}/Volumes"

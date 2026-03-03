@@ -135,7 +135,7 @@
       delegate_to: "{{ bmc_delegate_host }}"
 
     - name: Wait for system to come online
-        include_tasks: wait_for_system_up.yml
+      include_tasks: wait_for_system_up.yml
     
     - name: Wait for volumes specific pending jobs to complete
       block:

@@ -67,6 +67,9 @@
 
 - name: Reboot system and wait 
   include_tasks: wait_for_system_up.yml
+
+- name: Wait for RAID configuration jobs to complete
+  include_tasks: wait_for_raid_config_job.yml
   
 - name: Verify whether volume was created successfully
   uri:

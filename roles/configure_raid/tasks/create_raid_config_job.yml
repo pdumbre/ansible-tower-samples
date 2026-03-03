@@ -15,19 +15,3 @@
       when:
         - has_configure_jobs is defined
         - not has_configure_jobs
-
-    - name: Reboot server if any scheduled jobs were applied
-      uri:
-        url: "{{ bmc_reset_url }}"
-        method: POST
-        body:
-          ResetType: ForceRestart
-        body_format: json
-        user: "{{ bmc_user }}"
-        password: "{{ bmc_password }}"
-        validate_certs: no
-        status_code: [200, 204]
-      register: reboot_result
-      delegate_to: "{{ bmc_delegate_host }}"
-      when: 
-        - (create_config_job is defined) or (has_configure_jobs)

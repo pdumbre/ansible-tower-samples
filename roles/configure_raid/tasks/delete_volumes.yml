@@ -40,10 +40,6 @@
 
     - name: Wait until RAID configure jobs to complete
       include_tasks: wait_for_raid_config_job.yml
-      register: poll_result
-      until: not configure_jobs_active | bool
-      retries: 30
-      delay: 60
       
   when:
     - bmc_config.requires_job_cleanup is defined

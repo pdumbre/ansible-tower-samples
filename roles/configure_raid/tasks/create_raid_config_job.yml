@@ -13,5 +13,5 @@
       register: create_config_job
       delegate_to: "{{ bmc_delegate_host }}"
       when:
-        - has_configure_jobs is defined
+        - bmc_config.requires_job_cleanup is defined
         - not has_configure_jobs

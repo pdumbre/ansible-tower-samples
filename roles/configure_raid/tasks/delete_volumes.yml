@@ -13,6 +13,7 @@
 
 - name: Check existing RAID Configuration Job
   include_tasks: check_raid_config_job.yml
+  when: volume_list | length > 0 
 
 # Delete volumes
 
@@ -29,6 +30,7 @@
   
     - name: Create raid config job
       include_tasks: create_raid_config_job.yml
+      when: not has_configure_jobs
 
     - name: Wait for system to come online
       include_tasks: wait_for_system_up.yml
@@ -39,7 +41,7 @@
   when:
     - bmc_config.requires_job_cleanup is defined
     - bmc_config.requires_job_cleanup | bool
-    - has_configure_jobs or ( volume_list | length > 0 )
+    - volume_list | length > 0 
     
 
 - name: Verify all RAID volumes are deleted

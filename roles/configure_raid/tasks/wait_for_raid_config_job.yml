@@ -1,3 +1,19 @@
+- name: Fetch job details for all jobs
+  uri:
+    url: "{{ bmc_base_url }}{{ item['@odata.id'] }}"
+    method: GET
+    user: "{{ bmc_user }}"
+    password: "{{ bmc_password }}"
+    validate_certs: no
+    force_basic_auth: yes
+    return_content: yes
+    status_code: [200]
+  register: job_details_check
+  loop: "{{ job_queue_status.json.Members | default([]) }}"
+  loop_control:
+    label: "{{ item['@odata.id'] }}"
+  delegate_to: "{{ bmc_delegate_host }}"
+
 - name: Wait for RAID configuration jobs to complete
   uri:
     url: "{{ bmc_base_url }}{{ item['@odata.id'] }}"
@@ -19,6 +35,5 @@
     (job_status_poll.json.Name is not defined) or
     (job_status_poll.json.Name is not match('^Configure:')) or
     (job_status_poll.json.JobState not in ['Pending', 'Running', 'New', 'Scheduled'])
-
-  failed_when: false
+    
   changed_when: false

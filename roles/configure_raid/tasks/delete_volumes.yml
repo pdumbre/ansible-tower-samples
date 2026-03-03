@@ -41,22 +41,11 @@
 
     - debug:
         msg: "job details: {{ job_details_results.results }}"
-        
-    - name: Filter volumes without pending jobs
+
+    - name: Check for pending or running jobs
       set_fact:
-        safe_volumes_to_delete: >-
-          {{ volume_list | default([])
-             | reject('in',
-               job_details_results.results | default([])
-               | map(attribute='json')
-               | selectattr('JobState', 'in', ['New', 'Scheduled', 'Running', 'Pending'])
-               | map(attribute='Target', default='')
-               | map('regex_search', '/Volumes/([^/]+)')
-               | select('string')
-               | list
-             )
-             | list }}
-             
+        has_pending_jobs: "{{ job_details_results.results | default([]) | map(attribute='json') | selectattr('JobState', 'defined') | selectattr('JobState', 'in', ['Pending', 'Running', 'New', 'Scheduled']) | list | length > 0 }}"
+                  
     - name: Extract volumes with pending jobs
       set_fact:
         volumes_with_pending_jobs: >-
@@ -127,7 +116,7 @@
       loop_control:
         label: "{{ item }}"
       delegate_to: "{{ bmc_delegate_host }}"
-      failed_when: false
+      when: safe_volumes_to_delete | length > 0
 
     - name: Reboot server if any scheduled jobs were applied
       uri:
@@ -141,7 +130,8 @@
         validate_certs: no
         status_code: [200, 204]
       register: reboot_result
-      when: has_pending_jobs | bool
+      when: 
+        - ( has_pending_jobs | bool )or ( safe_volumes_to_delete | length > 0 )
       delegate_to: "{{ bmc_delegate_host }}"
 
     - name: Wait for server to come back
@@ -151,7 +141,7 @@
         timeout: 300
       delegate_to: "{{ bmc_delegate_host }}"
 
-    - name: Wait for pending jobs to complete
+    - name: Wait for volumes specific pending jobs to complete
       block:
         - name: Re-fetch job details to check completion
           uri:
@@ -169,19 +159,36 @@
             label: "{{ item['@odata.id'] }}"
           delegate_to: "{{ bmc_delegate_host }}"
 
-        - name: Assert no pending or running jobs remain
+        - name: Filter volume-related jobs only
+          set_fact:
+            volume_related_jobs: >-
+              {{ job_wait_details.results | default([])
+                 | map(attribute='json')
+                 | selectattr('JobState', 'defined')
+                 | selectattr('Target', 'defined')
+                 | selectattr('Target', 'search', '(Storage|Volume|Disk|RAID)')
+                 | selectattr('JobState', 'in', ['Pending', 'Running', 'New', 'Scheduled'])
+                 | list }}
+
+        - name: Debug volume-related pending jobs
+          debug:
+            msg:
+              - "Total jobs checked: {{ job_wait_details.results | default([]) | length }}"
+              - "Volume-related pending jobs: {{ volume_related_jobs | length }}"
+              - "Job targets: {{ volume_related_jobs | map(attribute='Target') | list }}"
+
+        - name: Assert no volume-related pending or running jobs remain
           assert:
             that:
-              - job_wait_details.results | default([]) | map(attribute='json') | selectattr('JobState', 'defined') | selectattr('JobState', 'in', ['Pending', 'Running', 'New', 'Scheduled']) | list | length == 0
-            fail_msg: "Jobs still pending or running"
+              - volume_related_jobs | length == 0
+            fail_msg: "Volume-related jobs still pending or running: {{ volume_related_jobs | map(attribute='Target') | list }}"
           retries: 10
           delay: 5
-      when: has_pending_jobs | bool
 
   when:
     - bmc_config.requires_job_cleanup is defined
     - bmc_config.requires_job_cleanup | bool
-    - safe_volumes_to_delete | length > 0
+    - ( has_pending_jobs | bool )or ( safe_volumes_to_delete | length > 0 )
 
 - name: Verify all RAID volumes are deleted
   uri:
@@ -200,5 +207,3 @@
 - name: Confirm deletion success
   debug:
     msg: "All Dell RAID volumes successfully deleted."
-
-# Made with Bob

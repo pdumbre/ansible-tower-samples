@@ -1,0 +1,6 @@
+- name: Cleanup NVME Disks
+  hosts: bmc_servers
+  gather_facts: false
+    
+  roles:
+    - cleanup_nvme

@@ -1,19 +1,18 @@
-- name: Check job queue status
+- name: Wait until no Configure jobs are active
   block:
-    - name: Get job queue status
+
+    - name: Get all jobs
       uri:
-        url: "{{ bmc_manager_url }}{{ job_config.url_suffix }}"
+        url: "{{ bmc_manager_url }}/Jobs"
         method: GET
         user: "{{ bmc_user }}"
         password: "{{ bmc_password }}"
         validate_certs: no
         force_basic_auth: yes
-        return_content: yes
-        status_code: [200]
-      register: job_queue_status
+      register: jobs_list
       delegate_to: "{{ bmc_delegate_host }}"
 
-    - name: Fetch job details for all jobs
+    - name: Get job details
       uri:
         url: "{{ bmc_base_url }}{{ item['@odata.id'] }}"
         method: GET
@@ -21,22 +20,20 @@
         password: "{{ bmc_password }}"
         validate_certs: no
         force_basic_auth: yes
-        return_content: yes
-        status_code: [200]
+      loop: "{{ jobs_list.json.Members | default([]) }}"
       register: job_details_check
-      loop: "{{ job_queue_status.json.Members | default([]) }}"
-      loop_control:
-        label: "{{ item['@odata.id'] }}"
       delegate_to: "{{ bmc_delegate_host }}"
-      until: >
-        (
-          job_details_check.results | default([])
-          | map(attribute='json')
-          | selectattr('JobState', 'in', ['Pending','Running','New','Scheduled'])
-          | selectattr('Name', 'defined')
-          | selectattr('Name', 'match', '^Configure:')
-          | list
-          | length
-        ) == 0
-      retries: 30
-      delay: 60
+
+  register: poll_result
+  until: >
+    (
+      job_details_check.results | default([])
+      | map(attribute='json')
+      | selectattr('JobState', 'in', ['Pending','Running','New','Scheduled'])
+      | selectattr('Name', 'defined')
+      | selectattr('Name', 'match', '^Configure:')
+      | list
+      | length
+    ) == 0
+  retries: 30
+  delay: 60

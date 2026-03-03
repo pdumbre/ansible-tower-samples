@@ -1,0 +1,33 @@
+    - name: Create storage configuration job for deletion
+      uri:
+        url: "{{ bmc_manager_url }}{{ job_config.create_job_url }}"
+        method: POST
+        user: "{{ bmc_user }}"
+        password: "{{ bmc_password }}"
+        validate_certs: no
+        force_basic_auth: yes
+        body_format: json
+        body:
+          #TargetSettingsURI: "{{ item }}/Settings"
+          TargetSettingsURI: "/redfish/v1/Systems/System.Embedded.1/Storage/BOSS.SL.12-1"
+        status_code: [200, 201, 202]
+      register: delete_job
+      loop: "{{ volume_list }}"
+      loop_control:
+        label: "{{ item }}"
+      delegate_to: "{{ bmc_delegate_host }}"
+      when: not (has_configure_jobs | bool)
+
+    - name: Reboot server if any scheduled jobs were applied
+      uri:
+        url: "{{ bmc_reset_url }}"
+        method: POST
+        body:
+          ResetType: ForceRestart
+        body_format: json
+        user: "{{ bmc_user }}"
+        password: "{{ bmc_password }}"
+        validate_certs: no
+        status_code: [200, 204]
+      register: reboot_result
+      delegate_to: "{{ bmc_delegate_host }}"

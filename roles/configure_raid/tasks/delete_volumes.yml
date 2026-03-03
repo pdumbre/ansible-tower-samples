@@ -68,7 +68,7 @@
 # Delete volumes
 
 - name: Delete each virtual volume with retry
-  include_tasks: delete_single_volume_dell.yml
+  include_tasks: delete_single_volume.yml
   loop: "{{ volume_list }}"
   loop_control:
     loop_var: volume_uri

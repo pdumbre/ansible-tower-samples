@@ -15,3 +15,7 @@
 
 - debug:
     msg: "{{ delete_result }}"
+
+- name: Wait for volume deletion
+  pause:
+    seconds: 60

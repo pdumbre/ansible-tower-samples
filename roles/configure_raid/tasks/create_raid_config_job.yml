@@ -1,4 +1,4 @@
-    - name: Create storage configuration job for deletion
+    - name: Create raid configuration job 
       uri:
         url: "{{ bmc_manager_url }}{{ job_config.create_job_url }}"
         method: POST

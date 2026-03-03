@@ -1,5 +1,8 @@
 # Create RAID volume
 
+- set_fact:
+    has_configure_jobs: false
+
 - name: Extract drive URLs (alternative method)
   set_fact:
     drive_urls: "{{ m2_storage.json.Drives | json_query('[*].\"@odata.id\"') }}"
@@ -30,7 +33,7 @@
   retries: "{{ max_retries }}"
   delay: "{{ retry_delay }}"
   until: volume_create.status in [200, 201, 202, 204]
-  when: not has_configuration_job
+  when: not has_configure_jobs
 
 - name: Wait for creation of RAID volume
   pause:

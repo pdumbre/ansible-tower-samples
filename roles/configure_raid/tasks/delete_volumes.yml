@@ -125,12 +125,12 @@
         - name: Filter raid-configuration related jobs only
           set_fact:
             raid_configure_jobs: >-
-            {{ job_details_results.results | default([])
-             | map(attribute='json')
-             | selectattr('JobState', 'in', ['Pending', 'Running', 'New', 'Scheduled'])
-             | selectattr('Name', 'defined')
-             | selectattr('Name', 'match', '^Configure:')
-             | list }}
+              {{ job_details_results.results | default([])
+                 | map(attribute='json')
+                 | selectattr('JobState', 'in', ['Pending', 'Running', 'New', 'Scheduled'])
+                 | selectattr('Name', 'defined')
+                 | selectattr('Name', 'match', '^Configure:')
+                 | list }}
 
         - name: Debug raid configuration related pending jobs
           debug:

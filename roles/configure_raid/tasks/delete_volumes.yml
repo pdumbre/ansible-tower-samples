@@ -81,7 +81,8 @@
         force_basic_auth: yes
         body_format: json
         body:
-          TargetSettingsURI: "{{ item }}/Settings"
+          #TargetSettingsURI: "{{ item }}/Settings"
+          TargetSettingsURI: "/redfish/v1/Systems/System.Embedded.1/Storage/BOSS.SL.12-1"
         status_code: [200, 201, 202]
       register: delete_job
       loop: "{{ volume_list }}"

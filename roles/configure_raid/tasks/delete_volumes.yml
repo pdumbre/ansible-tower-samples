@@ -145,9 +145,9 @@
           assert:
             that:
               - raid_configure_jobs | length == 0
-            fail_msg: "RAID configuration jobs still pending or running: {{ raid_configure_jobs | map(attribute='Target') | list }}"
-          retries: 10
-          delay: 5
+            fail_msg: "RAID configuration jobs still pending or running"
+          retries: 20
+          delay: 30
 
   when:
     - bmc_config.requires_job_cleanup is defined

@@ -13,7 +13,7 @@
       register: job_queue_status
       delegate_to: "{{ bmc_delegate_host }}"
 
-    - name: Wait for RAID configuration jobs to complete
+    - name: Fetch job details for all jobs
       uri:
         url: "{{ bmc_base_url }}{{ item['@odata.id'] }}"
         method: GET
@@ -21,22 +21,22 @@
         password: "{{ bmc_password }}"
         validate_certs: no
         force_basic_auth: yes
-    return_content: yes
-    status_code: [200]
-  register: job_wait_details
-  loop: "{{ job_queue_status.json.Members | default([]) }}"
-  loop_control:
-    label: "{{ item['@odata.id'] }}"
-  delegate_to: "{{ bmc_delegate_host }}"
-  until: >
-    (
-      job_wait_details.results
-      | map(attribute='json')
-      | selectattr('JobState', 'in', ['Pending','Running','New','Scheduled'])
-      | selectattr('Name', 'defined')
-      | selectattr('Name', 'match', '^Configure:')
-      | list
-      | length
-    ) == 0
-  retries: 30
-  delay: 60
+        return_content: yes
+        status_code: [200]
+      register: job_details_check
+      loop: "{{ job_queue_status.json.Members | default([]) }}"
+      loop_control:
+        label: "{{ item['@odata.id'] }}"
+      delegate_to: "{{ bmc_delegate_host }}"
+      until: >
+        (
+          job_details_check.results | default([])
+          | map(attribute='json')
+          | selectattr('JobState', 'in', ['Pending','Running','New','Scheduled'])
+          | selectattr('Name', 'defined')
+          | selectattr('Name', 'match', '^Configure:')
+          | list
+          | length
+        ) == 0
+      retries: 30
+      delay: 60

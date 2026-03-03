@@ -8,15 +8,13 @@
         force_basic_auth: yes
         body_format: json
         body:
-          #TargetSettingsURI: "{{ item }}/Settings"
           TargetSettingsURI: "/redfish/v1/Systems/System.Embedded.1/Storage/BOSS.SL.12-1"
         status_code: [200, 201, 202]
-      register: delete_job
-      loop: "{{ volume_list }}"
-      loop_control:
-        label: "{{ item }}"
+      register: create_config_job
       delegate_to: "{{ bmc_delegate_host }}"
-      when: not (has_configure_jobs | bool)
+      when:
+        - has_configure_jobs is defined
+        - not has_configure_jobs
 
     - name: Reboot server if any scheduled jobs were applied
       uri:
@@ -31,3 +29,5 @@
         status_code: [200, 204]
       register: reboot_result
       delegate_to: "{{ bmc_delegate_host }}"
+      when: 
+        - (create_config_job is defined) or (has_configure_jobs)

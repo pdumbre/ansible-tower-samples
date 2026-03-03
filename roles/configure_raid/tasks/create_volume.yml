@@ -33,7 +33,10 @@
   retries: "{{ max_retries }}"
   delay: "{{ retry_delay }}"
   until: volume_create.status in [200, 201, 202, 204]
-  failed_when: false
+
+  wait for creation of jobs by dell
+  if not, create configuration job
+  reboot
 
 - debug:
     msg: "{{ volume_create }}"
@@ -154,9 +157,6 @@
     - need_boot is defined
     - need_boot | bool
     
-- name: Wait for RAID configuration jobs to complete
-  include_tasks: wait_for_raid_config_job.yml
-
 - name: Verify volume was created successfully
   uri:
     url: "{{ bmc_storage_url }}/{{ controller_name }}/Volumes"

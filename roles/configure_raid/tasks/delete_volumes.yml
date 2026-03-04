@@ -59,19 +59,7 @@
   register: volumes_check
   delegate_to: "{{ bmc_delegate_host }}"
 
-# Reset system if volume still not deleted
-- name:  Reset system if volume still not deleted
-  shell: >
-    sshpass -p '{{ bmc_password }}'
-    ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null
-    {{ hostvars[inventory_hostname].bmc_user }}@{{ hostvars[inventory_hostname].ipv6ULA }}
-    "racreset"
-  register: racreset_result
-  delegate_to: "{{ bmc_delegate_host }}"
-  failed_when: racreset_result.rc !=0
-  when: volumes_check.json.Members | length > 0
-
- # Wait till system is up
+ # Wait for volume discovery
 - name: Wait for volume discovery
   uri:
     url: "{ bmc_storage_url }}/{{ controller_name }}/Volumes"

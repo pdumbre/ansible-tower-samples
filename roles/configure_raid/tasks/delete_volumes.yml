@@ -28,8 +28,7 @@
 - name: Delete RAID volumes with retry logic
   block:
     - name: Check existing RAID Configuration Job
-      #include_tasks: check_raid_config_job.yml
-      include_tasks: t.yml
+      include_tasks: check_raid_config_job.yml
       when: not has_configure_jobs
     
     - name: Create raid config job
@@ -47,17 +46,6 @@
     - bmc_config.requires_job_cleanup | bool
     - volume_list | length > 0 
     
-# Check whether RAID volume is deleted or not
-- name: Verify all RAID volumes are deleted
-  uri:
-    url: "{{ bmc_storage_url }}/{{ controller_name }}/Volumes"
-    method: GET
-    user: "{{ bmc_user }}"
-    password: "{{ bmc_password }}"
-    force_basic_auth: yes
-    validate_certs: no
-  register: volumes_check
-  delegate_to: "{{ bmc_delegate_host }}"
 
  # Wait for volume discovery
 - name: Wait for volume discovery

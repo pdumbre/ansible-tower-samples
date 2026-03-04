@@ -24,7 +24,6 @@
     body:
       TargetSettingsURI: "/redfish/v1/Systems/System.Embedded.1/Storage/{{ storage_controller_id }}"
       RebootJobType: "PowerCycle"
-      ScheduledStartTime: "TIME_NOW"
     status_code: [200, 201, 202]
   register: config_job_result
   delegate_to: "{{ bmc_delegate_host }}"

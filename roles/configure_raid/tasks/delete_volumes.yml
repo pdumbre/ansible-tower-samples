@@ -40,7 +40,8 @@
 - name: Delete RAID volumes with retry logic
   block:
     - name: Check existing RAID Configuration Job
-      include_tasks: check_raid_config_job.yml
+      #include_tasks: check_raid_config_job.yml
+      include_tasks: t.yml
       when: not has_configure_jobs
     
     - name: Create raid config job

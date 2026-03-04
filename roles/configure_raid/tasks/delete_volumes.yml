@@ -85,8 +85,22 @@
   delegate_to: "{{ bmc_delegate_host }}"
   failed_when: racreset_result.rc !=0
   when: volumes_check.json.Members | length > 0
- 
-  
+
+ # Wait till system is up
+- name: Wait for volume discovery
+  uri:
+    url: "{ bmc_storage_url }}/{{ controller_name }}/Volumes"
+    method: GET
+    user: "{{ bmc_user }}"
+    password: "{{ bmc_password }}"
+    validate_certs: no
+  register: volume_list
+  retries: "{{ max_retries }}"
+  delay: "{{ delay_power_on }}"
+  until:
+    - volume_list.status == 200
+    - volumes_list.json.Members | length > 0
+  delegate_to: "{{ bmc_delegate_host }}"  
 
 - name: Confirm deletion success
   debug:

@@ -53,13 +53,16 @@
     msg: "{{ volume_list }}"
   
 # Retrying volume deletion now
-- name: Delete volume using CLI
+- name: Retry volume deletion
   shell: >
     sshpass -p '{{ bmc_password }}'
     ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null
     {{ hostvars[inventory_hostname].bmc_user }}@{{ hostvars[inventory_hostname].ipv6ULA }}
     "storage deletevd:Disk.Virtual.0:{{ controller_name }}"
-  register: racadm_delete_result
+  register: retry_delete_result
   delegate_to: "{{ bmc_delegate_host }}"
   when: volume_list.json.Members | length > 0
+  failed_when: retry_delete_result.rc != 0 or
+    'error:' in retry_delete_result.stdout | lower or
+    'error:' in retry_delete_result.stderr | lower
 

@@ -12,6 +12,7 @@
         status_code: [200]
       register: job_queue_status
       delegate_to: "{{ bmc_delegate_host }}"
+      no_log: true
 
     - name: Fetch full details for each job
       uri:
@@ -28,6 +29,7 @@
       loop_control:
         label: "{{ item['@odata.id'] }}"
       delegate_to: "{{ bmc_delegate_host }}"
+      no_log: true
 
 
     - name: Check for failed jobs
@@ -66,4 +68,6 @@
     - bmc_config.requires_job_cleanup is defined
     - bmc_config.requires_job_cleanup | bool
 
-
+- name: Wait for deletion of failed jobs
+  pause:
+    seconds: 30

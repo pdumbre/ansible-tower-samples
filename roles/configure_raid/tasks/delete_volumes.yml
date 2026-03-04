@@ -56,7 +56,7 @@
     password: "{{ bmc_password }}"
     validate_certs: no
   register: volume_list
-  failed_when: volumes_list.json.Members | length > 0
+  failed_when: volume_list.json.Members | length > 0
   delegate_to: "{{ bmc_delegate_host }}"  
 
 - name: Confirm deletion success

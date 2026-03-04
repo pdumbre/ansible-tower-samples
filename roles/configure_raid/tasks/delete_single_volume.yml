@@ -10,14 +10,14 @@
     validate_certs: no
     force_basic_auth: yes
     status_code: [200, 202, 204]
-  register: delete_result
+  register: delete_volume_result
   delegate_to: "{{ bmc_delegate_host }}"
   retries: 3
   delay: 30
-  until: delete_result.status in [200, 202, 204]
+  until: delete_volume_result.status in [200, 202, 204]
 
 - debug:
-    msg: "{{ delete_result }}"
+    msg: "{{ delete_volume_result }}"
 
 - name: Wait for volume deletion
   pause:

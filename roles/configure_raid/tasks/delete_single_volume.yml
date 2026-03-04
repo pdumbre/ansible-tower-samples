@@ -17,6 +17,9 @@
   until: delete_volume_result.status in [200, 202, 204]
   failed_when: false
 
+- debug:
+    msg: "{{ delete_volume_result }}"
+
 - name:  Delete volume using CLI
   shell: >
     sshpass -p '{{ bmc_password }}'
@@ -27,6 +30,9 @@
   delegate_to: "{{ bmc_delegate_host }}"
   failed_when: false
   when: delete_volume_result.status not in [200, 202, 204]
+
+- debug:
+    msg: "{{ racadm_delete_result }}"
   
 - name: Clear pending storage configuration
   shell: >
@@ -39,6 +45,9 @@
   failed_when: false
   when: racadm_delete_result.rc != 0
 
+- debug:
+    msg: "{{ racadm_pending_result }}"
+    
 - name: Wait for volume deletion
   pause:
     seconds: 30
@@ -54,4 +63,6 @@
   register: racadm_delete_result
   delegate_to: "{{ bmc_delegate_host }}"
   failed_when: racadm_delete_result.rc !=0
-  when: racadm_pending_result.rc != 0
+
+- debug:
+    msg: "{{ racadm_delete_result }}"

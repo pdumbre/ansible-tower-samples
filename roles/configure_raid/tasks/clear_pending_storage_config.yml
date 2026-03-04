@@ -1,17 +1,4 @@
-- name: Clear pending storage configuration
-  uri:
-    url: "{{ bmc_storage_url }}/{{ controller_name }}/Actions/Oem/DellStorageController.ClearPending"
-    method: POST
-    user: "{{ bmc_user }}"
-    password: "{{ bmc_password }}"
-    validate_certs: no
-    force_basic_auth: yes
-    body_format: json
-    body: {}
-    status_code: [200, 202, 204]
-  delegate_to: "{{ bmc_delegate_host }}"
 
----
 # Clear pending configuration on Dell BOSS controller using Redfish API
 # Equivalent to racadm raid clearpending:BOSS.SL.12-1
 

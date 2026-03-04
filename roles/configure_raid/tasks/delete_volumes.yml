@@ -9,8 +9,12 @@
 - set_fact:
     has_configure_jobs: false
 
+# Delete previously failed jobs in queue
+- name: Delete failed jobs in queue
+  include_tasks: delete_stale_failed_jobs.yml
+ 
+  
 # Retrieve job queue check existing RAID Configuration Job
-
 - name: Check existing RAID Configuration Job
   include_tasks: check_raid_config_job.yml
   when: volume_list | length > 0 

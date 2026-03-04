@@ -14,7 +14,7 @@
 
 - name: Create configuration job to apply deletion
   uri:
-    url: "{{ bmc_base_url }}/redfish/v1/Managers/iDRAC.Embedded.1/Jobs"
+    url: "{{ bmc_storage_url }}/BOSS.SL.12-1/Actions/Storage.CreateJob"
     method: POST
     user: "{{ bmc_user }}"
     password: "{{ bmc_password }}"
@@ -22,6 +22,8 @@
     force_basic_auth: yes
     body_format: json
     body:
+      TargetSettingsURI: "/redfish/v1/Systems/System.Embedded.1/Storage/BOSS.SL.12-1"
+      ScheduledStartTime: "TIME_NOW"
       RebootJobType: "PowerCycle"
     status_code: [200, 201, 202]
   register: config_job_result

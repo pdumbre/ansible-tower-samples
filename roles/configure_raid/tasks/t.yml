@@ -27,7 +27,7 @@
     status_code: [200, 201, 202]
   register: config_job_result
   delegate_to: "{{ bmc_delegate_host }}"
-  when: delete_volume_result.status in [200, 202, 204]
+  #when: delete_volume_result.status in [200, 202, 204]
 
 - name: Extract configuration job ID
   set_fact:

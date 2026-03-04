@@ -1,32 +1,89 @@
-- name: Wait for storage controller discovery
-  uri:
-    url: "{{ bmc_storage_url }}"
-    method: GET
-    user: "{{ bmc_user }}"
-    password: "{{ bmc_password }}"
-    validate_certs: no
-  register: storage_list
-  retries: "{{ max_retries }}"
-  delay: "{{ delay_power_on }}"
-  until:
-    - storage_list.status == 200
-    - storage_list.json.Members | length > 0
-  delegate_to: "{{ bmc_delegate_host }}"
-
-- name: Verify all RAID volumes are deleted
-  uri:
-    url: "{{ bmc_storage_url}}/{{ controller_name }}/Volumes"
-    method: GET
-    user: "{{ bmc_user }}"
-    password: "{{ bmc_password }}"
-    force_basic_auth: yes
-    validate_certs: no
-  register: volumes_check
-  retries: 20
-  delay: 15
-  until: volumes_check.json.Members | length == 0
-  delegate_to: "{{ bmc_delegate_host }}"
-
-- name: Confirm deletion success
+- name: Display delete result
   debug:
-    msg: "Volume {{ volume_id }} successfully deleted."
+    msg:
+      - "Delete status: {{ delete_volume_result.status }}"
+      - "Response: {{ delete_volume_result.json | default('No response body') }}"
+
+- name: Extract storage controller ID from volume URI
+  set_fact:
+    storage_controller_id: "{{ volume_uri | regex_search('/Storage/([^/]+)/', '\\1') | first }}"
+
+- name: Display storage controller ID
+  debug:
+    msg: "Storage controller: {{ storage_controller_id }}"
+
+- name: Create configuration job to apply deletion
+  uri:
+    url: "{{ bmc_base_url }}/redfish/v1/Managers/iDRAC.Embedded.1/Jobs"
+    method: POST
+    user: "{{ bmc_user }}"
+    password: "{{ bmc_password }}"
+    validate_certs: no
+    force_basic_auth: yes
+    body_format: json
+    body:
+      TargetSettingsURI: "/redfish/v1/Systems/System.Embedded.1/Storage/{{ storage_controller_id }}"
+      RebootJobType: "PowerCycle"
+      ScheduledStartTime: "TIME_NOW"
+    status_code: [200, 201, 202]
+  register: config_job_result
+  delegate_to: "{{ bmc_delegate_host }}"
+  when: delete_volume_result.status in [200, 202, 204]
+
+- name: Extract configuration job ID
+  set_fact:
+    config_job_id: "{{ config_job_result.json.Id | default('') }}"
+  when: config_job_result.json is defined
+
+- name: Display configuration job ID
+  debug:
+    msg: "Configuration job ID: {{ config_job_id }}"
+  when: config_job_id is defined
+
+- name: Wait for configuration job to complete
+  uri:
+    url: "{{ bmc_base_url }}/redfish/v1/Managers/iDRAC.Embedded.1/Jobs/{{ config_job_id }}"
+    method: GET
+    user: "{{ bmc_user }}"
+    password: "{{ bmc_password }}"
+    validate_certs: no
+    force_basic_auth: yes
+    return_content: yes
+    status_code: [200]
+  register: job_status
+  delegate_to: "{{ bmc_delegate_host }}"
+  retries: 60
+  delay: 30
+  until: >
+    job_status.json.JobState is defined and
+    job_status.json.JobState in ['Completed', 'Failed', 'Exception', 'CompletedWithErrors']
+  when:
+    - config_job_id is defined
+    - config_job_id != ''
+
+- name: Display job completion status
+  debug:
+    msg:
+      - "Job State: {{ job_status.json.JobState | default('Unknown') }}"
+      - "Message: {{ job_status.json.Message | default('No message') }}"
+      - "Percent Complete: {{ job_status.json.PercentComplete | default('N/A') }}"
+  when: job_status.json is defined
+
+- name: Check if job completed successfully
+  set_fact:
+    deletion_successful: "{{ job_status.json.JobState == 'Completed' if job_status.json is defined else false }}"
+
+- name: Fail if deletion job failed
+  fail:
+    msg: "Volume deletion job failed: {{ job_status.json.Message | default('Unknown error') }}"
+  when:
+    - job_status.json is defined
+    - job_status.json.JobState is defined
+    - job_status.json.JobState in ['Failed', 'Exception']
+    - fail_on_deletion_error | default(true)
+
+- name: Volume deletion completed
+  debug:
+    msg: "Successfully deleted volume {{ volume_uri }}"
+  when: deletion_successful | default(false)
+

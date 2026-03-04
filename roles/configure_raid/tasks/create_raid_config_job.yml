@@ -1,17 +1,10 @@
-    - name: Create raid configuration job 
-      uri:
-        url: "{{ bmc_manager_url }}{{ job_config.create_job_url }}"
-        method: POST
-        user: "{{ bmc_user }}"
-        password: "{{ bmc_password }}"
-        validate_certs: no
-        force_basic_auth: yes
-        body_format: json
-        body:
-          TargetSettingsURI: "/redfish/v1/Systems/System.Embedded.1/Storage/BOSS.SL.12-1"
-        status_code: [200, 201, 202]
-      register: create_config_job
-      delegate_to: "{{ bmc_delegate_host }}"
-      when:
-        - bmc_config.requires_job_cleanup is defined
-        - not has_configure_jobs
+
+  # Create raid config job
+- name: Create raid configuration job
+  shell: >
+    sshpass -p '{{ bmc_password }}'
+    ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null
+    {{ hostvars[inventory_hostname].bmc_user }}@{{ hostvars[inventory_hostname].ipv6ULA }}
+    "jobqueue create {{ controller_name }} -s TIME_NOW -r forced"
+  register: raid_config_result
+  delegate_to: "{{ bmc_delegate_host }}"

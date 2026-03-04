@@ -8,6 +8,10 @@
   register: reset_system_result
   delegate_to: "{{ bmc_delegate_host }}"
 
+- name: Wait for reboot of system
+  pause:
+    seconds: 120
+    
 - name: Wait for system to reach setup state
   uri:
     url: "{{ bmc_systems_url }}"

@@ -46,8 +46,11 @@
     password: "{{ bmc_password }}"
     force_basic_auth: yes
     validate_certs: no
-  register: volumes_check
+  register: volumes_list
   delegate_to: "{{ bmc_delegate_host }}"
+
+- debug:
+    msg: "{{ volumes_list }}"
   
 # Retrying volume deletion now
 - name: Delete volume using CLI
@@ -58,7 +61,5 @@
     "storage deletevd:Disk.Virtual.0:{{ controller_name }}"
   register: racadm_delete_result
   delegate_to: "{{ bmc_delegate_host }}"
-  when: delete_volume_result.status not in [200, 202, 204]
+  when: volumes_list.json.Members | length > 0
 
-- debug:
-    msg: "{{ racadm_delete_result }}"

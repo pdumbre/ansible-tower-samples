@@ -1,0 +1,22 @@
+- name: Fetch current jobs
+  uri:
+    url: "{{ bmc_base_url }}/redfish/v1/Managers/iDRAC.Embedded.1/Jobs"
+    method: GET
+    user: "{{ bmc_user }}"
+    password: "{{ bmc_password }}"
+    validate_certs: no
+    return_content: yes
+  register: jobs_list
+
+- name: Delete failed Configure jobs
+  uri:
+    url: "{{ bmc_base_url }}{{ item['@odata.id'] }}"
+    method: DELETE
+    user: "{{ bmc_user }}"
+    password: "{{ bmc_password }}"
+    validate_certs: no
+  loop: "{{ jobs_list.json.Members }}"
+  when: >
+    item.Name is defined and
+    item.Name is match("^Configure:") and
+    item.JobState == "Failed"

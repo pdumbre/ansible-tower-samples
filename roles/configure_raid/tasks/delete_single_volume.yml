@@ -15,6 +15,7 @@
   retries: 3
   delay: 30
   until: delete_volume_result.status in [200, 202, 204]
+  failed_when: false
 
 - name: Execute RACADM via SSH
   shell: >

@@ -17,9 +17,15 @@
   until: delete_volume_result.status in [200, 202, 204]
 
 - name: Execute RACADM via SSH
-  ansible.netcommon.cli_command:
-    command: "storage deletevd:Disk.Virtual.0:BOSS.SL.12-1"
+  shell: >
+    sshpass -p '{{ hostvars[inventory_hostname].bmc_password }}'
+    ssh -6
+    {{ bmc_ssh_options | join(' ') }}
+    {{ hostvars[inventory_hostname].bmc_user }}@{{ hostvars[inventory_hostname].ipv6ULA }}
+    "racadm storage deletevd:Disk.Virtual.0:BOSS.SL.12-1"
   register: racadm_delete_result
+  failed_when: racadm_delete_result.rc != 0
+  when: delete_volume_result.status not in [200, 202, 204]
   delegate_to: "{{ bmc_delegate_host }}"
 
 - name: Display racadm deletion result

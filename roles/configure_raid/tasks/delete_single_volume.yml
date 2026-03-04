@@ -15,6 +15,7 @@
   retries: 3
   delay: 5
   until: delete_result.status in [200, 202, 204]
+  failed_when: false
 
 - debug:
     msg: "{{ delete_result }}"

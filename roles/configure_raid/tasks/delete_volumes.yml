@@ -20,6 +20,8 @@
 # Reboot system and wait to come online
 - name: Reboot server and wait for system to come online
   include_tasks: wait_for_system_up.yml
+  when:
+    - failed_jobs | length > 0
    
 # Retrieve existing RAID Configuration Job
 - name: Check existing RAID Configuration Job

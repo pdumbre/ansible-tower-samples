@@ -13,9 +13,8 @@
   register: delete_result
   delegate_to: "{{ bmc_delegate_host }}"
   retries: 3
-  delay: 5
+  delay: 30
   until: delete_result.status in [200, 202, 204]
-  failed_when: false
 
 - debug:
     msg: "{{ delete_result }}"

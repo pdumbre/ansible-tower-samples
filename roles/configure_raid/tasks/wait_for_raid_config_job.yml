@@ -13,6 +13,7 @@
   loop_control:
     label: "{{ item['@odata.id'] }}"
   delegate_to: "{{ bmc_delegate_host }}"
+  no_log: true
 
 - name: Wait for RAID configuration jobs to complete
   uri:
@@ -38,3 +39,4 @@
     
   failed_when: false    
   changed_when: false
+  no_log: true

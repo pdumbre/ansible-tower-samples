@@ -29,8 +29,8 @@
   loop_control:
     label: "{{ item['@odata.id'] }}"
   delegate_to: "{{ bmc_delegate_host }}"
-  retries: "{{ raid_config_retry }}"
-  delay: "{{ raid_config_delay }}"
+  retries: "{{ raid_config.raid_config_retry }}"
+  delay: "{{ raid_config.raid_config_delay }}"
   until: >-
     (job_status_poll.json.Name is not defined) or
     (job_status_poll.json.Name is not match('^Configure:')) or

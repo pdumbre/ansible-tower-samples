@@ -22,7 +22,6 @@
     force_basic_auth: yes
     body_format: json
     body:
-      TargetSettingsURI: "/redfish/v1/Systems/System.Embedded.1/Storage/{{ storage_controller_id }}"
       RebootJobType: "PowerCycle"
     status_code: [200, 201, 202]
   register: config_job_result

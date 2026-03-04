@@ -22,7 +22,7 @@
     sshpass -p '{{ bmc_password }}'
     ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null
     {{ hostvars[inventory_hostname].bmc_user }}@{{ hostvars[inventory_hostname].ipv6ULA }}
-    "storage deletevd:Disk.Virtual.0:BOSS.SL.12-1"
+    "storage deletevd:Disk.Virtual.0:{{ controller_name }}"
   register: racadm_delete_result
   delegate_to: "{{ bmc_delegate_host }}"
   failed_when: false
@@ -33,7 +33,7 @@
     sshpass -p '{{ bmc_password }}'
     ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null
     {{ hostvars[inventory_hostname].bmc_user }}@{{ hostvars[inventory_hostname].ipv6ULA }}
-    "clearpending BOSS.SL.12-1"
+    "clearpending {{ controller_name }}"
   register: racadm_pending_result
   delegate_to: "{{ bmc_delegate_host }}"
   failed_when: false
@@ -45,12 +45,12 @@
 
 #Retrying volume deletion now
 
-  - name:  Delete volume using CLI
+- name:  Delete volume using CLI
   shell: >
     sshpass -p '{{ bmc_password }}'
     ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null
     {{ hostvars[inventory_hostname].bmc_user }}@{{ hostvars[inventory_hostname].ipv6ULA }}
-    "storage deletevd:Disk.Virtual.0:BOSS.SL.12-1"
+    "storage deletevd:Disk.Virtual.0:{{ controller_name }}"
   register: racadm_delete_result
   delegate_to: "{{ bmc_delegate_host }}"
   failed_when: racadm_delete_result.rc !=0

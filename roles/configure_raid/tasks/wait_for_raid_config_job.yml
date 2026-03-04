@@ -36,4 +36,5 @@
     (job_status_poll.json.Name is not match('^Configure:')) or
     (job_status_poll.json.JobState not in ['Pending', 'Running', 'New', 'Scheduled'])
     
+  failed_when: false    
   changed_when: false

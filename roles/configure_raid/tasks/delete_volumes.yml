@@ -34,7 +34,9 @@
   loop: "{{ volume_list }}"
   loop_control:
     loop_var: volume_uri
-  when: not has_configure_jobs
+  when: 
+    - not has_configure_jobs 
+    - volume_list | length > 0 
 
 # Create configuration job for deletion of volume, reboot and wait for completion.
 - name: Delete RAID volumes with retry logic

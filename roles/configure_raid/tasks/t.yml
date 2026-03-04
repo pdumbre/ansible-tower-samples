@@ -6,7 +6,7 @@
 
 - name: Extract storage controller ID from volume URI
   set_fact:
-    storage_controller_id: "{{ volume_uri | regex_search('/Storage/([^/]+)/', '\\1') | first }}"
+    storage_controller_id: "{{ controller_name }}"
 
 - name: Display storage controller ID
   debug:

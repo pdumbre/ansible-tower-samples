@@ -20,9 +20,6 @@
 - debug:
     msg: "{{ delete_volume_result }}"
 
-- debug:
-    msg: "{{ racadm_delete_result }}"
-  
 - name: Clear pending storage configuration
   shell: >
     sshpass -p '{{ bmc_password }}'

@@ -67,7 +67,3 @@
   when:
     - bmc_config.requires_job_cleanup is defined
     - bmc_config.requires_job_cleanup | bool
-
-- name: Wait for deletion of failed jobs
-  pause:
-    seconds: 30

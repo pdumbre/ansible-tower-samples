@@ -13,6 +13,9 @@
 - name: Delete failed jobs in queue
   include_tasks: delete_stale_failed_jobs.yml
 
+- name: Reboot server and wait for system to come online
+  include_tasks: wait_for_system_up.yml
+
 # Clear pending storage configuration
 - name: Delete failed jobs in queue
   include_tasks: clear_pending_storage_config.yml

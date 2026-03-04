@@ -12,23 +12,22 @@
     status_code: [200, 202, 204]
   register: delete_volume_result
   delegate_to: "{{ bmc_delegate_host }}"
-  retries: 3
-  delay: 30
+  retries: 1
+  delay: 10
   until: delete_volume_result.status in [200, 202, 204]
   failed_when: false
 
-- name: Execute RACADM via SSH
+- name: Fallback - Delete volume using racadm command
   shell: >
-    sshpass -p '{{ hostvars[inventory_hostname].bmc_password }}'
-    ssh -6
-    {{ bmc_ssh_options | join(' ') }}
+    sshpass -p '{{ bmc_password }}'
+    ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null
     {{ hostvars[inventory_hostname].bmc_user }}@{{ hostvars[inventory_hostname].ipv6ULA }}
-    "racadm storage deletevd:Disk.Virtual.0:BOSS.SL.12-1"
+    "storage deletevd:Disk.Virtual.0:BOSS.SL.12-1"
   register: racadm_delete_result
+  delegate_to: "{{ bmc_delegate_host }}"
   failed_when: racadm_delete_result.rc != 0
   when: delete_volume_result.status not in [200, 202, 204]
-  delegate_to: "{{ bmc_delegate_host }}"
-
+  
 - name: Display racadm deletion result
   debug:
     msg:

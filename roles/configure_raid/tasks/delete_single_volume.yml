@@ -9,13 +9,16 @@
     password: "{{ bmc_password }}"
     validate_certs: no
     force_basic_auth: yes
+    status_code: [200, 202, 204]
   register: delete_result
   delegate_to: "{{ bmc_delegate_host }}"
-  failed_when: "{{ volume_delete_failed_when }}"
+  retries: 3
+  delay: 5
+  until: delete_result.status in [200, 202, 204]
 
 - debug:
     msg: "{{ delete_result }}"
 
 - name: Wait for volume deletion
   pause:
-    seconds: 60
+    seconds: 30

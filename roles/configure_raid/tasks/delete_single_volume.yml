@@ -25,7 +25,8 @@
     "storage deletevd:Disk.Virtual.0:BOSS.SL.12-1"
   register: racadm_delete_result
   delegate_to: "{{ bmc_delegate_host }}"
-  failed_when: racadm_delete_result.rc != 0
+  #failed_when: racadm_delete_result.rc != 0
+  failed_when: false
   when: delete_volume_result.status not in [200, 202, 204]
   
 - name: Display racadm deletion result

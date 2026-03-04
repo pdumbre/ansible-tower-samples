@@ -38,9 +38,7 @@
   include_tasks: wait_for_system_up.yml
  
 
-
 # Retrying volume deletion now
-
 - name: Delete volume using CLI
   shell: >
     sshpass -p '{{ bmc_password }}'

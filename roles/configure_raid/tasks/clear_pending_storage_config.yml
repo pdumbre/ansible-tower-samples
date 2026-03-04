@@ -10,3 +10,132 @@
     body: {}
     status_code: [200, 202, 204]
   delegate_to: "{{ bmc_delegate_host }}"
+
+---
+# Clear pending configuration on Dell BOSS controller using Redfish API
+# Equivalent to racadm raid clearpending:BOSS.SL.12-1
+
+- name: Display clear pending operation info
+  debug:
+    msg: "Clearing pending configuration on {{ boss_controller_id | default('BOSS.SL.12-1') }}"
+
+- name: Get BOSS controller details
+  uri:
+    url: "{{ bmc_storage_url }}/{{ controller_name | default('BOSS.SL.12-1') }}"
+    method: GET
+    user: "{{ bmc_user }}"
+    password: "{{ bmc_password }}"
+    validate_certs: no
+    force_basic_auth: yes
+    return_content: yes
+    status_code: [200]
+  register: boss_controller_info
+  delegate_to: "{{ bmc_delegate_host }}"
+
+- name: Display BOSS controller information
+  debug:
+    msg:
+      - "Controller: {{ boss_controller_info.json.Name | default('Unknown') }}"
+      - "Status: {{ boss_controller_info.json.Status.State | default('Unknown') }}"
+      - "Health: {{ boss_controller_info.json.Status.Health | default('Unknown') }}"
+
+- name: Check for ClearPending action
+  set_fact:
+    clear_pending_available: "{{ '#DellController.ClearPending' in (boss_controller_info.json.Actions | default({})) or 'Oem' in (boss_controller_info.json.Actions | default({})) }}"
+
+- name: Get ClearPending action target
+  set_fact:
+    clear_pending_target: >-
+      {{ boss_controller_info.json.Actions['#DellController.ClearPending'].target
+         if '#DellController.ClearPending' in boss_controller_info.json.Actions
+         else boss_controller_info.json.Actions.Oem.DellController.ClearPending.target
+         if 'Oem' in boss_controller_info.json.Actions and 'DellController' in boss_controller_info.json.Actions.Oem
+         else '' }}
+  when: clear_pending_available | bool
+
+- name: Clear pending configuration on BOSS controller
+  uri:
+    url: "{{ bmc_base_url }}{{ clear_pending_target }}"
+    method: POST
+    user: "{{ bmc_user }}"
+    password: "{{ bmc_password }}"
+    validate_certs: no
+    force_basic_auth: yes
+    body_format: json
+    body: {}
+    status_code: [200, 202, 204]
+  register: clear_pending_result
+  delegate_to: "{{ bmc_delegate_host }}"
+  when:
+    - clear_pending_available | bool
+    - clear_pending_target != ''
+
+- name: Extract job ID from clear pending response
+  set_fact:
+    clear_pending_job_id: "{{ clear_pending_result.json.Id | default(clear_pending_result.json['@odata.id'] | default('')) }}"
+  when:
+    - clear_pending_result.json is defined
+    - clear_pending_result.status in [200, 202]
+
+- name: Wait for clear pending job to complete
+  uri:
+    url: "{{ bmc_manager_url }}/Jobs/{{ clear_pending_job_id }}"
+    method: GET
+    user: "{{ bmc_user }}"
+    password: "{{ bmc_password }}"
+    validate_certs: no
+    force_basic_auth: yes
+    return_content: yes
+    status_code: [200]
+  register: clear_pending_job_status
+  delegate_to: "{{ bmc_delegate_host }}"
+  retries: 30
+  delay: 10
+  until: >
+    clear_pending_job_status.json.JobState is defined and
+    clear_pending_job_status.json.JobState in ['Completed', 'Failed', 'Exception']
+  when:
+    - clear_pending_job_id is defined
+    - clear_pending_job_id != ''
+
+- name: Display clear pending job status
+  debug:
+    msg:
+      - "Clear pending job ID: {{ clear_pending_job_id | default('N/A') }}"
+      - "Job State: {{ clear_pending_job_status.json.JobState | default('N/A') }}"
+      - "Message: {{ clear_pending_job_status.json.Message | default('N/A') }}"
+  when: clear_pending_job_status.json is defined
+
+- name: Fail if clear pending operation failed
+  fail:
+    msg: "Clear pending operation failed: {{ clear_pending_job_status.json.Message | default('Unknown error') }}"
+  when:
+    - clear_pending_job_status.json is defined
+    - clear_pending_job_status.json.JobState is defined
+    - clear_pending_job_status.json.JobState in ['Failed', 'Exception']
+
+- name: Verify BOSS controller after clear pending
+  uri:
+    url: "{{ bmc_storage_url }}/{{ controller_name | default('BOSS.SL.12-1') }}"
+    method: GET
+    user: "{{ bmc_user }}"
+    password: "{{ bmc_password }}"
+    validate_certs: no
+    force_basic_auth: yes
+    return_content: yes
+    status_code: [200]
+  register: boss_controller_verify
+  delegate_to: "{{ bmc_delegate_host }}"
+
+- name: Display verification results
+  debug:
+    msg:
+      - "BOSS controller status after clear pending:"
+      - "  Name: {{ boss_controller_verify.json.Name | default('Unknown') }}"
+      - "  Status: {{ boss_controller_verify.json.Status.State | default('Unknown') }}"
+      - "  Health: {{ boss_controller_verify.json.Status.Health | default('Unknown') }}"
+
+- name: Clear pending operation completed
+  debug:
+    msg: "Successfully cleared pending configuration on {{ boss_controller_id | default('BOSS.SL.12-1') }}"
+

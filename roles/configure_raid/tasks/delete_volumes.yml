@@ -62,7 +62,7 @@
     - bmc_config.requires_job_cleanup | bool
     - volume_list | length > 0 
     
-
+# Check whether RAID volume is deleted or not
 - name: Verify all RAID volumes are deleted
   uri:
     url: "{{ bmc_storage_url }}/{{ controller_name }}/Volumes"
@@ -72,20 +72,20 @@
     force_basic_auth: yes
     validate_certs: no
   register: volumes_check
-  until: volumes_check.json.Members | length == 0
   delegate_to: "{{ bmc_delegate_host }}"
 
-- name: Reset system if volume still not deleted
-  uri:
-    url: "{{ bmc_storage_url }}/{{ controller_name }}/Volumes"
-    method: GET
-    user: "{{ bmc_user }}"
-    password: "{{ bmc_password }}"
-    force_basic_auth: yes
-    validate_certs: no
-  register: volumes_check
-  until: volumes_check.json.Members | length == 0
+# Reset system if volume still not deleted
+- name:  Reset system if volume still not deleted
+  shell: >
+    sshpass -p '{{ bmc_password }}'
+    ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null
+    {{ hostvars[inventory_hostname].bmc_user }}@{{ hostvars[inventory_hostname].ipv6ULA }}
+    "racreset"
+  register: racreset_result
   delegate_to: "{{ bmc_delegate_host }}"
+  failed_when: racreset_result.rc !=0
+  when: volumes_check.json.Members | length > 0
+ 
   
 
 - name: Confirm deletion success

@@ -16,6 +16,33 @@
   delay: 30
   until: delete_volume_result.status in [200, 202, 204]
 
+- name: Fallback - Delete volume using racadm command
+  shell: |
+    sshpass -p "{{ bmc_password }}" ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
+    {{ bmc_user }}@{{ bmc_ip }} "racadm storage deletevd:{{ volume_id }}:{{ controller_id }}"
+  register: racadm_delete_result
+  delegate_to: "{{ bmc_delegate_host }}"
+  when: delete_volume_result.status not in [200, 202, 204]
+
+- name: Display racadm deletion result
+  debug:
+    msg:
+      - "racadm command output:"
+      - "{{ racadm_delete_result.stdout_lines | default([]) }}"
+      - "{{ racadm_delete_result.stderr_lines | default([]) }}"
+  when:
+    - redfish_deletion_failed | bool
+    - racadm_delete_result is defined
+
+- name: Check racadm deletion success
+  set_fact:
+    racadm_deletion_successful: >-
+      {{ racadm_delete_result.rc == 0 or
+         'successfully' in racadm_delete_result.stdout | lower or
+         'deleted' in racadm_delete_result.stdout | lower }}
+  when:
+    - delete_volume_result.status not in [200, 202, 204]
+
 - debug:
     msg: "{{ delete_volume_result }}"
 

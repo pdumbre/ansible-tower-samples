@@ -12,15 +12,18 @@
 # Delete previously failed jobs in queue
 - name: Delete failed jobs in queue
   include_tasks: delete_stale_failed_jobs.yml
+
+# Clear pending storage configuration
+- name: Delete failed jobs in queue
+  include_tasks: clear_pending_storage_config.yml
  
   
-# Retrieve job queue check existing RAID Configuration Job
+# Retrieve existing RAID Configuration Job
 - name: Check existing RAID Configuration Job
   include_tasks: check_raid_config_job.yml
   when: volume_list | length > 0 
 
 # Delete volumes
-
 - name: Delete each virtual volume with retry
   include_tasks: delete_single_volume.yml
   loop: "{{ volume_list }}"

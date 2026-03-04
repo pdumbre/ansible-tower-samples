@@ -20,17 +20,6 @@
 - debug:
     msg: "{{ delete_volume_result }}"
 
-- name:  Delete volume using CLI
-  shell: >
-    sshpass -p '{{ bmc_password }}'
-    ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null
-    {{ hostvars[inventory_hostname].bmc_user }}@{{ hostvars[inventory_hostname].ipv6ULA }}
-    "storage deletevd:Disk.Virtual.0:{{ controller_name }}"
-  register: racadm_delete_result
-  delegate_to: "{{ bmc_delegate_host }}"
-  failed_when: false
-  when: delete_volume_result.status not in [200, 202, 204]
-
 - debug:
     msg: "{{ racadm_delete_result }}"
   
@@ -42,19 +31,18 @@
     "clearpending {{ controller_name }}"
   register: racadm_pending_result
   delegate_to: "{{ bmc_delegate_host }}"
-  failed_when: false
-  when: racadm_delete_result.rc != 0
+  when: delete_volume_result.status not in [200, 202, 204]
 
 - debug:
     msg: "{{ racadm_pending_result }}"
     
-- name: Wait for volume deletion
+- name: Wait for clearing pending storage configuration
   pause:
     seconds: 30
 
-#Retrying volume deletion now
+# Retrying volume deletion now
 
-- name:  Delete volume using CLI
+- name: Delete volume using CLI
   shell: >
     sshpass -p '{{ bmc_password }}'
     ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null
@@ -62,7 +50,7 @@
     "storage deletevd:Disk.Virtual.0:{{ controller_name }}"
   register: racadm_delete_result
   delegate_to: "{{ bmc_delegate_host }}"
-  failed_when: racadm_delete_result.rc !=0
+  when: delete_volume_result.status not in [200, 202, 204]
 
 - debug:
     msg: "{{ racadm_delete_result }}"

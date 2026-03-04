@@ -33,9 +33,16 @@
 - debug:
     msg: "{{ racadm_pending_result }}"
     
-- name: Wait for clearing pending storage configuration
-  pause:
-    seconds: 30
+- name: Reset system
+  shell: >
+    sshpass -p '{{ bmc_password }}'
+    ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null
+    {{ hostvars[inventory_hostname].bmc_user }}@{{ hostvars[inventory_hostname].ipv6ULA }}
+    "racreset"
+  register: reset_system_result
+  delegate_to: "{{ bmc_delegate_host }}"
+  when: delete_volume_result.status not in [200, 202, 204]
+
 
 # Retrying volume deletion now
 

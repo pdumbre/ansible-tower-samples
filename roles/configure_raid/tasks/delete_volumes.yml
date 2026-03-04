@@ -13,14 +13,14 @@
 - name: Delete failed jobs in queue
   include_tasks: delete_stale_failed_jobs.yml
 
-- name: Reboot server and wait for system to come online
-  include_tasks: wait_for_system_up.yml
-
 # Clear pending storage configuration
 - name: Delete failed jobs in queue
   include_tasks: clear_pending_storage_config.yml
- 
   
+# Reboot system and wait to come online
+- name: Reboot server and wait for system to come online
+  include_tasks: wait_for_system_up.yml
+   
 # Retrieve existing RAID Configuration Job
 - name: Check existing RAID Configuration Job
   include_tasks: check_raid_config_job.yml

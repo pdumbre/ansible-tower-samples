@@ -1,22 +1,69 @@
-- name: Fetch current jobs
-  uri:
-    url: "{{ bmc_base_url }}/redfish/v1/Managers/iDRAC.Embedded.1/Jobs"
-    method: GET
-    user: "{{ bmc_user }}"
-    password: "{{ bmc_password }}"
-    validate_certs: no
-    return_content: yes
-  register: jobs_list
+- name: Check job queue status
+  block:
+    - name: Get job queue status
+      uri:
+        url: "{{ bmc_manager_url }}{{ job_config.url_suffix }}"
+        method: GET
+        user: "{{ bmc_user }}"
+        password: "{{ bmc_password }}"
+        validate_certs: no
+        force_basic_auth: yes
+        return_content: yes
+        status_code: [200]
+      register: job_queue_status
+      delegate_to: "{{ bmc_delegate_host }}"
 
-- name: Delete failed Configure jobs
-  uri:
-    url: "{{ bmc_base_url }}{{ item['@odata.id'] }}"
-    method: DELETE
-    user: "{{ bmc_user }}"
-    password: "{{ bmc_password }}"
-    validate_certs: no
-  loop: "{{ jobs_list.json.Members }}"
-  when: >
-    item.Name is defined and
-    item.Name is match("^Configure:") and
-    item.JobState == "Failed"
+    - name: Fetch full details for each job
+      uri:
+        url: "{{ bmc_base_url }}{{ item['@odata.id'] }}"
+        method: GET
+        user: "{{ bmc_user }}"
+        password: "{{ bmc_password }}"
+        validate_certs: no
+        force_basic_auth: yes
+        return_content: yes
+        status_code: [200]
+      register: job_details_results
+      loop: "{{ job_queue_status.json.Members | default([]) }}"
+      loop_control:
+        label: "{{ item['@odata.id'] }}"
+      delegate_to: "{{ bmc_delegate_host }}"
+
+
+    - name: Check for failed jobs
+      set_fact:
+        failed_jobs: >-
+          {{ job_details_results.results | default([])
+             | map(attribute='json')
+             | selectattr('JobState', 'in', ['Failed', 'Exception', 'Killed', 'Cancelled'])
+             | selectattr('Name', 'defined')
+             | selectattr('Name', 'match', '^Configure:')
+             | list }}
+
+    - name: Display failed jobs
+      debug:
+        msg:
+          - "Found {{ failed_jobs | length }} failed job(s) in queue"
+          - "Failed job IDs: {{ failed_jobs | map(attribute='Id') | list }}"
+
+    - name: Delete failed jobs from queue
+      uri:
+        url: "{{ bmc_manager_url }}{{ job_config.url_suffix }}/{{ item.Id }}"
+        method: DELETE
+        user: "{{ bmc_user }}"
+        password: "{{ bmc_password }}"
+        validate_certs: no
+        force_basic_auth: yes
+        status_code: [200, 202, 204]
+      register: delete_failed_job_result
+      loop: "{{ failed_jobs }}"
+      loop_control:
+        label: "{{ item.Id }}"
+      delegate_to: "{{ bmc_delegate_host }}"
+      when:
+        - failed_jobs | length > 0                  
+  when:
+    - bmc_config.requires_job_cleanup is defined
+    - bmc_config.requires_job_cleanup | bool
+
+

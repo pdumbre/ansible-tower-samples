@@ -1,11 +1,17 @@
 
-- name: Reset system
-  shell: >
-    sshpass -p '{{ bmc_password }}'
-    ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null
-    {{ hostvars[inventory_hostname].bmc_user }}@{{ hostvars[inventory_hostname].ipv6ULA }}
-    "racreset"
-  register: reset_system_result
+
+- name: Restart Server
+  uri:
+    url: "{{ bmc_reset_url }}"
+    method: POST
+    user: "{{ bmc_user }}"
+    password: "{{ bmc_password }}"
+    validate_certs: no
+    force_basic_auth: yes
+    body_format: json
+    body:
+      ResetType: "ForceRestart"
+    status_code: [200, 204]
   delegate_to: "{{ bmc_delegate_host }}"
 
 - name: Wait for reboot of system

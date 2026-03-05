@@ -42,6 +42,10 @@
     "racreset"
   register: reset_system_result
   delegate_to: "{{ bmc_delegate_host }}"
+
+- name: Wait for reboot of system
+  pause:
+    seconds: 120
     
 # Reboot system and wait to be online
 - name: Reboot system and wait to be online

@@ -42,6 +42,7 @@
     "racreset"
   register: reset_system_result
   delegate_to: "{{ bmc_delegate_host }}"
+  when: delete_volume_result.status not in [200, 202, 204]
 
 - name: Wait for reboot of system
   pause:

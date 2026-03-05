@@ -50,13 +50,13 @@
  # Wait for volume discovery
 - name: Wait for volume discovery
   uri:
-    url: "{ bmc_storage_url }}/{{ controller_name }}/Volumes"
+    url: "{{ bmc_storage_url }}/{{ controller_name }}/Volumes"
     method: GET
     user: "{{ bmc_user }}"
     password: "{{ bmc_password }}"
     validate_certs: no
-  register: volume_list
-  failed_when: volume_list.json.Members | length > 0
+  register: volumes
+  failed_when: volumes.json.Members | length > 0
   delegate_to: "{{ bmc_delegate_host }}"  
 
 - name: Confirm deletion success

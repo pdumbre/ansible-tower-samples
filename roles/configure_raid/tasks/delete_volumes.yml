@@ -12,7 +12,7 @@
 # Retrieve existing RAID Configuration Job
 - name: Check existing RAID Configuration Job
   include_tasks: check_raid_config_job.yml
-  when: volume_list.json.Members | length > 0
+  when: volume_list| length > 0
 
 # Delete volumes
 - name: Delete each virtual volume with retry
@@ -22,7 +22,7 @@
     loop_var: volume_uri
   when: 
     - not has_configure_jobs 
-    - volume_list.json.Members | length > 0
+    - volume_list | length > 0
 
 # Create configuration job for deletion of volume, reboot and wait for completion.
 - name: Delete RAID volumes with retry logic
@@ -44,7 +44,7 @@
   when:
     - bmc_config.requires_job_cleanup is defined
     - bmc_config.requires_job_cleanup | bool
-    - volume_list.json.Members | length > 0
+    - volume_list | length > 0
     
 
  # Wait for volume discovery

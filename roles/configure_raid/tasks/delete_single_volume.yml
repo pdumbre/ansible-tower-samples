@@ -20,96 +20,93 @@
 - debug:
     msg: "{{ delete_volume_result }}"
 
-- name: Clear pending storage configuration
-  shell: >
-    sshpass -p '{{ bmc_password }}'
-    ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null
-    {{ hostvars[inventory_hostname].bmc_user }}@{{ hostvars[inventory_hostname].ipv6ULA }}
-    "clearpending {{ controller_name }}"
-  register: racadm_pending_result
-  delegate_to: "{{ bmc_delegate_host }}"
+- name: Handle failed Redfish deletion with racadm fallback
+  block:
+    - name: Clear pending storage configuration
+      shell: >
+        sshpass -p '{{ bmc_password }}'
+        ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null
+        {{ hostvars[inventory_hostname].bmc_user }}@{{ hostvars[inventory_hostname].ipv6ULA }}
+        "clearpending {{ controller_name }}"
+      register: racadm_pending_result
+      delegate_to: "{{ bmc_delegate_host }}"
+
+    # Reset system
+    - name: Reset system
+      shell: >
+        sshpass -p '{{ bmc_password }}'
+        ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null
+        {{ hostvars[inventory_hostname].bmc_user }}@{{ hostvars[inventory_hostname].ipv6ULA }}
+        "racreset"
+      register: reset_system_result
+      delegate_to: "{{ bmc_delegate_host }}"
+
+    - name: Wait for reboot of system
+      pause:
+        seconds: 120
+
+    - name: Wait for system to reach setup state
+      uri:
+        url: "{{ bmc_systems_url }}"
+        method: GET
+        user: "{{ bmc_user }}"
+        password: "{{ bmc_password }}"
+        validate_certs: no
+        force_basic_auth: yes
+        return_content: yes
+        status_code: [200]
+      register: power_state_check
+      delegate_to: "{{ bmc_delegate_host }}"
+      retries: "{{ max_retries }}"
+      delay: "{{ delay_power_on }}"
+      until: >
+        power_state_check.json.PowerState is defined and
+        power_state_check.json.PowerState == "On"
+
+    - name: Wait for storage controller discovery
+      uri:
+        url: "{{ bmc_storage_url }}"
+        method: GET
+        user: "{{ bmc_user }}"
+        password: "{{ bmc_password }}"
+        validate_certs: no
+      register: storage_list
+      retries: "{{ max_retries }}"
+      delay: "{{ delay_power_on }}"
+      until:
+        - storage_list.status == 200
+        - storage_list.json.Members | length > 0
+      delegate_to: "{{ bmc_delegate_host }}"
+
+    # Check whether RAID volume is deleted or not
+    - name: Verify all RAID volumes are deleted
+      uri:
+        url: "{{ bmc_storage_url }}/{{ controller_name }}/Volumes"
+        method: GET
+        user: "{{ bmc_user }}"
+        password: "{{ bmc_password }}"
+        force_basic_auth: yes
+        validate_certs: no
+      register: volumes
+      delegate_to: "{{ bmc_delegate_host }}"
+
+    - name: Extract volume list
+      set_fact:
+        volume_list: "{{ volumes.json | default({}) | json_query('Members[].\"@odata.id\"') | default([]) }}"
+
+    # Retrying volume deletion now
+    - name: Retry volume deletion
+      shell: >
+        sshpass -p '{{ bmc_password }}'
+        ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null
+        {{ hostvars[inventory_hostname].bmc_user }}@{{ hostvars[inventory_hostname].ipv6ULA }}
+        "storage deletevd:Disk.Virtual.0:{{ controller_name }}"
+      register: retry_delete_result
+      delegate_to: "{{ bmc_delegate_host }}"
+      when: volume_list | length > 0
+      failed_when: >
+        retry_delete_result.rc != 0 or
+        'error:' in retry_delete_result.stdout | lower or
+        'error:' in retry_delete_result.stderr | lower
+
   when: delete_volume_result.status not in [200, 202, 204]
-
-- debug:
-    msg: "{{ racadm_pending_result }}"
-    
- #Reset system
-- name: Reset system
-  shell: >
-    sshpass -p '{{ bmc_password }}'
-    ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null
-    {{ hostvars[inventory_hostname].bmc_user }}@{{ hostvars[inventory_hostname].ipv6ULA }}
-    "racreset"
-  register: reset_system_result
-  delegate_to: "{{ bmc_delegate_host }}"
-  when: delete_volume_result.status not in [200, 202, 204]
-
-- name: Wait for reboot of system
-  pause:
-    seconds: 120
-
-- name: Wait for system to reach setup state
-  uri:
-    url: "{{ bmc_systems_url }}"
-    method: GET
-    user: "{{ bmc_user }}"
-    password: "{{ bmc_password }}"
-    validate_certs: no
-    force_basic_auth: yes
-    return_content: yes
-    status_code: [200]
-  register: power_state_check
-  delegate_to: "{{ bmc_delegate_host }}"
-  retries: "{{ max_retries }}"
-  delay: "{{ delay_power_on }}"
-  until: >
-    power_state_check.json.PowerState is defined and
-    power_state_check.json.PowerState == "On"
-
-- name: Wait for storage controller discovery
-  uri:
-    url: "{{ bmc_storage_url }}"
-    method: GET
-    user: "{{ bmc_user }}"
-    password: "{{ bmc_password }}"
-    validate_certs: no
-  register: storage_list
-  retries: "{{ max_retries }}"
-  delay: "{{ delay_power_on }}"
-  until:
-    - storage_list.status == 200
-    - storage_list.json.Members | length > 0
-  delegate_to: "{{ bmc_delegate_host }}"
-     
-# Check whether RAID volume is deleted or not
-- name: Verify all RAID volumes are deleted
-  uri:
-    url: "{{ bmc_storage_url }}/{{ controller_name }}/Volumes"
-    method: GET
-    user: "{{ bmc_user }}"
-    password: "{{ bmc_password }}"
-    force_basic_auth: yes
-    validate_certs: no
-  register: volumes
-  delegate_to: "{{ bmc_delegate_host }}"
-
-- debug:
-    msg: "{{ volumes }}"
-
-- set_fact:
-    volume_list: "{{ volumes.json | default({}) | json_query('Members[].\"@odata.id\"') | default([]) }}"
-  
-# Retrying volume deletion now
-- name: Retry volume deletion
-  shell: >
-    sshpass -p '{{ bmc_password }}'
-    ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null
-    {{ hostvars[inventory_hostname].bmc_user }}@{{ hostvars[inventory_hostname].ipv6ULA }}
-    "storage deletevd:Disk.Virtual.0:{{ controller_name }}"
-  register: retry_delete_result
-  delegate_to: "{{ bmc_delegate_host }}"
-  when: volume_list | length > 0
-  failed_when: retry_delete_result.rc != 0 or
-    'error:' in retry_delete_result.stdout | lower or
-    'error:' in retry_delete_result.stderr | lower
-

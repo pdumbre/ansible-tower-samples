@@ -64,8 +64,22 @@
   until: >
     power_state_check.json.PowerState is defined and
     power_state_check.json.PowerState == "On"
-    
- 
+
+- name: Wait for storage controller discovery
+  uri:
+    url: "{{ bmc_storage_url }}"
+    method: GET
+    user: "{{ bmc_user }}"
+    password: "{{ bmc_password }}"
+    validate_certs: no
+  register: storage_list
+  retries: "{{ max_retries }}"
+  delay: "{{ delay_power_on }}"
+  until:
+    - storage_list.status == 200
+    - storage_list.json.Members | length > 0
+  delegate_to: "{{ bmc_delegate_host }}"
+     
 # Check whether RAID volume is deleted or not
 - name: Verify all RAID volumes are deleted
   uri:

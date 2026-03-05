@@ -43,15 +43,3 @@
   failed_when: false    
   changed_when: false
   no_log: true
-
-- name: Check if any RAID configuration jobs are still incomplete
-  debug:
-    msg: >-
-      RAID configuration job {{ item.json.Id | default('unknown') }}
-      is still in state {{ item.json.JobState }}
-  loop: "{{ job_status_poll.results | default([]) }}"
-  when:
-    - item.json is defined
-    - item.json.Name is defined
-    - item.json.Name is match('^Configure:')
-    - item.json.JobState in ['Pending', 'Running', 'New', 'Scheduled']

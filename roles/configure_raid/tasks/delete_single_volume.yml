@@ -46,11 +46,14 @@
     password: "{{ bmc_password }}"
     force_basic_auth: yes
     validate_certs: no
-  register: volume_list
+  register: volumes
   delegate_to: "{{ bmc_delegate_host }}"
 
 - debug:
-    msg: "{{ volume_list }}"
+    msg: "{{ volumes }}"
+
+- set_fact:
+    volume_list: "{{ volumes.json | default({}) | json_query('Members[].\"@odata.id\"') | default([]) }}"
   
 # Retrying volume deletion now
 - name: Retry volume deletion
@@ -61,7 +64,7 @@
     "storage deletevd:Disk.Virtual.0:{{ controller_name }}"
   register: retry_delete_result
   delegate_to: "{{ bmc_delegate_host }}"
-  when: volume_list.json.Members | length > 0
+  when: volume_list | length > 0
   failed_when: retry_delete_result.rc != 0 or
     'error:' in retry_delete_result.stdout | lower or
     'error:' in retry_delete_result.stderr | lower

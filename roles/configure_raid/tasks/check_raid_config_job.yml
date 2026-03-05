@@ -26,9 +26,11 @@
         status_code: [200]
       register: job_details_results
       loop: "{{ job_queue_status.json.Members | default([]) | select('defined') | list }}"
-      loop: "{{ job_queue_status.json.Members | default([]) }}"
       loop_control:
         label: "{{ item['@odata.id'] }}"
+      when:
+        - job_queue_status.json.Members is defined
+        - job_queue_status.json.Members | select('defined') | list | length > 0
       delegate_to: "{{ bmc_delegate_host }}"
       no_log: true
 

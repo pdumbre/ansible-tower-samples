@@ -13,10 +13,6 @@
       ResetType: "ForceRestart"
     status_code: [200, 204]
   delegate_to: "{{ bmc_delegate_host }}"
-
-- name: Wait for reboot of system
-  pause:
-    seconds: 120
     
 - name: Wait for system to reach setup state
   uri:

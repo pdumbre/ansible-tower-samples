@@ -11,8 +11,8 @@
   register: job_details_check
   loop: "{{ job_queue_status.json.Members | default([]) | select('defined') | list }}"
   loop_control:
-    label: "{{ item['@odata.id'] }}"
-    show_per_step_vars: false 
+    #label: "{{ item['@odata.id'] }}"
+    label: ""
   when:
     - job_queue_status.json.Members is defined
     - job_queue_status.json.Members | select('defined') | list | length > 0

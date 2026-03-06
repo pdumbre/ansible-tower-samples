@@ -19,7 +19,7 @@ raid_config:
   write_policy: "wt"  # Write policy: wt (write-through), wb (write-back)
   disk_cache_policy: "default"  # Disk cache policy
   drive_capacity: "480GB"  # Expected drive capacity
-  retry: 40 #retry value of raid volume creation
+  retry: 30 #retry value of raid volume creation
   delay: 60 #delay value of raid volume creation
   
 

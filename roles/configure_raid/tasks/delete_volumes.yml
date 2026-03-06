@@ -58,7 +58,9 @@
     password: "{{ bmc_password }}"
     validate_certs: no
   register: volumes
-  failed_when: volumes.json.Members | length > 0
+  retries: raid_config.raid_config_retry
+  delay: raid_config.raid_config_delay
+  until: volumes.json.Members | length > 0
   delegate_to: "{{ bmc_delegate_host }}"  
 
 - name: Confirm deletion success

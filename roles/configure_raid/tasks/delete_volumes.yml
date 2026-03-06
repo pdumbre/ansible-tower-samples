@@ -46,7 +46,9 @@
     - bmc_config.requires_job_cleanup | bool
     - volume_list | length > 0
     
-
+- debug:
+    msg: "{{ bmc_storage_url }}/{{ controller_name }}/Volumes"
+    
  # Wait for volume discovery
 - name: Wait for volume discovery
   uri:

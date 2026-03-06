@@ -8,3 +8,6 @@
     "jobqueue create {{ controller_name }} -s TIME_NOW -r forced"
   register: raid_config_result
   delegate_to: "{{ bmc_delegate_host }}"
+  when:
+    - bmc_config.requires_job_cleanup is defined
+    - bmc_config.requires_job_cleanup | bool

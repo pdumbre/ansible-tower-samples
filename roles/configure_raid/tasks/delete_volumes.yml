@@ -60,7 +60,7 @@
   register: volumes
   retries: "{{ raid_config.retry }}"
   delay: "{{ raid_config.delay }}"
-  until: volumes.json.Members | length = 0
+  until: volumes.json.Members | length == 0
   delegate_to: "{{ bmc_delegate_host }}"  
 
 - name: Confirm deletion success

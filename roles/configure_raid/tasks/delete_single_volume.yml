@@ -12,9 +12,6 @@
     status_code: [200, 202, 204]
   register: delete_volume_result
   delegate_to: "{{ bmc_delegate_host }}"
-  retries: 1
-  delay: 10
-  until: delete_volume_result.status in [200, 202, 204]
   failed_when: false
 
 - debug:

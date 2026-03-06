@@ -93,8 +93,8 @@
   register: volumes_verify
   delegate_to: "{{ bmc_delegate_host }}"
   until: volumes_verify.json.Members | length > 0
-  retries: "{{ raid_config.raid_config_retry }}"
-  delay: "{{ raid_config.raid_config_delay }}"
+  retries: "{{ raid_config.retry }}"
+  delay: "{{ raid_config.delay }}"
   
 - name: Volume creation completed
   debug:

@@ -33,6 +33,7 @@
       - "Capacity: {{ drive_details.json.CapacityBytes | default(0) | human_readable }}"
       - "Status: {{ drive_details.json.Status.State | default('Unknown') }}"
       - "Protocol: {{ drive_details.json.Protocol | default('Unknown') }}"
+      - "Actions: {{ drive_details.json.Actions | default('Unknown') }}"
 
 - name: Check for SecureErase action
   set_fact:

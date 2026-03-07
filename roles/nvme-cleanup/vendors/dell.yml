@@ -1,2 +1,5 @@
 storage_config:
   storage_controller_name: "BOSS" 
+
+bmc_config:
+  requires_job_handling: true

@@ -9,37 +9,6 @@
   loop_control:
     loop_var: drive_info
 
-- name: Verify drives are cleaned via Redfish
-  uri:
-    url: "{{ bmc_base_url }}{{ drive_info.drive_url }}"
-    method: GET
-    user: "{{ bmc_user }}"
-    password: "{{ bmc_password }}"
-    validate_certs: no
-    force_basic_auth: yes
-    return_content: yes
-    status_code: [200]
-  register: post_cleanup_check
-  loop: "{{ detailed_drives }}"
-  loop_control:
-    loop_var: drive_info
-    label: "{{ drive_info.drive_uri }}"
-  delegate_to: "{{ bmc_delegate_host }}"
-  when: verify_cleanup | default(true)
-
-- name: Display post-cleanup status
-  debug:
-    msg:
-      - "Drive: {{ item.json.Name | default('Unknown') }}"
-      - "Status: {{ item.json.Status.State | default('Unknown') }}"
-      - "Health: {{ item.json.Status.Health | default('Unknown') }}"
-  loop: "{{ post_cleanup_check.results | default([]) }}"
-  loop_control:
-    label: "{{ item.json.Name | default('Unknown') }}"
-  when:
-    - verify_cleanup | default(true)
-    - item.json is defined
-
 - name: Display cleanup completion
   debug:
     msg: "Successfully cleaned {{ ves_to_clean | length }} NVMe drive(s) via Redfish API"

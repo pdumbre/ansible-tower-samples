@@ -70,7 +70,8 @@
         'protocol'    : item.json.Protocol | default(''),
         'serial'      : item.json.SerialNumber | default(''),
         'status'      : item.json.Status.State | default(''),
-        'drive_url'   : item.item
+        'drive_url'   : item.item,
+        'Actions'     : item.json.Actions
       }] }}
   loop: "{{ drive_details.results | default([]) }}"
   when: drive_details.results is defined

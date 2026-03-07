@@ -3,35 +3,6 @@
 # Performs secure erase or format operations via BMC
 # Updated to match latest cleanup_ves.yml playbook implementation
 
-- name: Get storage controllers via Redfish
-  uri:
-    url: "{{ bmc_base_url }}/redfish/v1/Systems/{{ system_id }}/Storage"
-    method: GET
-    user: "{{ bmc_user }}"
-    password: "{{ bmc_password }}"
-    validate_certs: no
-    force_basic_auth: yes
-    return_content: yes
-    status_code: [200]
-  register: storage_controllers
-  delegate_to: "{{ bmc_delegate_host }}"
-
-- name: Get detailed storage controller information
-  uri:
-    url: "{{ bmc_base_url }}{{ item['@odata.id'] }}"
-    method: GET
-    user: "{{ bmc_user }}"
-    password: "{{ bmc_password }}"
-    validate_certs: no
-    force_basic_auth: yes
-    return_content: yes
-    status_code: [200]
-  register: controller_details
-  loop: "{{ storage_controllers.json.Members | default([]) }}"
-  loop_control:
-    label: "{{ item['@odata.id'] }}"
-  delegate_to: "{{ bmc_delegate_host }}"
-
 - name: Clean up each NVMe drive via Redfish
   include_tasks: cleanup_single_drive.yml
   loop: "{{ detailed_drives }}"

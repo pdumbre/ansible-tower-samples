@@ -26,6 +26,7 @@
     headers:
       Content-Type: "application/json"
   loop: "{{ storage_response.json.Members }}"
+  delegate_to: "{{ bmc_delegate_host }}"
   register: drives_response
 
 - name: Get individual drive details
@@ -39,6 +40,7 @@
     headers:
       Content-Type: "application/json"
   loop: "{{ drives_response.results | subelements('json.Members') }}"
+  delegate_to: "{{ bmc_delegate_host }}"
   register: drive_details
 
 - name: Extract NVMe drives only

@@ -42,6 +42,92 @@
 - debug:
     msg: "Drive details: {{ format_available}} "
 
+- name: Perform Secure Erase
+  uri:
+    url: "{{ bmc_base_url }}{{ drive_details.json.Actions['#Drive.SecureErase'].target }}"
+    method: POST
+    user: "{{ bmc_user }}"
+    password: "{{ bmc_password }}"
+    validate_certs: no
+    force_basic_auth: yes
+    body_format: json
+    body:
+      SecureEraseType: "{{ secure_erase_type | default('CryptographicErase') }}"
+    status_code: [200, 202, 204]
+  register: secure_erase_result
+  delegate_to: "{{ bmc_delegate_host }}"
+  when:
+    - secure_erase_available | bool
+  failed_when: false
+
+- name: Perform Format
+  uri:
+    url: "{{ bmc_base_url }}{{ drive_details.json.Actions['#Drive.Format'].target }}"
+    method: POST
+    user: "{{ bmc_user }}"
+    password: "{{ bmc_password }}"
+    validate_certs: no
+    force_basic_auth: yes
+    body_format: json
+    body:
+      FormatType: "{{ format_type | default('FastFormat') }}"
+    status_code: [200, 202, 204]
+  register: format_result
+  delegate_to: "{{ bmc_delegate_host }}"
+  when:
+    - not (secure_erase_available | bool)
+    - format_available | bool
+  failed_when: false
+
+- name: Extract job ID from response
+  set_fact:
+    cleanup_job_id: "{{ (secure_erase_result.json.Id | default(format_result.json.Id | default(''))) }}"
+  when: secure_erase_result.json is defined or format_result.json is defined
+
+- name: Wait for cleanup job to complete
+  uri:
+    url: "{{ bmc_manager_url }}/Jobs/{{ cleanup_job_id }}"
+    method: GET
+    user: "{{ bmc_user }}"
+    password: "{{ bmc_password }}"
+    validate_certs: no
+    force_basic_auth: yes
+    return_content: yes
+    status_code: [200]
+  register: job_status
+  delegate_to: "{{ bmc_delegate_host }}"
+  retries: 60
+  delay: 30
+  until: >
+    job_status.json.JobState is defined and
+    job_status.json.JobState in ['Completed', 'Failed', 'CompletedWithErrors']
+  when:
+    - bmc_config.requires_job_handling is defined
+    - bmc_config.requires_job_handling | bool
+    - cleanup_job_id is defined
+
+- name: Check job completion status 
+  set_fact:
+    cleanup_successful: "{{ job_status.json.JobState == 'Completed' if job_status.json is defined else false }}"
+  when: 
+    - bmc_config.requires_job_handling is defined
+    - bmc_config.requires_job_handling | bool
+    - cleanup_job_id is defined
+
+- name: Verify drive is clean
+  uri:
+    url: "{{ bmc_base_url }}{{ drive_info.drive_uri }}"
+    method: GET
+    user: "{{ bmc_user }}"
+    password: "{{ bmc_password }}"
+    validate_certs: no
+    force_basic_auth: yes
+    return_content: yes
+    status_code: [200]
+  register: verify_drive
+  delegate_to: "{{ bmc_delegate_host }}"
+  when: secure_erase_result.json is defined or format_result.json is defined
+
 # Fallback: OS-level cleanup if Redfish operations not available
 - name: Check if OS-level cleanup is needed
   set_fact:

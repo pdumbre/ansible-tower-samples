@@ -62,6 +62,23 @@
 - debug:
     msg: "{{ m2_storage.json.Drives }}"
 
+- name: Get individual drive details
+  uri:
+    url: "{{ bmc_base_url }}{{ item['@odata.id'] }}"
+    method: GET
+    user: "{{ bmc_user }}"
+    password: "{{ bmc_password }}"
+    validate_certs: no
+    force_basic_auth: yes
+    return_content: yes
+    status_code: [200]
+  loop: "{{ m2_storage.json.Drives }}"
+  register: drive_details
+  delegate_to: "{{ bmc_delegate_host }}"
+
+- debug:
+    msg: "drive_details: {{ drive_details }}"
+    
 - name: Extract NVMe drives (Dell)
   ansible.builtin.set_fact:
     nvme_drives: >-
@@ -76,7 +93,7 @@
         'state'       : item.json.Status.State | default(''),
         'drive_url'   : item.json['@odata.id']
       }] }}
-  loop: "{{ m2_storage.json.Drives }}"
+  loop: "{{ drive_details }}"
   when:
     - item.json.Protocol is defined
     - item.json.Protocol in ['NVMe', 'PCIe']
@@ -91,8 +108,3 @@
       - "Status    : {{ item.Status.Health }}"
       - "Drive URL : {{ item.drive_url }}"
   loop: "{{ nvme_drives }}"
-  
-- name: Display detailed drive information
-  debug:
-    msg: "{{ nvme_drives }}"
-  when: nvme_drives is defined

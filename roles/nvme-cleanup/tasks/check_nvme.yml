@@ -18,6 +18,9 @@
 - debug:
     msg: "{{ storage_response.json.Members }}"
 
+- debug:
+    msg: "{{ bmc_base_url }}/redfish/v1/Systems/1/Storage/M.2/Drives"
+
 - name: Get drives for each storage controller
   uri:
     url: "{{ bmc_base_url }}{{ item['@odata.id'] }}/Drives"

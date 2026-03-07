@@ -56,18 +56,20 @@
   when: needs_os_cleanup | bool
 
 - name: Perform OS-level drive cleanup using dd (Fallback)
-  shell: |
-    dd if=/dev/zero of=/dev/{{ drive_info.name }} bs=1M count=1024 conv=fsync
-    wipefs -a /dev/{{ drive_info.name }}
-    partprobe /dev/{{ drive_info.name }} || true
+  shell: >
+    sshpass -p '{{ bmc_password }}'
+    ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null
+    {{ hostvars[inventory_hostname].bmc_user }}@{{ hostvars[inventory_hostname].ipv6ULA }}
+    "dd if=/dev/zero of=/dev/{{ drive_info.name }} bs=1M count=1024 conv=fsync &&
+     wipefs -a /dev/{{ drive_info.name }} &&
+     partprobe /dev/{{ drive_info.name }} || true"
   register: os_cleanup_result
+  delegate_to: "{{ bmc_delegate_host }}"
   when:
     - needs_os_cleanup | bool
     - drive_info.name is defined
-  failed_when: os_cleanup_result.rc != 0
-  vars:
-    ansible_ssh_common_args: "-o StrictHostKeyChecking=no -o ProxyJump={{ bmc_delegate_host }}"
-    
+  failed_when: false
+
 - name: Display OS-level cleanup result
   debug:
     msg:

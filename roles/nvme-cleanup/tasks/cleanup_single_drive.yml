@@ -1,0 +1,150 @@
+---
+# Clean up a single NVMe drive using Redfish API
+# Performs secure erase or format via BMC
+# Updated to match latest cleanup_nvme_drives.yml playbook implementation
+
+- name: Display drive being cleaned
+  debug:
+    msg:
+      - "=========================================="
+      - "Cleaning NVMe Drive via Redfish API"
+      - "=========================================="
+      - "Drive: {{ drive_info.drive_name }}"
+      - "URI: {{ drive_info.drive_uri }}"
+      - "Host: {{ inventory_hostname }}"
+      - "=========================================="
+
+- name: Get drive details via Redfish
+  uri:
+    url: "{{ bmc_base_url }}{{ drive_info.drive_uri }}"
+    method: GET
+    user: "{{ bmc_user }}"
+    password: "{{ bmc_password }}"
+    validate_certs: no
+    force_basic_auth: yes
+    return_content: yes
+    status_code: [200]
+  register: drive_details
+  delegate_to: "{{ bmc_delegate_host }}"
+
+- name: Display drive information
+  debug:
+    msg:
+      - "Drive Name: {{ drive_details.json.Name | default('Unknown') }}"
+      - "Model: {{ drive_details.json.Model | default('Unknown') }}"
+      - "Capacity: {{ drive_details.json.CapacityBytes | default(0) | human_readable }}"
+      - "Status: {{ drive_details.json.Status.State | default('Unknown') }}"
+      - "Protocol: {{ drive_details.json.Protocol | default('Unknown') }}"
+
+- name: Check for SecureErase action
+  set_fact:
+    secure_erase_available: "{{ '#Drive.SecureErase' in (drive_details.json.Actions | default({})) }}"
+    format_available: "{{ '#Drive.Format' in (drive_details.json.Actions | default({})) }}"
+
+- name: Perform Secure Erase via Redfish
+  uri:
+    url: "{{ bmc_base_url }}{{ drive_details.json.Actions['#Drive.SecureErase'].target }}"
+    method: POST
+    user: "{{ bmc_user }}"
+    password: "{{ bmc_password }}"
+    validate_certs: no
+    force_basic_auth: yes
+    body_format: json
+    body:
+      SecureEraseType: "{{ secure_erase_type | default('CryptographicErase') }}"
+    status_code: [200, 202, 204]
+  register: secure_erase_result
+  delegate_to: "{{ bmc_delegate_host }}"
+  when: secure_erase_available | bool
+  failed_when: false
+
+- name: Perform Format via Redfish (if SecureErase not available)
+  uri:
+    url: "{{ bmc_base_url }}{{ drive_details.json.Actions['#Drive.Format'].target }}"
+    method: POST
+    user: "{{ bmc_user }}"
+    password: "{{ bmc_password }}"
+    validate_certs: no
+    force_basic_auth: yes
+    body_format: json
+    body:
+      FormatType: "{{ format_type | default('FastFormat') }}"
+    status_code: [200, 202, 204]
+  register: format_result
+  delegate_to: "{{ bmc_delegate_host }}"
+  when:
+    - not (secure_erase_available | bool)
+    - format_available | bool
+  failed_when: false
+
+- name: Extract job ID from response
+  set_fact:
+    cleanup_job_id: "{{ (secure_erase_result.json.Id | default(format_result.json.Id | default(''))) }}"
+  when: secure_erase_result.json is defined or format_result.json is defined
+
+- name: Wait for cleanup job to complete
+  uri:
+    url: "{{ bmc_base_url }}/redfish/v1/TaskService/Tasks/{{ cleanup_job_id }}"
+    method: GET
+    user: "{{ bmc_user }}"
+    password: "{{ bmc_password }}"
+    validate_certs: no
+    force_basic_auth: yes
+    return_content: yes
+    status_code: [200]
+  register: job_status
+  delegate_to: "{{ bmc_delegate_host }}"
+  retries: 60
+  delay: 30
+  until: >
+    job_status.json.TaskState is defined and
+    job_status.json.TaskState in ['Completed', 'Exception', 'Killed', 'Cancelled']
+  when: cleanup_job_id is defined and cleanup_job_id != ''
+
+- name: Check job completion status
+  set_fact:
+    cleanup_successful: "{{ job_status.json.TaskState == 'Completed' if job_status.json is defined else false }}"
+
+- name: Verify drive is clean
+  uri:
+    url: "{{ bmc_base_url }}{{ drive_info.drive_uri }}"
+    method: GET
+    user: "{{ bmc_user }}"
+    password: "{{ bmc_password }}"
+    validate_certs: no
+    force_basic_auth: yes
+    return_content: yes
+    status_code: [200]
+  register: verify_drive
+  delegate_to: "{{ bmc_delegate_host }}"
+
+- name: Display cleanup status for drive
+  debug:
+    msg:
+      - "Drive {{ drive_info.drive_name }} cleanup status:"
+      - "  Secure Erase Available: {{ secure_erase_available }}"
+      - "  Format Available: {{ format_available }}"
+      - "  Operation: {{ 'SecureErase' if secure_erase_available else 'Format' if format_available else 'None' }}"
+      - "  Job ID: {{ cleanup_job_id | default('N/A') }}"
+      - "  Job Status: {{ job_status.json.TaskState | default('N/A') }}"
+      - "  Cleanup Successful: {{ cleanup_successful | default(false) }}"
+      - "  Current Drive State: {{ verify_drive.json.Status.State | default('Unknown') }}"
+      - "  Current Drive Health: {{ verify_drive.json.Status.Health | default('Unknown') }}"
+
+- name: Fail if cleanup was not successful
+  fail:
+    msg: "Drive cleanup failed for {{ drive_info.drive_name }}"
+  when:
+    - not (cleanup_successful | default(false))
+    - fail_on_error | default(true)
+
+- name: Log cleanup operation
+  lineinfile:
+    path: "{{ cleanup_log_file }}"
+    line: "{{ ansible_date_time.iso8601 }} - {{ inventory_hostname }} - Cleaned {{ drive_info.drive_name }} via Redfish ({{ 'SecureErase' if secure_erase_available else 'Format' }})"
+    create: yes
+    mode: '0644'
+  delegate_to: localhost
+  when: cleanup_log_file is defined
+
+# Made with Bob

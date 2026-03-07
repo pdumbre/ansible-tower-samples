@@ -15,6 +15,9 @@
   register: storage_response
   delegate_to: "{{ bmc_delegate_host }}"
 
+- debug:
+    msg: "{{ storage_response.json.Members }}"
+
 - name: Get drives for each storage controller
   uri:
     url: "{{ bmc_base_url }}{{ item['@odata.id'] }}/Drives"

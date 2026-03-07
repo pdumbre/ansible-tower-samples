@@ -12,7 +12,7 @@
     force_basic_auth: yes
     return_content: yes
     status_code: [200]
-  register: storage_controllers
+  register: storage_response
   delegate_to: "{{ bmc_delegate_host }}"
 
 - name: Get drives for each storage controller

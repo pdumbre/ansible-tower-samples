@@ -13,6 +13,7 @@
     headers:
       Content-Type: "application/json"
   register: storage_response
+  delegate_to: "{{ bmc_delegate_host }}"
 
 - name: Get each storage controller details
   ansible.builtin.uri:
@@ -26,6 +27,7 @@
       Content-Type: "application/json"
   loop: "{{ storage_response.json.Members }}"
   register: controller_details
+  delegate_to: "{{ bmc_delegate_host }}"
 
 - name: Build list of valid drive URLs from controllers
   ansible.builtin.set_fact:
@@ -49,6 +51,7 @@
       Content-Type: "application/json"
   loop: "{{ drive_urls }}"
   register: drive_details
+  delegate_to: "{{ bmc_delegate_host }}"
 
 - name: Extract NVMe drives only
   ansible.builtin.set_fact:

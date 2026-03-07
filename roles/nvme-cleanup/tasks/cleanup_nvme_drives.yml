@@ -3,24 +3,6 @@
 # Performs secure erase or format operations via BMC
 # Updated to match latest cleanup_nvme_drives.yml playbook implementation
 
-- name: Display cleanup warning
-  debug:
-    msg:
-      - "=========================================="
-      - "WARNING: NVMe Drive Cleanup Operation"
-      - "=========================================="
-      - "About to clean {{ nvme_drives_to_clean | length }} NVMe drive(s) via Redfish API"
-      - "This will DESTROY ALL DATA on these drives!"
-      - "Target drives: {{ nvme_drives_to_clean }}"
-      - "Host: {{ inventory_hostname }}"
-      - "BMC: {{ bmc_ip | default(ansible_host) }}"
-      - "=========================================="
-
-- name: Pause for confirmation (if interactive)
-  pause:
-    prompt: "Press ENTER to continue with NVMe cleanup or Ctrl+C to abort"
-  when: require_confirmation | default(false)
-
 - name: Get storage controllers via Redfish
   uri:
     url: "{{ bmc_base_url }}/redfish/v1/Systems/{{ system_id }}/Storage"

@@ -18,9 +18,6 @@
 
 - name: Clean up NVMe drives
   include_tasks: cleanup_nvme_drives.yml
-  when: 
-    - nvme_drives_to_clean is defined
-    - nvme_drives_to_clean | length > 0
 
 #- name: Display cleanup completion
  # debug:

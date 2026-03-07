@@ -24,7 +24,6 @@
     drive_urls: "{{ storage_response.json.Drives | map('dict2items') | map('selectattr', 'key', 'equalto', '@odata.id') | map('map', attribute='value') | map('first') | list }}"
   when: storage_response.json.Drives is defined
 
-
 - name: Display extracted drive information
   debug:
     msg:
@@ -45,15 +44,6 @@
       - "Drive IDs extracted:"
       - "{{ drive_ids }}"
 
-# Example output for the provided JSON:
-# Drive URLs:
-#   - /redfish/v1/Systems/1/Storage/M.2/Drives/Drive.M.2_Bay_0
-#   - /redfish/v1/Systems/1/Storage/M.2/Drives/Drive.M.2_Bay_1
-# 
-# Drive IDs:
-#   - Drive.M.2_Bay_0
-#   - Drive.M.2_Bay_1
-
 - name: Get detailed information for each drive
   uri:
     url: "{{ bmc_base_url }}{{ item }}"
@@ -71,7 +61,17 @@
 
 - name: Extract detailed drive information
   set_fact:
-    detailed_drives: "{{ detailed_drives | default([]) + [{'id': item.json.Id, 'name': item.json.Name | default(''), 'model': item.json.Model | default(''), 'capacity_gb': (item.json.CapacityBytes | default(0) / 1073741824) | round(2), 'protocol': item.json.Protocol | default(''), 'serial': item.json.SerialNumber | default(''), 'status': item.json.Status.State | default('')}] }}"
+    detailed_drives: >-
+      {{ detailed_drives | default([]) + [{
+        'id'          : item.json.Id,
+        'name'        : item.json.Name | default(''),
+        'model'       : item.json.Model | default(''),
+        'capacity_gb' : (item.json.CapacityBytes | default(0) / 1073741824) | round(2),
+        'protocol'    : item.json.Protocol | default(''),
+        'serial'      : item.json.SerialNumber | default(''),
+        'status'      : item.json.Status.State | default(''),
+        'drive_url'   : item.item
+      }] }}
   loop: "{{ drive_details.results | default([]) }}"
   when: drive_details.results is defined
 
@@ -79,29 +79,3 @@
   debug:
     msg: "{{ detailed_drives }}"
   when: detailed_drives is defined
-
-# Example: Extract storage controller information
-- name: Extract storage controller details
-  set_fact:
-    storage_controller:
-      name: "{{ storage_response.json.StorageControllers[0].Name }}"
-      model: "{{ storage_response.json.StorageControllers[0].Model }}"
-      manufacturer: "{{ storage_response.json.StorageControllers[0].Manufacturer }}"
-      serial_number: "{{ storage_response.json.StorageControllers[0].SerialNumber }}"
-      firmware_version: "{{ storage_response.json.StorageControllers[0].FirmwareVersion }}"
-      supported_raid_types: "{{ storage_response.json.StorageControllers[0].SupportedRAIDTypes }}"
-      location: "{{ storage_response.json.StorageControllers[0].Location.Info }}"
-  when: storage_response.json.StorageControllers is defined
-
-- name: Display storage controller information
-  debug:
-    msg:
-      - "Storage Controller Information:"
-      - "  Name: {{ storage_controller.name }}"
-      - "  Model: {{ storage_controller.model }}"
-      - "  Manufacturer: {{ storage_controller.manufacturer }}"
-      - "  Serial: {{ storage_controller.serial_number }}"
-      - "  Firmware: {{ storage_controller.firmware_version }}"
-      - "  Supported RAID: {{ storage_controller.supported_raid_types | join(', ') }}"
-      - "  Location: {{ storage_controller.location }}"
-  when: storage_controller is defined

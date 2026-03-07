@@ -1,62 +1,19 @@
----
-# Clean up NVMe drives using Redfish API
-# Performs secure erase or format operations via BMC
-# Updated to match latest cleanup_nvme_drives.yml playbook implementation
+- debug:
+    msg: "Drive details: drive_info"
 
-- name: Display cleanup warning
+- name: Display drive being cleaned
   debug:
     msg:
       - "=========================================="
-      - "WARNING: NVMe Drive Cleanup Operation"
+      - "Cleaning NVMe Drive via Redfish API"
       - "=========================================="
-      - "About to clean {{ nvme_drives_to_clean | length }} NVMe drive(s) via Redfish API"
-      - "This will DESTROY ALL DATA on these drives!"
-      - "Target drives: {{ nvme_drives_to_clean }}"
+      - "Drive: {{ drive_info.drive_name }}"
+      - "URI: {{ drive_info.drive_uri }}"
       - "Host: {{ inventory_hostname }}"
-      - "BMC: {{ bmc_ip | default(ansible_host) }}"
+      - "Vendor: {{ 'Dell' if is_dell_system else 'Lenovo' }}"
       - "=========================================="
 
-- name: Pause for confirmation (if interactive)
-  pause:
-    prompt: "Press ENTER to continue with NVMe cleanup or Ctrl+C to abort"
-  when: require_confirmation | default(false)
-
-- name: Get storage controllers via Redfish
-  uri:
-    url: "{{ bmc_base_url }}/redfish/v1/Systems/{{ system_id }}/Storage"
-    method: GET
-    user: "{{ bmc_user }}"
-    password: "{{ bmc_password }}"
-    validate_certs: no
-    force_basic_auth: yes
-    return_content: yes
-    status_code: [200]
-  register: storage_controllers
-  delegate_to: "{{ bmc_delegate_host }}"
-
-- name: Get detailed storage controller information
-  uri:
-    url: "{{ bmc_base_url }}{{ item['@odata.id'] }}"
-    method: GET
-    user: "{{ bmc_user }}"
-    password: "{{ bmc_password }}"
-    validate_certs: no
-    force_basic_auth: yes
-    return_content: yes
-    status_code: [200]
-  register: controller_details
-  loop: "{{ storage_controllers.json.Members | default([]) }}"
-  loop_control:
-    label: "{{ item['@odata.id'] }}"
-  delegate_to: "{{ bmc_delegate_host }}"
-
-- name: Clean up each NVMe drive via Redfish
-  include_tasks: cleanup_single_drive.yml
-  loop: "{{ nvme_drives_to_clean }}"
-  loop_control:
-    loop_var: drive_info
-
-- name: Verify drives are cleaned via Redfish
+- name: Get drive details via Redfish
   uri:
     url: "{{ bmc_base_url }}{{ drive_info.drive_uri }}"
     method: GET
@@ -66,53 +23,28 @@
     force_basic_auth: yes
     return_content: yes
     status_code: [200]
-  register: post_cleanup_check
-  loop: "{{ nvme_drives_to_clean }}"
-  loop_control:
-    loop_var: drive_info
-    label: "{{ drive_info.drive_uri }}"
+  register: drive_details
   delegate_to: "{{ bmc_delegate_host }}"
-  when: verify_cleanup | default(true)
 
-- name: Display post-cleanup status
+- name: Display drive information
   debug:
     msg:
-      - "Drive: {{ item.json.Name | default('Unknown') }}"
-      - "Status: {{ item.json.Status.State | default('Unknown') }}"
-      - "Health: {{ item.json.Status.Health | default('Unknown') }}"
-  loop: "{{ post_cleanup_check.results | default([]) }}"
-  loop_control:
-    label: "{{ item.json.Name | default('Unknown') }}"
-  when:
-    - verify_cleanup | default(true)
-    - item.json is defined
+      - "Drive Name: {{ drive_details.json.Name | default('Unknown') }}"
+      - "Model: {{ drive_details.json.Model | default('Unknown') }}"
+      - "Capacity: {{ drive_details.json.CapacityBytes | default(0) | human_readable }}"
+      - "Status: {{ drive_details.json.Status.State | default('Unknown') }}"
+      - "Protocol: {{ drive_details.json.Protocol | default('Unknown') }}"
 
-- name: Create cleanup report
-  copy:
-    content: |
-      NVMe Drive Cleanup Report (Redfish API)
-      ========================================
-      Hostname: {{ inventory_hostname }}
-      Date: {{ ansible_date_time.iso8601 }}
-      Node Type: {{ node_type | default('unknown') }}
-      BMC: {{ bmc_ip }}
-      
-      Drives Cleaned:
-      {% for drive in nvme_drives_to_clean %}
-      - {{ drive.drive_name }} ({{ drive.drive_uri }})
-      {% endfor %}
-      
-      Cleanup Operations Performed:
-      - Secure Erase via Redfish API
-      - Drive format/initialization
-      - Job status monitoring
-      
-      Status: Completed Successfully
-    dest: "{{ cleanup_report_dir }}/{{ inventory_hostname }}_nvme_cleanup_redfish_{{ ansible_date_time.epoch }}.txt"
-    mode: '0644'
-  delegate_to: localhost
-  when: create_cleanup_report | default(true)
+- name: Check for SecureErase action
+  set_fact:
+    secure_erase_available: "{{ '#Drive.SecureErase' in (drive_details.json.Actions | default({})) }}"
+    format_available: "{{ '#Drive.Format' in (drive_details.json.Actions | default({})) }}"
 
-- name: Display cleanup completion
-  debug:
-    msg: "Successfully cleaned {{ nvme_drives_to_clean | length }} NVMe drive(s) via Redfish API"
+- debug:
+    msg: "Drive details: drive_info"
+    
+- debug:
+    msg: "Drive details: secure_erase_available"
+
+- debug:
+    msg: "Drive details: format_available"

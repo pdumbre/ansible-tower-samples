@@ -2,80 +2,76 @@
 # Example: Extract Drives from BMC Storage URL response
 # This demonstrates how to parse the Drives array from Redfish Storage response
 
-- name: Example - Get storage information from BMC
-  uri:
-    url: "{{ bmc_base_url }}/redfish/v1/Systems/1/Storage/M.2"
+- name: Get storage members via Redfish
+  ansible.builtin.uri:
+    url: "{{ bmc_storage_url }}"
     method: GET
     user: "{{ bmc_user }}"
     password: "{{ bmc_password }}"
-    validate_certs: no
-    force_basic_auth: yes
-    return_content: yes
-    status_code: [200]
+    validate_certs: false
+    force_basic_auth: true
+    headers:
+      Content-Type: "application/json"
   register: storage_response
-  delegate_to: "{{ bmc_delegate_host }}"
 
-- name: Extract drive count
-  set_fact:
-    drive_count: "{{ storage_response.json['Drives@odata.count'] | default(0) }}"
-
-- name: Extract drive URLs from Drives array
-  set_fact:
-    drive_urls: "{{ storage_response.json.Drives | map('dict2items') | map('selectattr', 'key', 'equalto', '@odata.id') | map('map', attribute='value') | map('first') | list }}"
-  when: storage_response.json.Drives is defined
-
-- name: Display extracted drive information
-  debug:
-    msg:
-      - "Storage Controller: {{ storage_response.json.Name }}"
-      - "Storage ID: {{ storage_response.json.Id }}"
-      - "Drive Count: {{ drive_count }}"
-      - "Drive URLs:"
-      - "{{ drive_urls }}"
-
-- name: Extract drive IDs from URLs
-  set_fact:
-    drive_ids: "{{ drive_urls | map('regex_replace', '^.*/(.*)$', '\\1') | list }}"
-  when: drive_urls is defined
-
-- name: Display drive IDs
-  debug:
-    msg:
-      - "Drive IDs extracted:"
-      - "{{ drive_ids }}"
-
-- name: Get detailed information for each drive
-  uri:
-    url: "{{ bmc_base_url }}{{ item }}"
+- name: Get each storage controller details
+  ansible.builtin.uri:
+    url: "{{ bmc_base_url }}{{ item['@odata.id'] }}"
     method: GET
     user: "{{ bmc_user }}"
     password: "{{ bmc_password }}"
-    validate_certs: no
-    force_basic_auth: yes
-    return_content: yes
-    status_code: [200]
-  register: drive_details
+    validate_certs: false
+    force_basic_auth: true
+    headers:
+      Content-Type: "application/json"
+  loop: "{{ storage_response.json.Members }}"
+  register: controller_details
+
+- name: Build list of valid drive URLs from controllers
+  ansible.builtin.set_fact:
+    drive_urls: >-
+      {{ drive_urls | default([]) +
+         item.json.Drives | default([]) }}
+  loop: "{{ controller_details.results }}"
+  when:
+    - item.json.Drives is defined
+    - item.json.Drives | length > 0
+
+- name: Get individual drive details
+  ansible.builtin.uri:
+    url: "{{ bmc_base_url }}{{ item['@odata.id'] }}"
+    method: GET
+    user: "{{ bmc_user }}"
+    password: "{{ bmc_password }}"
+    validate_certs: false
+    force_basic_auth: true
+    headers:
+      Content-Type: "application/json"
   loop: "{{ drive_urls }}"
-  delegate_to: "{{ bmc_delegate_host }}"
-  when: drive_urls is defined and drive_urls | length > 0
+  register: drive_details
 
-- name: Extract detailed drive information
-  set_fact:
-    detailed_drives: >-
-      {{ detailed_drives | default([]) + [{
-        'id'          : item.json.Id,
-        'name'        : item.json.Name | default(''),
-        'model'       : item.json.Model | default(''),
-        'capacity_gb' : (item.json.CapacityBytes | default(0) / 1073741824) | round(2),
-        'protocol'    : item.json.Protocol | default(''),
-        'serial'      : item.json.SerialNumber | default(''),
-        'status'      : item.json.Status.State | default(''),
-        'drive_url'   : item.item
-      }] }}
-  loop: "{{ drive_details.results | default([]) }}"
-  when: drive_details.results is defined
+- name: Extract NVMe drives only
+  ansible.builtin.set_fact:
+    nvme_drives: >-
+      {{ nvme_drives | default([]) +
+         [item.json | combine({'drive_url': item.json['@odata.id']})] }}
+  loop: "{{ drive_details.results }}"
+  when:
+    - item.json.Protocol is defined
+    - item.json.Protocol == 'NVMe'
 
+- name: Display NVMe drives
+  ansible.builtin.debug:
+    msg:
+      - "Name      : {{ item.Name }}"
+      - "Model     : {{ item.Model }}"
+      - "Serial    : {{ item.SerialNumber }}"
+      - "Capacity  : {{ item.CapacityBytes }}"
+      - "Status    : {{ item.Status.Health }}"
+      - "Drive URL : {{ item.drive_url }}"
+  loop: "{{ nvme_drives }}"
+  
 - name: Display detailed drive information
   debug:
-    msg: "{{ detailed_drives }}"
-  when: detailed_drives is defined
+    msg: "{{ nvme_drives }}"
+  when: nvme_drives is defined

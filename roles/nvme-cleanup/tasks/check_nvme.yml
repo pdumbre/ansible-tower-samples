@@ -15,28 +15,41 @@
   register: storage_controllers
   delegate_to: "{{ bmc_delegate_host }}"
 
-- name: Get detailed storage information
+- name: Get drives for each storage controller
   uri:
-    url: "{{ bmc_base_url }}{{ item['@odata.id'] }}"
+    url: "{{ bmc_base_url }}{{ item['@odata.id'] }}/Drives"
     method: GET
     user: "{{ bmc_user }}"
     password: "{{ bmc_password }}"
-    validate_certs: no
-    force_basic_auth: yes
-    return_content: yes
-    status_code: [200]
-  register: storage_details
-  loop: "{{ storage_controllers.json.Members | default([]) }}"
-  delegate_to: "{{ bmc_delegate_host }}"
-  when: storage_controllers.json.Members is defined
+    validate_certs: false
+    force_basic_auth: true
+    headers:
+      Content-Type: "application/json"
+  loop: "{{ storage_response.json.Members }}"
+  register: drives_response
 
-- name: Check for NVMe drives in storage
+- name: Get individual drive details
+  uri:
+    url: "{{ bmc_base_url }}{{ item.1['@odata.id'] }}"
+    method: GET
+    user: "{{ bmc_user }}"
+    password: "{{ bmc_password }}"
+    validate_certs: false
+    force_basic_auth: true
+    headers:
+      Content-Type: "application/json"
+  loop: "{{ drives_response.results | subelements('json.Members') }}"
+  register: drive_details
+
+- name: Extract NVMe drives only
   set_fact:
-    has_nvme_drives: true
+    nvme_drives: >-
+      {{ nvme_drives | default([]) + 
+         [item.json | combine({'drive_url': item.json['@odata.id']})] }}
+  loop: "{{ drive_details.results }}"
   when:
-    - storage_details.results is defined
-    - storage_details.results | selectattr('json.Drives', 'defined') | list | length > 0
+    - item.json.Protocol is defined
+    - item.json.Protocol == 'NVMe'
 
-- name: Display NVMe drive detection result
-  debug:
-    msg: "System {{ 'has' if has_nvme_drives | default(false) else 'does not have' }} NVMe drives detected via Redfish"
+- debug:
+    msg: "nvme_drives = {{ nvme_drives }}"

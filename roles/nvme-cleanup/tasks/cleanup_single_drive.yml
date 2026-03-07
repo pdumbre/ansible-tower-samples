@@ -7,11 +7,7 @@
       - "=========================================="
       - "Cleaning NVMe Drive via Redfish API"
       - "=========================================="
-      - "Drive: {{ drive_info.drive_name }}"
-      - "URI: {{ drive_info.drive_uri }}"
-      - "Host: {{ inventory_hostname }}"
-      - "Vendor: {{ 'Dell' if is_dell_system else 'Lenovo' }}"
-      - "=========================================="
+      - "Drive: {{ drive_info.name }}"
 
 - name: Get drive details via Redfish
   uri:

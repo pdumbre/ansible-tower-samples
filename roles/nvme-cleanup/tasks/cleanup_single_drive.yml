@@ -22,6 +22,9 @@
   register: drive_details
   delegate_to: "{{ bmc_delegate_host }}"
 
+- debug:
+    msg: "Drive details: {{ drive_details }}"
+
 - name: Display drive information
   debug:
     msg:

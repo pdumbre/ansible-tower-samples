@@ -1,1 +1,2 @@
-
+storage_config:
+  storage_controller_name: "BOSS" 

@@ -100,11 +100,5 @@
 
 - name: Display NVMe drives
   ansible.builtin.debug:
-    msg:
-      - "Name      : {{ item.Name }}"
-      - "Model     : {{ item.Model }}"
-      - "Serial    : {{ item.SerialNumber }}"
-      - "Capacity  : {{ item.CapacityBytes }}"
-      - "Status    : {{ item.Status.Health }}"
-      - "Drive URL : {{ item.drive_url }}"
-  loop: "{{ nvme_drives }}"
+    msg: "nvme: {{ nvme_drives }}"
+    

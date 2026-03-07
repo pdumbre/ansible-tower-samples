@@ -5,7 +5,7 @@
 
 - name: Clean up each NVMe drive via Redfish
   include_tasks: cleanup_single_drive.yml
-  loop: "{{ detailed_drives }}"
+  loop: "{{ nvme_drives }}"
   loop_control:
     loop_var: drive_info
 

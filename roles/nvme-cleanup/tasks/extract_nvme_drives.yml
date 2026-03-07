@@ -2,66 +2,84 @@
 # Example: Extract Drives from BMC Storage URL response
 # This demonstrates how to parse the Drives array from Redfish Storage response
 
-- name: Get storage members via Redfish
-  ansible.builtin.uri:
+- name: Retrieve storage collection
+  uri:
     url: "{{ bmc_storage_url }}"
     method: GET
     user: "{{ bmc_user }}"
     password: "{{ bmc_password }}"
-    validate_certs: false
-    force_basic_auth: true
-    headers:
-      Content-Type: "application/json"
-  register: storage_response
+    validate_certs: no
+  register: storage_collection
   delegate_to: "{{ bmc_delegate_host }}"
 
-- name: Get each storage controller details
-  ansible.builtin.uri:
-    url: "{{ bmc_base_url }}{{ item['@odata.id'] }}"
+
+- name: Build controller list
+  set_fact:
+    controller_list: "{{ storage_collection.json | json_query('Members[].\"@odata.id\"') }}"
+
+
+- name: Retrieve storage controller
+  set_fact:
+    storage_controller_id: >-
+      {{ controller_list
+         | select('search', storage_config.storage_controller_name)
+         | list
+         | first
+         | default('') }}
+
+
+- name: Extract controller name
+  set_fact:
+    controller_name: "{{ storage_controller_id | basename }}"
+    
+- name: Fail if Storage controller not present
+  fail:
+    msg: "Storage Subsystem not found."
+  when: controller_name is not defined
+  
+- name: Retrieve storage controllers
+  uri:
+    url: "{{ bmc_storage_url}}/{{ controller_name }}"
     method: GET
     user: "{{ bmc_user }}"
     password: "{{ bmc_password }}"
-    validate_certs: false
-    force_basic_auth: true
-    headers:
-      Content-Type: "application/json"
-  loop: "{{ storage_response.json.Members }}"
-  register: controller_details
+    validate_certs: no
+    force_basic_auth: yes
+    return_content: yes
+    status_code: [200]
+  register: storage_info
   delegate_to: "{{ bmc_delegate_host }}"
 
-- name: Build list of valid drive URLs from controllers
-  ansible.builtin.set_fact:
-    drive_urls: >-
-      {{ drive_urls | default([]) +
-         item.json.Drives | default([]) }}
-  loop: "{{ controller_details.results }}"
-  when:
-    - item.json.Drives is defined
-    - item.json.Drives | length > 0
+- name: Ensure storage controllers list is not empty
+  fail:
+    msg: "No storage controllers found!"
+  when: storage_info.json.StorageControllers | length == 0
 
-- name: Get individual drive details
-  ansible.builtin.uri:
-    url: "{{ bmc_base_url }}{{ item['@odata.id'] }}"
-    method: GET
-    user: "{{ bmc_user }}"
-    password: "{{ bmc_password }}"
-    validate_certs: false
-    force_basic_auth: true
-    headers:
-      Content-Type: "application/json"
-  loop: "{{ drive_urls }}"
-  register: drive_details
-  delegate_to: "{{ bmc_delegate_host }}"
+- name: Storage Configuration
+  set_fact:
+    m2_storage: "{{ storage_info }}"
 
-- name: Extract NVMe drives only
+- debug:
+    msg: "{{ m2_storage.json.Drives }}"
+
+- name: Extract NVMe drives (Dell)
   ansible.builtin.set_fact:
     nvme_drives: >-
-      {{ nvme_drives | default([]) +
-         [item.json | combine({'drive_url': item.json['@odata.id']})] }}
-  loop: "{{ drive_details.results }}"
+      {{ nvme_drives | default([]) + [{
+        'id'          : item.json.Id,
+        'name'        : item.json.Name | default(''),
+        'model'       : item.json.Model | default(''),
+        'serial'      : item.json.SerialNumber | default(''),
+        'capacity_gb' : (item.json.CapacityBytes | default(0) / 1073741824) | round(2),
+        'protocol'    : item.json.Protocol | default(''),
+        'status'      : item.json.Status.Health | default(''),
+        'state'       : item.json.Status.State | default(''),
+        'drive_url'   : item.json['@odata.id']
+      }] }}
+  loop: "{{ m2_storage.json.Drives }}"
   when:
     - item.json.Protocol is defined
-    - item.json.Protocol == 'NVMe'
+    - item.json.Protocol in ['NVMe', 'PCIe']
 
 - name: Display NVMe drives
   ansible.builtin.debug:

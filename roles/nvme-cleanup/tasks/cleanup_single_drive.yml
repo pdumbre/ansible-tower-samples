@@ -42,6 +42,11 @@
 - debug:
     msg: "Drive details: {{ format_available}} "
 
+- name: Set secure erase payload based on drive type
+  ansible.builtin.set_fact:
+    secure_erase_body: >-
+      {{ {} if 'BOSS' in drive_info.drive_url else {'SecureEraseType': 'CryptographicEraseSanitize'} }}
+
 - name: Perform Secure Erase
   uri:
     url: "{{ bmc_base_url }}{{ drive_details.json.Actions['#Drive.SecureErase'].target }}"

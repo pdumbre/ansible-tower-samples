@@ -1,5 +1,4 @@
-- debug:
-    msg: "Drive details: drive_info"
+
 
 - name: Display drive being cleaned
   debug:
@@ -22,9 +21,6 @@
   register: drive_details
   delegate_to: "{{ bmc_delegate_host }}"
 
-- debug:
-    msg: "Drive details: {{ drive_details }}"
-
 - name: Display drive information
   debug:
     msg:
@@ -45,3 +41,46 @@
 
 - debug:
     msg: "Drive details: {{ format_available}} "
+
+# Fallback: OS-level cleanup if Redfish operations not available
+- name: Check if OS-level cleanup is needed
+  set_fact:
+    needs_os_cleanup: "{{ not (secure_erase_available | bool or format_available | bool) }}"
+
+- name: Display fallback cleanup notice
+  debug:
+    msg:
+      - "WARNING: Redfish SecureErase and Format not available"
+      - "Falling back to OS-level cleanup using dd command"
+      - "This will write zeros to the drive"
+  when: needs_os_cleanup | bool
+
+- name: Perform OS-level drive cleanup using dd (Fallback)
+  shell: |
+    # Write zeros to first 1GB of drive
+    dd if=/dev/zero of=/dev/{{ drive_info.drive_name }} bs=1M count=1024 conv=fsync
+    # Clear partition table
+    wipefs -a /dev/{{ drive_info.drive_name }}
+    # Inform kernel of partition table changes
+    partprobe /dev/{{ drive_info.drive_name }} || true
+  register: os_cleanup_result
+  when:
+    - needs_os_cleanup | bool
+    - drive_info.drive_name is defined
+  failed_when: false
+  delegate_to: "{{ bmc_delegate_host }}"
+  changed_when: os_cleanup_result.rc == 0
+
+- name: Display OS-level cleanup result
+  debug:
+    msg:
+      - "OS-level cleanup completed for {{ drive_info.drive_name }}"
+      - "Return code: {{ os_cleanup_result.rc | default('N/A') }}"
+      - "Status: {{ 'Success' if os_cleanup_result.rc == 0 else 'Failed' }}"
+  when: needs_os_cleanup | bool
+
+- name: Set cleanup successful flag for OS-level cleanup
+  set_fact:
+    cleanup_successful: "{{ os_cleanup_result.rc == 0 }}"
+  when: needs_os_cleanup | bool
+

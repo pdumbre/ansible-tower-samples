@@ -10,22 +10,17 @@
 - name: Discover resources
   include_tasks: discover.yml
 
-- name: Check if system has NVMe drives via Redfish
+- name: Retrieve nvme drives
   include_tasks: check_nvme.yml
 
-#- name: Detect NVMe drives on target system
- # include_tasks: detect_nvme_drives.yml
-
-#- name: Display detected NVMe drives
- # debug:
-  #  msg: "Found {{ nvme_drives_to_clean | default([]) | length }} NVMe drive(s) to clean"
+- name: Check if system has NVMe drives via Redfish
+  include_tasks: extract_nvme_drives.yml
 
 #- name: Clean up NVMe drives
- # include_tasks: cleanup_nvme_drives.yml
-  #when: 
-   # - nvme_drives_to_clean is defined
-    #- nvme_drives_to_clean | length > 0
-    #- not dry_run | default(false)
+#  include_tasks: cleanup_nvme_drives.yml
+ # when: 
+  #  - nvme_drives_to_clean is defined
+   # - nvme_drives_to_clean | length > 0
 
 #- name: Display cleanup completion
  # debug:

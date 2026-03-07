@@ -57,20 +57,17 @@
 
 - name: Perform OS-level drive cleanup using dd (Fallback)
   shell: |
-    # Write zeros to first 1GB of drive
     dd if=/dev/zero of=/dev/{{ drive_info.name }} bs=1M count=1024 conv=fsync
-    # Clear partition table
     wipefs -a /dev/{{ drive_info.name }}
-    # Inform kernel of partition table changes
     partprobe /dev/{{ drive_info.name }} || true
   register: os_cleanup_result
   when:
     - needs_os_cleanup | bool
     - drive_info.name is defined
-  failed_when: false
-  delegate_to: "{{ bmc_delegate_host }}"
-  changed_when: os_cleanup_result.rc == 0
-
+  failed_when: os_cleanup_result.rc != 0
+  vars:
+    ansible_ssh_common_args: "-o StrictHostKeyChecking=no -o ProxyJump={{ bmc_delegate_host }}"
+    
 - name: Display OS-level cleanup result
   debug:
     msg:

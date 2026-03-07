@@ -37,10 +37,7 @@
     format_available: "{{ '#Drive.Format' in (drive_details.json.Actions | default({})) }}"
 
 - debug:
-    msg: "Drive details: drive_info"
-    
-- debug:
-    msg: "Drive details: secure_erase_available"
+    msg: "Drive details: {{ secure_erase_available }}"
 
 - debug:
-    msg: "Drive details: format_available"
+    msg: "Drive details: {{ format_available}} "

@@ -15,11 +15,6 @@
   register: storage_response
   delegate_to: "{{ bmc_delegate_host }}"
 
-- name: Display full storage response
-  debug:
-    var: storage_response.json
-  when: debug_mode | default(false)
-
 - name: Extract drive count
   set_fact:
     drive_count: "{{ storage_response.json['Drives@odata.count'] | default(0) }}"
@@ -29,11 +24,6 @@
     drive_urls: "{{ storage_response.json.Drives | map('dict2items') | map('selectattr', 'key', 'equalto', '@odata.id') | map('map', attribute='value') | map('first') | list }}"
   when: storage_response.json.Drives is defined
 
-# Alternative simpler method using json_query (requires jmespath)
-- name: Extract drive URLs (alternative method)
-  set_fact:
-    drive_urls_alt: "{{ storage_response.json.Drives | json_query('[*].\"@odata.id\"') }}"
-  when: storage_response.json.Drives is defined
 
 - name: Display extracted drive information
   debug:

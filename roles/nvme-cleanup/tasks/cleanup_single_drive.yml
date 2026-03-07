@@ -60,6 +60,9 @@
     - secure_erase_available | bool
   failed_when: false
 
+- debug:
+    msg: "secure erase details: {{ secure_erase_result }} "
+
 - name: Perform Format
   uri:
     url: "{{ bmc_base_url }}{{ drive_details.json.Actions['#Drive.Format'].target }}"
@@ -83,6 +86,9 @@
   set_fact:
     cleanup_job_id: "{{ (secure_erase_result.json.Id | default(format_result.json.Id | default(''))) }}"
   when: secure_erase_result.json is defined or format_result.json is defined
+
+- debug:
+    msg: "cleanup id: {{ cleanup_job_id }}"
 
 - name: Wait for cleanup job to complete
   uri:

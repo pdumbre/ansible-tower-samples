@@ -93,7 +93,7 @@
         'state'       : item.json.Status.State | default(''),
         'drive_url'   : item.json['@odata.id']
       }] }}
-  loop: "{{ drive_details }}"
+  loop: "{{ drive_details.results }}"
   when:
     - item.json.Protocol is defined
     - item.json.Protocol in ['NVMe', 'PCIe']

@@ -58,15 +58,15 @@
 - name: Perform OS-level drive cleanup using dd (Fallback)
   shell: |
     # Write zeros to first 1GB of drive
-    dd if=/dev/zero of=/dev/{{ drive_info.drive_name }} bs=1M count=1024 conv=fsync
+    dd if=/dev/zero of=/dev/{{ drive_info.name }} bs=1M count=1024 conv=fsync
     # Clear partition table
-    wipefs -a /dev/{{ drive_info.drive_name }}
+    wipefs -a /dev/{{ drive_info.name }}
     # Inform kernel of partition table changes
-    partprobe /dev/{{ drive_info.drive_name }} || true
+    partprobe /dev/{{ drive_info.name }} || true
   register: os_cleanup_result
   when:
     - needs_os_cleanup | bool
-    - drive_info.drive_name is defined
+    - drive_info.name is defined
   failed_when: false
   delegate_to: "{{ bmc_delegate_host }}"
   changed_when: os_cleanup_result.rc == 0
@@ -74,7 +74,7 @@
 - name: Display OS-level cleanup result
   debug:
     msg:
-      - "OS-level cleanup completed for {{ drive_info.drive_name }}"
+      - "OS-level cleanup completed for {{ drive_info.name }}"
       - "Return code: {{ os_cleanup_result.rc | default('N/A') }}"
       - "Status: {{ 'Success' if os_cleanup_result.rc == 0 else 'Failed' }}"
   when: needs_os_cleanup | bool

@@ -11,7 +11,7 @@
 
 - name: Get drive details via Redfish
   uri:
-    url: "{{ bmc_base_url }}{{ drive_info.drive_uri }}"
+    url: "{{ bmc_base_url }}{{ drive_info.drive_url }}"
     method: GET
     user: "{{ bmc_user }}"
     password: "{{ bmc_password }}"

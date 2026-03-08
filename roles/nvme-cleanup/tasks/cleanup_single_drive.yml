@@ -21,26 +21,10 @@
   register: drive_details
   delegate_to: "{{ bmc_delegate_host }}"
 
-- name: Display drive information
-  debug:
-    msg:
-      - "Drive Name: {{ drive_details.json.Name | default('Unknown') }}"
-      - "Model: {{ drive_details.json.Model | default('Unknown') }}"
-      - "Capacity: {{ drive_details.json.CapacityBytes | default(0) | human_readable }}"
-      - "Status: {{ drive_details.json.Status.State | default('Unknown') }}"
-      - "Protocol: {{ drive_details.json.Protocol | default('Unknown') }}"
-      - "Actions: {{ drive_details.json.Actions | default('Unknown') }}"
-
 - name: Check for SecureErase action
   set_fact:
     secure_erase_available: "{{ '#Drive.SecureErase' in (drive_details.json.Actions | default({})) }}"
     format_available: "{{ '#Drive.Format' in (drive_details.json.Actions | default({})) }}"
-
-- debug:
-    msg: "Drive details: {{ secure_erase_available }}"
-
-- debug:
-    msg: "Drive details: {{ format_available}} "
 
 - name: Perform Secure Erase
   uri:
@@ -59,8 +43,6 @@
     - secure_erase_available | bool
   failed_when: false
 
-- debug:
-    msg: "secure erase details: {{ secure_erase_result }} "
 
 # Check Secure Erase job status
 - name: Check Secure Erase job status
@@ -84,7 +66,6 @@
   when:
     - not (secure_erase_available | bool)
     - format_available | bool
-  failed_when: false
 
 
 # Fallback: OS-level cleanup if Redfish operations not available

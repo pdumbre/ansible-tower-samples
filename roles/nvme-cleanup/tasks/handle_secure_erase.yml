@@ -121,6 +121,4 @@
         ['Failed', 'Killed', 'Exception']
 
   when:
-    - secure_erase_result is defined
-    - secure_erase_result.results is defined
-    - secure_erase_result.results | length > 0
+    - secure_erase_available | bool

@@ -1,6 +1,9 @@
+---
+# SecureErase job monitoring and execution tasks
+# This file handles the complete lifecycle of SecureErase operations
+
 - name: SecureErase job monitoring and execution
   block:
-  
     - name: Extract job URL from SecureErase response
       ansible.builtin.set_fact:
         secure_erase_job_url: "{{ secure_erase_result.location }}"
@@ -12,31 +15,31 @@
       ansible.builtin.debug:
         msg: "SecureErase Job URL: {{ secure_erase_job_url }}"
 
-    - name: Check initial job state
-      ansible.builtin.uri:
-        url: "{{ secure_erase_job_url }}"
-        method: GET
-        user: "{{ bmc_user }}"
-        password: "{{ bmc_password }}"
-        validate_certs: false
-        force_basic_auth: true
-        headers:
-          Content-Type: "application/json"
-        status_code: [200, 202]
-      register: initial_job_status
-      delegate_to: "{{ bmc_delegate_host }}"
-
-    - name: Debug initial job state
-      ansible.builtin.debug:
-        msg:
-          - "Job URL   : {{ secure_erase_job_url }}"
-          - "JobState  : {{ initial_job_status.json.TaskState | default(initial_job_status.json.JobState) | default('Unknown') }}"
-          - "JobStatus : {{ initial_job_status.json.TaskStatus | default(initial_job_status.json.JobStatus) | default('Unknown') }}"
-
-    - name: Check if reboot is needed
+    - name: Extract job ID from location header
       ansible.builtin.set_fact:
-        needs_reboot: >-
-          {{ initial_job_status.json.TaskState | default(initial_job_status.json.JobState) == 'Scheduled' }}
+        secure_erase_job_id: "{{ secure_erase_result.location.split('/')[-1] }}"
+        secure_erase_job_url: "{{ secure_erase_result.location }}"
+      when:
+        - secure_erase_result.status == 202
+        - secure_erase_result.location is defined
+
+    - name: Debug job ID
+      ansible.builtin.debug:
+        msg: "SecureErase Job ID: {{ secure_erase_job_id }}"
+
+    - name: Force job start time to NOW via racadm
+      ansible.builtin.shell: >
+        sshpass -p '{{ bmc_password }}'
+        ssh -o StrictHostKeyChecking=no
+        -o UserKnownHostsFile=/dev/null
+        {{ bmc_user }}@{{ bmc_host }}
+        "racadm jobqueue create {{ secure_erase_job_id }} -s TIME_NOW -r forced"
+      register: racadm_force_result
+      delegate_to: "{{ bmc_delegate_host }}"
+      when:
+        - secure_erase_job_id is defined
+        - racadm_result.rc != 0
+      failed_when: false
 
     - name: Trigger server reboot to execute scheduled job
       ansible.builtin.uri:
@@ -98,7 +101,6 @@
       retries: 30
       delay: 10
 
-  
     - name: Display SecureErase job result
       ansible.builtin.debug:
         msg:
@@ -107,7 +109,6 @@
           - "Status    : {{ job_status.json.TaskStatus | default(job_status.json.JobStatus) }}"
           - "Message   : {{ job_status.json.Messages | default(job_status.json.Message) | default([]) }}"
 
- 
     - name: Fail if SecureErase job failed
       ansible.builtin.fail:
         msg: >-

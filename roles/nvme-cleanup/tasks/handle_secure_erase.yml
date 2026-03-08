@@ -60,7 +60,7 @@
 
     - name: Wait for server to reboot
       ansible.builtin.pause:
-        seconds: 120
+        seconds: 60
       when: needs_reboot | bool
 
     - name: Wait for BMC to become available after reboot

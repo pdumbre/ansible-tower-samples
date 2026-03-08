@@ -42,11 +42,6 @@
 - debug:
     msg: "Drive details: {{ format_available}} "
 
-- name: Set secure erase payload based on drive type
-  ansible.builtin.set_fact:
-    secure_erase_body: >-
-      {{ {} if 'CPU' in drive_info.drive_url else {'SecureEraseType': 'CryptographicEraseSanitize'} }}
-
 - name: Perform Secure Erase
   uri:
     url: "{{ bmc_base_url }}{{ drive_details.json.Actions['#Drive.SecureErase'].target }}"
@@ -56,7 +51,8 @@
     validate_certs: no
     force_basic_auth: yes
     body_format: json
-    body: "{{ secure_erase_body }}"
+    body:
+      "@Redfish.OperationApplyTime": "Immediate"
     status_code: [200, 202, 204]
   register: secure_erase_result
   delegate_to: "{{ bmc_delegate_host }}"

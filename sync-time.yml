@@ -1,0 +1,6 @@
+- name: Sync time
+  hosts: bmc_servers
+  gather_facts: false
+    
+  roles:
+    - time_sync

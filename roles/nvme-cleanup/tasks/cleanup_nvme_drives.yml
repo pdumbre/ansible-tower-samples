@@ -11,4 +11,4 @@
 
 - name: Display cleanup completion
   debug:
-    msg: "Successfully cleaned {{ ves_to_clean | length }} NVMe drive(s) via Redfish API"
+    msg: "Successfully cleaned NVMe drive(s)"

@@ -11,9 +11,6 @@
         - secure_erase_result.status == 202
         - secure_erase_result.location is defined
 
-    - name: Debug job URL
-      ansible.builtin.debug:
-        msg: "SecureErase Job URL: {{ secure_erase_job_url }}"
 
     - name: Extract job ID from location header
       ansible.builtin.set_fact:

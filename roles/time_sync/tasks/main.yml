@@ -4,6 +4,9 @@
 # Synchronizes time on BMC and/or OS level
 # Vendor-agnostic implementation using Redfish API for BMC
 
+- name: Discover required attributes
+  include_tasks: discovery.yml
+  
 - name: Display time sync configuration
   debug:
     msg:

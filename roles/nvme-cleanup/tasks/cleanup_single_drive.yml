@@ -51,8 +51,7 @@
     validate_certs: no
     force_basic_auth: yes
     body_format: json
-    body:
-      "@Redfish.OperationApplyTime": "Immediate"
+    body: {}
     status_code: [200, 202, 204]
   register: secure_erase_result
   delegate_to: "{{ bmc_delegate_host }}"

@@ -1,22 +1,20 @@
----
-# SecureErase job monitoring and execution tasks
-# This file handles the complete lifecycle of SecureErase operations
-
 - name: SecureErase job monitoring and execution
   block:
-    - name: Extract job URLs from SecureErase responses
+  
+    - name: Extract job URL from SecureErase response
       ansible.builtin.set_fact:
-        secure_erase_job_urls: >-
-          {{ secure_erase_job_urls | default([]) +
-             [item.location] }}
-      loop: "{{ secure_erase_result.results | default([]) }}"
+        secure_erase_job_url: "{{ secure_erase_result.location }}"
       when:
-        - item.status == 202
-        - item.location is defined
+        - secure_erase_result.status == 202
+        - secure_erase_result.location is defined
+
+    - name: Debug job URL
+      ansible.builtin.debug:
+        msg: "SecureErase Job URL: {{ secure_erase_job_url }}"
 
     - name: Check initial job state
       ansible.builtin.uri:
-        url: "{{ item }}"
+        url: "{{ secure_erase_job_url }}"
         method: GET
         user: "{{ bmc_user }}"
         password: "{{ bmc_password }}"
@@ -24,22 +22,21 @@
         force_basic_auth: true
         headers:
           Content-Type: "application/json"
+        status_code: [200, 202]
       register: initial_job_status
       delegate_to: "{{ bmc_delegate_host }}"
-      loop: "{{ secure_erase_job_urls | default([]) }}"
+
+    - name: Debug initial job state
+      ansible.builtin.debug:
+        msg:
+          - "Job URL   : {{ secure_erase_job_url }}"
+          - "JobState  : {{ initial_job_status.json.TaskState | default(initial_job_status.json.JobState) | default('Unknown') }}"
+          - "JobStatus : {{ initial_job_status.json.TaskStatus | default(initial_job_status.json.JobStatus) | default('Unknown') }}"
 
     - name: Check if reboot is needed
       ansible.builtin.set_fact:
         needs_reboot: >-
-          {{ initial_job_status.results |
-             selectattr('json.TaskState', 'defined') |
-             selectattr('json.TaskState', 'equalto', 'Scheduled') |
-             list | length > 0
-             or
-             initial_job_status.results |
-             selectattr('json.JobState', 'defined') |
-             selectattr('json.JobState', 'equalto', 'Scheduled') |
-             list | length > 0 }}
+          {{ initial_job_status.json.TaskState | default(initial_job_status.json.JobState) == 'Scheduled' }}
 
     - name: Trigger server reboot to execute scheduled job
       ansible.builtin.uri:
@@ -64,7 +61,7 @@
         seconds: 120
       when: needs_reboot | bool
 
-    - name: Wait for server to become available
+    - name: Wait for BMC to become available after reboot
       ansible.builtin.uri:
         url: "{{ bmc_base_url }}/redfish/v1/Systems/System.Embedded.1"
         method: GET
@@ -84,7 +81,7 @@
 
     - name: Poll SecureErase job status
       ansible.builtin.uri:
-        url: "{{ item }}"
+        url: "{{ secure_erase_job_url }}"
         method: GET
         user: "{{ bmc_user }}"
         password: "{{ bmc_password }}"
@@ -92,33 +89,35 @@
         force_basic_auth: true
         headers:
           Content-Type: "application/json"
+        status_code: [200, 202]
       register: job_status
       delegate_to: "{{ bmc_delegate_host }}"
-      loop: "{{ secure_erase_job_urls | default([]) }}"
       until: >-
         job_status.json.TaskState | default(job_status.json.JobState) in
         ['Completed', 'Failed', 'Killed', 'Exception']
       retries: 30
-      delay: 30
+      delay: 10
 
-    - name: Check SecureErase job results
+  
+    - name: Display SecureErase job result
       ansible.builtin.debug:
         msg:
-          - "Job URL   : {{ item.item }}"
-          - "State     : {{ item.json.TaskState | default(item.json.JobState) }}"
-          - "Status    : {{ item.json.TaskStatus | default(item.json.JobStatus) }}"
-          - "Message   : {{ item.json.Messages | default(item.json.Message) | default([]) }}"
-      loop: "{{ job_status.results }}"
+          - "Job URL   : {{ secure_erase_job_url }}"
+          - "State     : {{ job_status.json.TaskState | default(job_status.json.JobState) }}"
+          - "Status    : {{ job_status.json.TaskStatus | default(job_status.json.JobStatus) }}"
+          - "Message   : {{ job_status.json.Messages | default(job_status.json.Message) | default([]) }}"
 
-    - name: Fail if any SecureErase job failed
+ 
+    - name: Fail if SecureErase job failed
       ansible.builtin.fail:
         msg: >-
-          Job {{ item.item }} failed with state:
-          {{ item.json.TaskState | default(item.json.JobState) }}
-      loop: "{{ job_status.results }}"
+          SecureErase job {{ secure_erase_job_url }} failed with state:
+          {{ job_status.json.TaskState | default(job_status.json.JobState) }}
       when: >-
-        item.json.TaskState | default(item.json.JobState) in
+        job_status.json.TaskState | default(job_status.json.JobState) in
         ['Failed', 'Killed', 'Exception']
 
   when:
     - secure_erase_available | bool
+    - secure_erase_result is defined
+    - secure_erase_result.status == 202

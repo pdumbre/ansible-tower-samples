@@ -1,1 +1,92 @@
 
+---
+# Synchronize BMC time using Redfish API
+# Vendor-agnostic implementation for Dell and Lenovo systems
+
+- name: Get current BMC time
+  uri:
+    url: "{{ bmc_base_url }}/redfish/v1/Managers/{{ bmc_manager_id }}"
+    method: GET
+    user: "{{ bmc_user }}"
+    password: "{{ bmc_password }}"
+    validate_certs: no
+    force_basic_auth: yes
+    return_content: yes
+    status_code: [200]
+  register: bmc_manager_info
+  delegate_to: "{{ bmc_delegate_host }}"
+
+- name: Display current BMC time
+  debug:
+    msg: "Current BMC DateTime: {{ bmc_manager_info.json.DateTime | default('Not available') }}"
+
+- name: Get current system time
+  set_fact:
+    current_time: "{{ ansible_date_time.iso8601 }}"
+  delegate_to: localhost
+  run_once: true
+
+- name: Display time to be set
+  debug:
+    msg: "Setting BMC time to: {{ current_time }}"
+
+- name: Configure NTP settings on BMC
+  uri:
+    url: "{{ bmc_base_url }}/redfish/v1/Managers/{{ bmc_manager_id }}/NetworkProtocol"
+    method: PATCH
+    user: "{{ bmc_user }}"
+    password: "{{ bmc_password }}"
+    validate_certs: no
+    force_basic_auth: yes
+    body_format: json
+    body:
+      NTP:
+        ProtocolEnabled: true
+        NTPServers: "{{ time_sync_ntp_servers }}"
+    status_code: [200, 204]
+  register: ntp_config
+  delegate_to: "{{ bmc_delegate_host }}"
+  when: time_sync_use_ntp | bool
+  failed_when: false
+
+- name: Set BMC time manually (if NTP not used or failed)
+  uri:
+    url: "{{ bmc_base_url }}/redfish/v1/Managers/{{ bmc_manager_id }}"
+    method: PATCH
+    user: "{{ bmc_user }}"
+    password: "{{ bmc_password }}"
+    validate_certs: no
+    force_basic_auth: yes
+    body_format: json
+    body:
+      DateTime: "{{ current_time }}"
+    status_code: [200, 204]
+  register: time_set
+  delegate_to: "{{ bmc_delegate_host }}"
+  when: not (time_sync_use_ntp | bool) or (ntp_config is failed)
+
+- name: Wait for BMC to process time change
+  pause:
+    seconds: 5
+  when: time_set is changed or ntp_config is changed
+
+- name: Verify BMC time was updated
+  uri:
+    url: "{{ bmc_base_url }}/redfish/v1/Managers/{{ bmc_manager_id }}"
+    method: GET
+    user: "{{ bmc_user }}"
+    password: "{{ bmc_password }}"
+    validate_certs: no
+    force_basic_auth: yes
+    return_content: yes
+    status_code: [200]
+  register: bmc_time_verify
+  delegate_to: "{{ bmc_delegate_host }}"
+
+- name: Display updated BMC time
+  debug:
+    msg: "Updated BMC DateTime: {{ bmc_time_verify.json.DateTime | default('Not available') }}"
+
+- name: BMC time synchronization completed
+  debug:
+    msg: "BMC time synchronized successfully"

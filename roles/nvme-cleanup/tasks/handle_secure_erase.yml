@@ -30,16 +30,15 @@
     - name: Force job start time to NOW via racadm
       ansible.builtin.shell: >
         sshpass -p '{{ bmc_password }}'
-        ssh -o StrictHostKeyChecking=no
-        -o UserKnownHostsFile=/dev/null
-        {{ bmc_user }}@{{ bmc_host }}
+        ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null
+        {{ hostvars[inventory_hostname].bmc_user }}@{{ hostvars[inventory_hostname].ipv6ULA }}
         "racadm jobqueue create {{ secure_erase_job_id }} -s TIME_NOW -r forced"
       register: racadm_force_result
       delegate_to: "{{ bmc_delegate_host }}"
       when:
         - secure_erase_job_id is defined
         - racadm_result.rc != 0
-      failed_when: false
+      failed_when: racadm_result.rc != 0
 
     - name: Trigger server reboot to execute scheduled job
       ansible.builtin.uri:

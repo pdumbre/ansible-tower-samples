@@ -45,7 +45,7 @@
 - name: Set secure erase payload based on drive type
   ansible.builtin.set_fact:
     secure_erase_body: >-
-      {{ {} if 'BOSS' in drive_info.drive_url else {'SecureEraseType': 'CryptographicEraseSanitize'} }}
+      {{ {} if 'CPU' in drive_info.drive_url else {'SecureEraseType': 'CryptographicEraseSanitize'} }}
 
 - name: Perform Secure Erase
   uri:

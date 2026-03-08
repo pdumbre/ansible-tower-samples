@@ -67,6 +67,11 @@
 - debug:
     msg: "secure erase details: {{ secure_erase_result }} "
 
+# Check Secure Erase job status
+- name: Check Secure Erase job status
+  include_tasks: handle_secure_erase.yml
+  when: secure_erase_available | bool
+
 - name: Perform Format
   uri:
     url: "{{ bmc_base_url }}{{ drive_details.json.Actions['#Drive.Format'].target }}"

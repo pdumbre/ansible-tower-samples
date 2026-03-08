@@ -55,7 +55,6 @@
         status_code: [200, 202, 204]
       register: reboot_result
       delegate_to: "{{ bmc_delegate_host }}"
-      when: needs_reboot | bool
 
     - name: Wait for server to reboot
       ansible.builtin.pause:

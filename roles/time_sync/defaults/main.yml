@@ -1,1 +1,46 @@
 
+# Default variables for time_sync role
+
+# Enable/disable BMC time synchronization
+time_sync_bmc_enabled: true
+
+# Enable/disable OS time synchronization
+time_sync_os_enabled: true
+
+# NTP server configuration
+# For OS sync: single NTP server (typically the management laptop)
+time_sync_ntp_server: "10.0.0.1"
+
+# For BMC sync: list of NTP servers
+time_sync_ntp_servers:
+  - "{{ time_sync_ntp_server }}"
+
+# Use NTP for BMC (if false, will set time manually)
+time_sync_use_ntp: true
+
+# Timezone setting for OS
+time_sync_timezone: "UTC"
+
+# Retry settings for NTP synchronization
+time_sync_max_retries: 3
+time_sync_retry_delay: 5
+
+# Wait time after time change (seconds)
+time_sync_wait_after_change: 5
+
+# Chrony configuration
+time_sync_chrony_package: "chrony"
+time_sync_chrony_service: "chronyd"
+time_sync_chrony_config: "/etc/chrony.conf"
+
+# Backup chrony config before modification
+time_sync_backup_config: true
+
+# Force time step (useful for large time differences)
+time_sync_force_step: true
+
+# Hardware clock sync
+time_sync_hwclock_sync: true
+
+# Debug mode
+time_sync_debug: false

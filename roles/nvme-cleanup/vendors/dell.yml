@@ -1,5 +1,5 @@
 storage_config:
-  storage_controller_name: "BOSS" 
+  storage_controller_name: "CPU" 
 
 bmc_config:
   requires_job_handling: true

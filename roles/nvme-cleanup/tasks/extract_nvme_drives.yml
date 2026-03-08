@@ -27,7 +27,9 @@
          | first
          | default('') }}
 
-
+- debug:
+    msg: "storage_controller_id = {{ storage_controller_id }}"
+    
 - name: Extract controller name
   set_fact:
     controller_name: "{{ storage_controller_id | basename }}"
@@ -36,6 +38,9 @@
   fail:
     msg: "Storage Subsystem not found."
   when: controller_name is not defined
+
+- debug:
+    msg: "storage_controller_name = {{ controller_name }}"
   
 - name: Retrieve storage controllers
   uri:

@@ -1,1 +1,24 @@
 
+---
+# Main tasks file for time_sync role
+# Synchronizes time on BMC and/or OS level
+# Vendor-agnostic implementation using Redfish API for BMC
+
+- name: Display time sync configuration
+  debug:
+    msg:
+      - "Sync BMC time: {{ time_sync_bmc_enabled }}"
+      - "Sync OS time: {{ time_sync_os_enabled }}"
+      - "NTP server: {{ time_sync_ntp_server }}"
+
+- name: Synchronize BMC time via Redfish API
+  include_tasks: sync_bmc_time.yml
+  when: time_sync_bmc_enabled | bool
+
+- name: Synchronize OS time via chrony/NTP
+  include_tasks: sync_os_time.yml
+  when: time_sync_os_enabled | bool
+
+- name: Time synchronization completed
+  debug:
+    msg: "Time synchronization completed successfully"

@@ -59,7 +59,6 @@
     - name: Wait for server to reboot
       ansible.builtin.pause:
         seconds: 60
-      when: needs_reboot | bool
 
     - name: Wait for BMC to become available after reboot
       ansible.builtin.uri:
@@ -77,7 +76,6 @@
       until: idrac_status.status == 200
       retries: 20
       delay: 30
-      when: needs_reboot | bool
 
     - name: Poll SecureErase job status
       ansible.builtin.uri:

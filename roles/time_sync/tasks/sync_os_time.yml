@@ -166,6 +166,7 @@
   package:
     name: "{{ time_sync_chrony_package }}"
     state: present
+  delegate_to: "{{ bmc_delegate_host }}"
   become: yes
 
 - name: Backup existing chrony configuration
@@ -213,12 +214,14 @@
   systemd:
     name: "{{ time_sync_chrony_service }}"
     enabled: yes
+  delegate_to: "{{ bmc_delegate_host }}"
   become: yes
 
 - name: Restart chronyd service
   systemd:
     name: "{{ time_sync_chrony_service }}"
     state: restarted
+  delegate_to: "{{ bmc_delegate_host }}"
   become: yes
 
 - name: Wait for chronyd to start
@@ -239,28 +242,33 @@
   command: chronyc -a 'burst 4/4'
   become: yes
   changed_when: false
+  delegate_to: "{{ bmc_delegate_host }}"
   when: time_sync_force_step | bool
 
 - name: Force chrony to make step adjustment
   command: chronyc -a makestep
   become: yes
   changed_when: false
+  delegate_to: "{{ bmc_delegate_host }}"
   when: time_sync_force_step | bool
 
 - name: Sync hardware clock with system time
   command: hwclock -w
   become: yes
   changed_when: false
+  delegate_to: "{{ bmc_delegate_host }}"
   when: time_sync_hwclock_sync | bool
 
 - name: Set timezone
   command: timedatectl set-timezone {{ time_sync_timezone }}
   become: yes
+  delegate_to: "{{ bmc_delegate_host }}"
   changed_when: false
 
 - name: Wait for NTP synchronization
   pause:
     seconds: "{{ time_sync_retry_delay }}"
+  delegate_to: "{{ bmc_delegate_host }}"
 
 - name: Verify NTP synchronization (attempt 1)
   command: timedatectl show
@@ -327,6 +335,7 @@
       fail:
         msg: "NTP synchronization failed after retries"
       when: time_status_retry.NTPSynchronized | default('no') | lower != 'yes'
+      delegate_to: "{{ bmc_delegate_host }}"
 
   when: time_status.NTPSynchronized | default('no') | lower != 'yes'
 

@@ -20,6 +20,13 @@
   debug:
     msg: "Current BMC DateTime: {{ bmc_manager_info.json.DateTime | default('Not available') }}"
 
+- name: Gather only date/time facts
+  setup:
+    filter: ansible_date_time
+    
+- debug:
+    var: ansible_date_time.iso8601
+
 - name: Get current system time
   set_fact:
     current_time: "{{ ansible_date_time.iso8601 }}"

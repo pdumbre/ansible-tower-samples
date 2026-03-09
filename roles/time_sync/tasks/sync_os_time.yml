@@ -1,172 +1,9 @@
-
 ---
-# Synchronize OS time using chrony/NTP and configure BMC NTP via Redfish API
-# Equivalent to RTClock.groovy functionality
-
-# ============================================================
-# PHASE 1: Configure NTP on BMC via Redfish API
-# ============================================================
-
-- name: Get current BMC NetworkProtocol configuration via Redfish API
-  block:
-    - name: Get current BMC NetworkProtocol configuration using uri module
-      uri:
-        url: "{{ bmc_manager_url }}/NetworkProtocol"
-        method: GET
-        user: "{{ bmc_user }}"
-        password: "{{ bmc_password }}"
-        validate_certs: no
-        force_basic_auth: yes
-        return_content: yes
-        status_code: [200]
-      register: bmc_network_protocol
-      delegate_to: "{{ bmc_delegate_host }}"
-
-  rescue:
-    - name: Fallback - Get current BMC NetworkProtocol configuration using curl
-      shell: |
-        curl -k -u "{{ bmc_user }}:{{ bmc_password }}" \
-          -X GET \
-          "{{ bmc_manager_url }}/NetworkProtocol"
-      register: bmc_network_protocol_curl
-      delegate_to: "{{ bmc_delegate_host }}"
-      changed_when: false
-
-    - name: Parse curl response for NetworkProtocol
-      set_fact:
-        bmc_network_protocol:
-          json: "{{ bmc_network_protocol_curl.stdout | from_json }}"
-          status: 200
-
-- name: Extract current BMC NTP configuration
-  set_fact:
-    current_bmc_ntp_enabled: "{{ bmc_network_protocol.json.NTP.ProtocolEnabled | default(false) }}"
-    current_bmc_ntp_servers: "{{ bmc_network_protocol.json.NTP.NTPServers | default([]) }}"
-
-- name: Display current BMC NTP configuration
-  debug:
-    msg:
-      - "========================================="
-      - "Current BMC NTP Configuration"
-      - "========================================="
-      - "NTP Enabled: {{ current_bmc_ntp_enabled }}"
-      - "NTP Servers: {{ current_bmc_ntp_servers }}"
-      - "========================================="
-
-- name: Check if BMC NTP configuration needs update
-  set_fact:
-    bmc_ntp_needs_update: >-
-      {{
-        not (current_bmc_ntp_enabled | bool) or
-        (time_sync_ntp_servers | difference(current_bmc_ntp_servers) | length > 0)
-      }}
-
-- name: Configure NTP settings on BMC via Redfish API
-  block:
-    - name: Configure BMC NTP using uri module
-      uri:
-        url: "{{ bmc_manager_url }}/NetworkProtocol"
-        method: PATCH
-        user: "{{ bmc_user }}"
-        password: "{{ bmc_password }}"
-        validate_certs: no
-        force_basic_auth: yes
-        body_format: json
-        body:
-          NTP:
-            ProtocolEnabled: true
-            NTPServers: "{{ time_sync_ntp_servers }}"
-        status_code: [200, 202, 204]
-      register: bmc_ntp_config
-      delegate_to: "{{ bmc_delegate_host }}"
-      changed_when: bmc_ntp_config.status in [200, 202, 204]
-
-  rescue:
-    - name: Fallback - Configure BMC NTP using curl
-      shell: |
-        curl -k -u "{{ bmc_user }}:{{ bmc_password }}" \
-          -X PATCH \
-          -H "Content-Type: application/json" \
-          -d '{
-            "NTP": {
-              "ProtocolEnabled": true,
-              "NTPServers": {{ time_sync_ntp_servers | to_json }}
-            }
-          }' \
-          "{{ bmc_manager_url }}/NetworkProtocol" \
-          -w "\n%{http_code}"
-      register: bmc_ntp_config_curl
-      delegate_to: "{{ bmc_delegate_host }}"
-      changed_when: bmc_ntp_config_curl.stdout_lines[-1] in ['200', '202', '204']
-
-    - name: Set bmc_ntp_config from curl result
-      set_fact:
-        bmc_ntp_config:
-          status: "{{ bmc_ntp_config_curl.stdout_lines[-1] | int }}"
-          changed: "{{ bmc_ntp_config_curl.stdout_lines[-1] in ['200', '202', '204'] }}"
-
-  when: bmc_ntp_needs_update | bool
-
-- name: BMC NTP already configured
-  debug:
-    msg: "BMC NTP already enabled with servers {{ current_bmc_ntp_servers }} - no change needed"
-  when: not (bmc_ntp_needs_update | bool)
-
-- name: Wait for BMC NTP configuration to apply
-  pause:
-    seconds: "{{ time_sync_wait_after_change }}"
-  when: bmc_ntp_config is changed
-
-- name: Verify BMC NTP configuration via Redfish API
-  block:
-    - name: Verify BMC NTP configuration using uri module
-      uri:
-        url: "{{ bmc_manager_url }}/NetworkProtocol"
-        method: GET
-        user: "{{ bmc_user }}"
-        password: "{{ bmc_password }}"
-        validate_certs: no
-        force_basic_auth: yes
-        return_content: yes
-        status_code: [200]
-      register: bmc_ntp_verify
-      delegate_to: "{{ bmc_delegate_host }}"
-
-  rescue:
-    - name: Fallback - Verify BMC NTP configuration using curl
-      shell: |
-        curl -k -u "{{ bmc_user }}:{{ bmc_password }}" \
-          -X GET \
-          "{{ bmc_manager_url }}/NetworkProtocol"
-      register: bmc_ntp_verify_curl
-      delegate_to: "{{ bmc_delegate_host }}"
-      changed_when: false
-
-    - name: Parse curl response for NTP verification
-      set_fact:
-        bmc_ntp_verify:
-          json: "{{ bmc_ntp_verify_curl.stdout | from_json }}"
-          status: 200
-
-- name: Display verified BMC NTP configuration
-  debug:
-    msg:
-      - "========================================="
-      - "Verified BMC NTP Configuration"
-      - "========================================="
-      - "NTP Enabled: {{ bmc_ntp_verify.json.NTP.ProtocolEnabled | default('unknown') }}"
-      - "NTP Servers: {{ bmc_ntp_verify.json.NTP.NTPServers | default([]) }}"
-      - "========================================="
-
-# ============================================================
-# PHASE 2: Configure OS time synchronization via chrony/NTP
-# ============================================================
 
 - name: Ensure chrony is installed
   package:
     name: "{{ time_sync_chrony_package }}"
     state: present
-  delegate_to: "{{ bmc_delegate_host }}"
   become: yes
 
 - name: Backup existing chrony configuration
@@ -178,170 +15,116 @@
   failed_when: false
   when: time_sync_backup_config | bool
 
-- name: Check if NTP server line exists in chrony.conf
-  shell: grep "^server" {{ time_sync_chrony_config }} || true
-  register: existing_server
-  changed_when: false
-  become: yes
 
-- name: Display existing NTP server configuration
-  debug:
-    msg: "Existing server config: {{ existing_server.stdout }}"
+- name: Configure and verify NTP synchronization (single SSH session via jump host)
+  shell: >
+    sshpass -p '{{ hostvars[inventory_hostname].ansible_password }}'
+    ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null
+    {{ hostvars[inventory_hostname].ansible_user }}@{{ hostvars[inventory_hostname].ipv6ULA }}
+    "
+    set -e;
 
-- name: Remove existing server lines from chrony.conf
-  lineinfile:
-    path: "{{ time_sync_chrony_config }}"
-    regexp: '^server\s+'
-    state: absent
-  become: yes
-  when: existing_server.stdout != ""
+    CHRONY_CONFIG='{{ time_sync_chrony_config }}';
+    CHRONY_SERVICE='{{ time_sync_chrony_service }}';
+    NTP_SERVER='{{ time_sync_ntp_server }}';
+    TIMEZONE='{{ time_sync_timezone }}';
+    FORCE_STEP='{{ time_sync_force_step | bool | lower }}';
+    HWCLOCK_SYNC='{{ time_sync_hwclock_sync | bool | lower }}';
+    RETRY_DELAY='{{ time_sync_retry_delay }}';
 
-- name: Remove pool lines from chrony.conf
-  lineinfile:
-    path: "{{ time_sync_chrony_config }}"
-    regexp: '^pool\s+'
-    state: absent
-  become: yes
+    echo '--- Existing NTP server configuration ---';
+    grep '^server' \$CHRONY_CONFIG || echo '(none found)';
 
-- name: Add NTP server to chrony.conf
-  lineinfile:
-    path: "{{ time_sync_chrony_config }}"
-    line: "server {{ time_sync_ntp_server }}"
-    insertafter: EOF
-  become: yes
+    echo '--- Updating chrony.conf ---';
+    sed -i '/^server /d' \$CHRONY_CONFIG;
+    sed -i '/^pool /d'   \$CHRONY_CONFIG;
+    echo \"server \$NTP_SERVER\" >> \$CHRONY_CONFIG;
+    echo \"Added: server \$NTP_SERVER\";
 
-- name: Enable chronyd service
-  systemd:
-    name: "{{ time_sync_chrony_service }}"
-    enabled: yes
+    echo '--- Enabling and restarting chronyd ---';
+    systemctl enable \$CHRONY_SERVICE;
+    systemctl restart \$CHRONY_SERVICE;
+    sleep 2;
+
+    echo '--- Chrony sources ---';
+    chronyc -a sources;
+
+    if [ \"\$FORCE_STEP\" = 'true' ]; then
+      echo '--- Forcing chrony sync (burst + makestep) ---';
+      chronyc -a 'burst 4/4';
+      chronyc -a makestep;
+    fi;
+
+    if [ \"\$HWCLOCK_SYNC\" = 'true' ]; then
+      echo '--- Syncing hardware clock ---';
+      hwclock -w;
+    fi;
+
+    echo \"--- Setting timezone to \$TIMEZONE ---\";
+    timedatectl set-timezone \$TIMEZONE;
+
+    echo \"--- Waiting \${RETRY_DELAY}s for NTP sync ---\";
+    sleep \$RETRY_DELAY;
+
+    echo '--- Verifying NTP synchronization (attempt 1) ---';
+    TIMEDATECTL_OUT=\$(timedatectl show);
+    echo \"\$TIMEDATECTL_OUT\";
+    NTP_SYNC=\$(echo \"\$TIMEDATECTL_OUT\" | grep '^NTPSynchronized=' | cut -d= -f2 | tr -d '[:space:]');
+    NTP_ACTIVE=\$(echo \"\$TIMEDATECTL_OUT\" | grep '^NTP=' | cut -d= -f2 | tr -d '[:space:]');
+    echo \"NTP            : \$NTP_ACTIVE\";
+    echo \"NTPSynchronized: \$NTP_SYNC\";
+
+    if [ \"\$NTP_SYNC\" != 'yes' ]; then
+      echo '--- Not synchronized, retrying ---';
+      chronyc -a sources;
+      chronyc -a 'burst 4/4';
+      chronyc -a makestep;
+      echo \"--- Waiting \${RETRY_DELAY}s before retry verification ---\";
+      sleep \$RETRY_DELAY;
+      echo '--- Verifying NTP synchronization (attempt 2) ---';
+      TIMEDATECTL_RETRY=\$(timedatectl show);
+      echo \"\$TIMEDATECTL_RETRY\";
+      NTP_SYNC_RETRY=\$(echo \"\$TIMEDATECTL_RETRY\" | grep '^NTPSynchronized=' | cut -d= -f2 | tr -d '[:space:]');
+      NTP_ACTIVE_RETRY=\$(echo \"\$TIMEDATECTL_RETRY\" | grep '^NTP=' | cut -d= -f2 | tr -d '[:space:]');
+      echo \"NTP (retry)            : \$NTP_ACTIVE_RETRY\";
+      echo \"NTPSynchronized (retry): \$NTP_SYNC_RETRY\";
+      if [ \"\$NTP_SYNC_RETRY\" != 'yes' ]; then
+        echo '[FAIL] NTP synchronization failed after retries';
+        exit 1;
+      fi;
+      echo \"RESULT_NTP=\$NTP_ACTIVE_RETRY\";
+      echo \"RESULT_SYNCED=\$NTP_SYNC_RETRY\";
+    else
+      echo \"RESULT_NTP=\$NTP_ACTIVE\";
+      echo \"RESULT_SYNCED=\$NTP_SYNC\";
+    fi
+    "
   delegate_to: "{{ bmc_delegate_host }}"
-  become: yes
+  register: timesync_result
+  changed_when: timesync_result.rc == 0
 
-- name: Restart chronyd service
-  systemd:
-    name: "{{ time_sync_chrony_service }}"
-    state: restarted
-  delegate_to: "{{ bmc_delegate_host }}"
-  become: yes
-
-- name: Wait for chronyd to start
-  pause:
-    seconds: 2
-
-- name: Check chrony sources
-  command: chronyc -a sources
-  register: chrony_sources
-  changed_when: false
-  become: yes
-
-- name: Display chrony sources
-  debug:
-    msg: "{{ chrony_sources.stdout_lines }}"
-
-- name: Force chrony burst to sync quickly
-  command: chronyc -a 'burst 4/4'
-  become: yes
-  changed_when: false
-  delegate_to: "{{ bmc_delegate_host }}"
-  when: time_sync_force_step | bool
-
-- name: Force chrony to make step adjustment
-  command: chronyc -a makestep
-  become: yes
-  changed_when: false
-  delegate_to: "{{ bmc_delegate_host }}"
-  when: time_sync_force_step | bool
-
-- name: Sync hardware clock with system time
-  command: hwclock -w
-  become: yes
-  changed_when: false
-  delegate_to: "{{ bmc_delegate_host }}"
-  when: time_sync_hwclock_sync | bool
-
-- name: Set timezone
-  command: timedatectl set-timezone {{ time_sync_timezone }}
-  become: yes
-  delegate_to: "{{ bmc_delegate_host }}"
-  changed_when: false
-
-- name: Wait for NTP synchronization
-  pause:
-    seconds: "{{ time_sync_retry_delay }}"
-  delegate_to: "{{ bmc_delegate_host }}"
-
-- name: Verify NTP synchronization (attempt 1)
-  command: timedatectl show
-  register: timedatectl_output
-  changed_when: false
-  become: yes
-
-- name: Parse timedatectl output
+- name: Parse time sync results
   set_fact:
-    timedatectl_status: "{{ timedatectl_output.stdout | regex_replace('\\[\\?2004[lh]', '') | trim }}"
+    time_status:
+      NTP: >-
+        {{ timesync_result.stdout
+           | regex_search('RESULT_NTP=(.*)', '\1')
+           | first | default('unknown') }}
+      NTPSynchronized: >-
+        {{ 'yes' if 'RESULT_SYNCED=yes' in timesync_result.stdout else 'no' }}
+    time_status_retry:
+      NTPSynchronized: >-
+        {{ 'yes' if 'RESULT_SYNCED=yes' in timesync_result.stdout else 'no' }}
 
-- name: Convert timedatectl output to dictionary
-  set_fact:
-    time_status: "{{ dict(timedatectl_status.split('\n') | map('regex_replace', '^(.*)=(.*)$', '\\1|||\\2') | map('split', '|||') | list) }}"
+- name: Display shell block output
+  debug:
+    msg: "{{ timesync_result.stdout_lines }}"
 
 - name: Display NTP synchronization status
   debug:
     msg:
-      - "NTP: {{ time_status.NTP | default('unknown') }}"
-      - "NTPSynchronized: {{ time_status.NTPSynchronized | default('unknown') }}"
-
-- name: Retry NTP synchronization if not synchronized
-  block:
-    - name: Force chrony sources check
-      command: chronyc -a sources
-      become: yes
-      changed_when: false
-
-    - name: Force chrony burst again
-      command: chronyc -a 'burst 4/4'
-      become: yes
-      changed_when: false
-
-    - name: Force chrony makestep again
-      command: chronyc -a makestep
-      become: yes
-      changed_when: false
-
-    - name: Wait before retry
-      pause:
-        seconds: "{{ time_sync_retry_delay }}"
-
-    - name: Verify NTP synchronization (attempt 2)
-      command: timedatectl show
-      register: timedatectl_retry
-      changed_when: false
-      become: yes
-
-    - name: Parse retry timedatectl output
-      set_fact:
-        timedatectl_retry_status: "{{ timedatectl_retry.stdout | regex_replace('\\[\\?2004[lh]', '') | trim }}"
-
-    - name: Convert retry timedatectl output to dictionary
-      set_fact:
-        time_status_retry: "{{ dict(timedatectl_retry_status.split('\n') | map('regex_replace', '^(.*)=(.*)$', '\\1|||\\2') | map('split', '|||') | list) }}"
-
-    - name: Display retry NTP synchronization status
-      debug:
-        msg:
-          - "NTP: {{ time_status_retry.NTP | default('unknown') }}"
-          - "NTPSynchronized: {{ time_status_retry.NTPSynchronized | default('unknown') }}"
-
-    - name: Final synchronization check
-      fail:
-        msg: "NTP synchronization failed after retries"
-      when: time_status_retry.NTPSynchronized | default('no') | lower != 'yes'
-      delegate_to: "{{ bmc_delegate_host }}"
-
-  when: time_status.NTPSynchronized | default('no') | lower != 'yes'
-
-# ============================================================
-# PHASE 3: Summary
-# ============================================================
+      - "NTP            : {{ time_status.NTP }}"
+      - "NTPSynchronized: {{ time_status.NTPSynchronized }}"
 
 - name: OS time synchronization completed
   debug:
@@ -351,7 +134,7 @@
       - "========================================="
       - "BMC NTP configured via Redfish API: {{ bmc_ntp_config is changed | default(false) or not (bmc_ntp_needs_update | bool) }}"
       - "BMC NTP Servers: {{ time_sync_ntp_servers }}"
-      - "OS NTP server: {{ time_sync_ntp_server }}"
-      - "OS timezone: {{ time_sync_timezone }}"
+      - "OS NTP server  : {{ time_sync_ntp_server }}"
+      - "OS timezone    : {{ time_sync_timezone }}"
       - "OS NTP synchronized: {{ time_status_retry.NTPSynchronized | default(time_status.NTPSynchronized) | default('unknown') }}"
       - "========================================="

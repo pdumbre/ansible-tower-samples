@@ -23,6 +23,7 @@
 - name: Gather only date/time facts
   setup:
     filter: ansible_date_time
+  delegate_to: "{{ bmc_delegate_host }}"
     
 - debug:
     var: ansible_date_time.iso8601
@@ -30,7 +31,7 @@
 - name: Get current system time
   set_fact:
     current_time: "{{ ansible_date_time.iso8601 }}"
-  delegate_to: localhost
+  delegate_to: "{{ bmc_delegate_host }}"
   run_once: true
 
 - name: Display time to be set

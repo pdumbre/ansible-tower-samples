@@ -11,7 +11,7 @@
   block:
     - name: Get current BMC NetworkProtocol configuration using uri module
       uri:
-        url: "{{ bmc_base_url }}/redfish/v1/Managers/{{ bmc_manager_id }}/NetworkProtocol"
+        url: "{{ bmc_manager_url }}/NetworkProtocol"
         method: GET
         user: "{{ bmc_user }}"
         password: "{{ bmc_password }}"
@@ -27,7 +27,7 @@
       shell: |
         curl -k -u "{{ bmc_user }}:{{ bmc_password }}" \
           -X GET \
-          "{{ bmc_base_url }}/redfish/v1/Managers/{{ bmc_manager_id }}/NetworkProtocol"
+          "{{ bmc_manager_url }}/NetworkProtocol"
       register: bmc_network_protocol_curl
       delegate_to: "{{ bmc_delegate_host }}"
       changed_when: false
@@ -65,7 +65,7 @@
   block:
     - name: Configure BMC NTP using uri module
       uri:
-        url: "{{ bmc_base_url }}/redfish/v1/Managers/{{ bmc_manager_id }}/NetworkProtocol"
+        url: "{{ bmc_manager_url }}/NetworkProtocol"
         method: PATCH
         user: "{{ bmc_user }}"
         password: "{{ bmc_password }}"
@@ -93,7 +93,7 @@
               "NTPServers": {{ time_sync_ntp_servers | to_json }}
             }
           }' \
-          "{{ bmc_base_url }}/redfish/v1/Managers/{{ bmc_manager_id }}/NetworkProtocol" \
+          "{{ bmc_manager_url }}/NetworkProtocol" \
           -w "\n%{http_code}"
       register: bmc_ntp_config_curl
       delegate_to: "{{ bmc_delegate_host }}"
@@ -121,7 +121,7 @@
   block:
     - name: Verify BMC NTP configuration using uri module
       uri:
-        url: "{{ bmc_base_url }}/redfish/v1/Managers/{{ bmc_manager_id }}/NetworkProtocol"
+        url: "{{ bmc_manager_url }}/NetworkProtocol"
         method: GET
         user: "{{ bmc_user }}"
         password: "{{ bmc_password }}"
@@ -137,7 +137,7 @@
       shell: |
         curl -k -u "{{ bmc_user }}:{{ bmc_password }}" \
           -X GET \
-          "{{ bmc_base_url }}/redfish/v1/Managers/{{ bmc_manager_id }}/NetworkProtocol"
+          "{{ bmc_manager_url }}/NetworkProtocol"
       register: bmc_ntp_verify_curl
       delegate_to: "{{ bmc_delegate_host }}"
       changed_when: false
@@ -346,5 +346,3 @@
       - "OS timezone: {{ time_sync_timezone }}"
       - "OS NTP synchronized: {{ time_status_retry.NTPSynchronized | default(time_status.NTPSynchronized) | default('unknown') }}"
       - "========================================="
-
-# Made with Bob

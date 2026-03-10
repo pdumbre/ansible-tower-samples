@@ -1,0 +1,124 @@
+#!/bin/bash
+# ============================================================
+# rtclock_sync.sh
+# OS time synchronization via chrony/NTP
+# Direct port of RTClock.groovy SSH commands
+# Variables passed as environment variables from Ansible
+# ============================================================
+
+set -e
+
+# ------------------------------------------------------------
+# Required environment variables (passed from Ansible):
+#   NTP_SERVER       - laptop/merion NTP server IP
+#   CHRONY_CONFIG    - chrony config path (default /etc/chrony.conf)
+# ------------------------------------------------------------
+
+CHRONY_CONFIG="${CHRONY_CONFIG:-/etc/chrony.conf}"
+
+if [ -z "$NTP_SERVER" ]; then
+  echo "[FAIL] Required variable NTP_SERVER is not set"
+  exit 1
+fi
+
+# ------------------------------------------------------------
+# 1. Update chrony.conf — replace or add server line
+#    (replaces: cat grep / echo / sed -i server logic)
+# ------------------------------------------------------------
+echo "--- [1] Updating chrony server configuration ---"
+EXISTING_SERVER=$(grep "^server" "$CHRONY_CONFIG" || true)
+
+if [ -z "$EXISTING_SERVER" ]; then
+  echo "No server line found — adding server $NTP_SERVER"
+  echo "server $NTP_SERVER" >> "$CHRONY_CONFIG"
+else
+  if echo "$EXISTING_SERVER" | grep -q "$NTP_SERVER"; then
+    echo "Server $NTP_SERVER already configured — no change needed"
+  else
+    echo "Replacing existing server line with $NTP_SERVER"
+    sed -i '/^server/d' "$CHRONY_CONFIG"
+    echo "server $NTP_SERVER" >> "$CHRONY_CONFIG"
+  fi
+fi
+
+# ------------------------------------------------------------
+# 2. Remove pool lines
+#    (replaces: sed -i '/^pool/d' chrony.conf)
+# ------------------------------------------------------------
+echo "--- [2] Removing pool lines from chrony.conf ---"
+sed -i '/^pool/d' "$CHRONY_CONFIG"
+
+# ------------------------------------------------------------
+# 3. Enable and restart chronyd
+#    (replaces: systemctl enable/restart chronyd)
+# ------------------------------------------------------------
+echo "--- [3] Enabling and restarting chronyd ---"
+systemctl enable chronyd
+systemctl restart chronyd
+
+# ------------------------------------------------------------
+# 4. Force chrony sync
+#    (replaces: chronyc sources, burst, makestep)
+# ------------------------------------------------------------
+echo "--- [4] Forcing chrony sync ---"
+chronyc -a sources
+chronyc -a 'burst 4/4'
+chronyc -a makestep
+
+# ------------------------------------------------------------
+# 5. Sync hardware clock and set timezone
+#    (replaces: hwclock -w, timedatectl set-timezone UTC)
+# ------------------------------------------------------------
+echo "--- [5] Syncing hardware clock and setting timezone ---"
+hwclock -w
+timedatectl set-timezone UTC
+
+# ------------------------------------------------------------
+# 6. Wait for NTP synchronization (5 seconds as per Groovy)
+#    (replaces: Thread.sleep(1000*5))
+# ------------------------------------------------------------
+echo "--- [6] Waiting 5s for NTP sync ---"
+sleep 5
+
+# ------------------------------------------------------------
+# 7. Verify sync with retry loop (3 attempts as per Groovy)
+#    (replaces: for (def i=0; i<3; i++) timedatectl show block)
+# ------------------------------------------------------------
+echo "--- [7] Verifying NTP synchronization ---"
+SYNC_ERR=true
+
+for i in 1 2 3; do
+  echo "  Attempt $i of 3"
+  TIMEDATECTL_OUT=$(timedatectl show | tr -d '\r' | sed 's/\[?2004[lh]//g')
+  echo "$TIMEDATECTL_OUT"
+
+  NTP_ACTIVE=$(echo "$TIMEDATECTL_OUT" | grep '^NTP='              | cut -d= -f2 | tr -d '[:space:]')
+  NTP_SYNC=$(echo   "$TIMEDATECTL_OUT" | grep '^NTPSynchronized='  | cut -d= -f2 | tr -d '[:space:]')
+
+  echo "  NTP            : ${NTP_ACTIVE:-unknown}"
+  echo "  NTPSynchronized: ${NTP_SYNC:-unknown}"
+
+  if [ "${NTP_SYNC:-no}" = "yes" ]; then
+    SYNC_ERR=false
+    break
+  else
+    echo "  Not synchronized — retrying chrony sync"
+    chronyc -a sources
+    chronyc -a 'burst 4/4'
+    chronyc -a makestep
+    sleep 5
+  fi
+done
+
+# ------------------------------------------------------------
+# 8. Fail if not synchronized after all retries
+#    (replaces: if (err) throw new Exception("NTP sync error"))
+# ------------------------------------------------------------
+if [ "$SYNC_ERR" = "true" ]; then
+  echo "[FAIL] NTP synchronization error after 3 attempts"
+  exit 1
+fi
+
+echo "RESULT_NTP=${NTP_ACTIVE:-unknown}"
+echo "RESULT_SYNCED=${NTP_SYNC:-no}"
+echo "--- RTClock sync completed successfully ---"

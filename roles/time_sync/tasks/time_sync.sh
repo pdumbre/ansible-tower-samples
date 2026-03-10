@@ -40,20 +40,36 @@ TIME_SYNC_MAX_RETRIES="${TIME_SYNC_MAX_RETRIES:-3}"
 
 # ============================================================
 # 1. Ensure chrony is installed
-#    (from time_sync.sh — missing in rtclock_sync.sh)
+#    Check first — skip install if already present.
+#    Avoids "no enabled repositories" error on air-gapped hosts.
 # ============================================================
 echo "--- [1] Ensuring chrony is installed ---"
-if command -v yum &>/dev/null; then
-  yum install -y "$TIME_SYNC_CHRONY_PACKAGE"
-elif command -v dnf &>/dev/null; then
-  dnf install -y "$TIME_SYNC_CHRONY_PACKAGE"
-elif command -v apt-get &>/dev/null; then
-  apt-get install -y "$TIME_SYNC_CHRONY_PACKAGE"
+if command -v chronyc &>/dev/null; then
+  echo "[OK] chrony already installed — skipping package install"
 else
-  echo "[FAIL] No supported package manager found (yum/dnf/apt-get)"
-  exit 1
+  echo "chrony not found — attempting install"
+  if command -v yum &>/dev/null; then
+    if yum repolist 2>/dev/null | grep -v "^$\|repolist:" | grep -q "."; then
+      yum install -y "$TIME_SYNC_CHRONY_PACKAGE"
+    else
+      echo "[FAIL] No yum repositories available and chrony is not installed"
+      exit 1
+    fi
+  elif command -v dnf &>/dev/null; then
+    if dnf repolist enabled 2>/dev/null | grep -v "^$\|Last metadata" | grep -q "."; then
+      dnf install -y "$TIME_SYNC_CHRONY_PACKAGE"
+    else
+      echo "[FAIL] No dnf repositories available and chrony is not installed"
+      exit 1
+    fi
+  elif command -v apt-get &>/dev/null; then
+    apt-get install -y "$TIME_SYNC_CHRONY_PACKAGE"
+  else
+    echo "[FAIL] No supported package manager found (yum/dnf/apt-get)"
+    exit 1
+  fi
+  echo "[OK] $TIME_SYNC_CHRONY_PACKAGE installed"
 fi
-echo "[OK] $TIME_SYNC_CHRONY_PACKAGE installed"
 
 # ============================================================
 # 2. Backup existing chrony configuration

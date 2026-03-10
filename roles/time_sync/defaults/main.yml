@@ -9,7 +9,7 @@ time_sync_os_enabled: true
 
 # NTP server configuration
 # For OS sync: single NTP server (typically the management laptop)
-time_sync_ntp_server: "10.48.112.47"
+time_sync_ntp_server: "169.253.1.250"
 
 # For BMC sync: list of NTP servers
 time_sync_ntp_servers:

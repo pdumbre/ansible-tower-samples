@@ -3,7 +3,11 @@
 # time_sync.sh
 # OS time synchronization via chrony/NTP
 # Executed remotely via SSH from jump host
-# Variables passed as environment variables from Ansible
+# Merged best of rtclock_sync.sh + time_sync.sh:
+#   - Flexible variables from time_sync.sh
+#   - Idempotent server-check from rtclock_sync.sh
+#   - 3-attempt retry loop from rtclock_sync.sh
+#   - Package install + backup + validation from time_sync.sh
 # ============================================================
 
 set -e
@@ -19,6 +23,7 @@ set -e
 #   TIME_SYNC_HWCLOCK_SYNC    - true/false
 #   TIME_SYNC_BACKUP_CONFIG   - true/false
 #   TIME_SYNC_RETRY_DELAY     - seconds e.g. 10
+#   TIME_SYNC_MAX_RETRIES     - retry attempts (default 3, per Groovy)
 # ------------------------------------------------------------
 
 # Validate required variables
@@ -31,31 +36,29 @@ for VAR in TIME_SYNC_CHRONY_PACKAGE TIME_SYNC_CHRONY_CONFIG \
   fi
 done
 
-# ============================================================
-# PHASE 2: Configure OS time synchronization via chrony/NTP
-# ============================================================
+TIME_SYNC_MAX_RETRIES="${TIME_SYNC_MAX_RETRIES:-3}"
 
-# ------------------------------------------------------------
+# ============================================================
 # 1. Ensure chrony is installed
-#    (replaces: package module)
-# ------------------------------------------------------------
+#    (from time_sync.sh — missing in rtclock_sync.sh)
+# ============================================================
 echo "--- [1] Ensuring chrony is installed ---"
 if command -v yum &>/dev/null; then
   yum install -y "$TIME_SYNC_CHRONY_PACKAGE"
-elif command -v apt-get &>/dev/null; then
-  apt-get install -y "$TIME_SYNC_CHRONY_PACKAGE"
 elif command -v dnf &>/dev/null; then
   dnf install -y "$TIME_SYNC_CHRONY_PACKAGE"
+elif command -v apt-get &>/dev/null; then
+  apt-get install -y "$TIME_SYNC_CHRONY_PACKAGE"
 else
   echo "[FAIL] No supported package manager found (yum/dnf/apt-get)"
   exit 1
 fi
 echo "[OK] $TIME_SYNC_CHRONY_PACKAGE installed"
 
-# ------------------------------------------------------------
+# ============================================================
 # 2. Backup existing chrony configuration
-#    (replaces: copy module with remote_src + failed_when: false)
-# ------------------------------------------------------------
+#    (from time_sync.sh — missing in rtclock_sync.sh)
+# ============================================================
 if [ "${TIME_SYNC_BACKUP_CONFIG:-false}" = "true" ]; then
   echo "--- [2] Backing up chrony configuration ---"
   if cp "$TIME_SYNC_CHRONY_CONFIG" "${TIME_SYNC_CHRONY_CONFIG}.backup" 2>/dev/null; then
@@ -65,124 +68,125 @@ if [ "${TIME_SYNC_BACKUP_CONFIG:-false}" = "true" ]; then
   fi
 fi
 
-# ------------------------------------------------------------
-# 3. Display existing NTP server configuration
-#    (replaces: grep shell task + debug display)
-# ------------------------------------------------------------
-echo "--- [3] Existing NTP server configuration ---"
-grep "^server" "$TIME_SYNC_CHRONY_CONFIG" || echo "(none found)"
+# ============================================================
+# 3. Update chrony.conf — idempotent server check
+#    (from rtclock_sync.sh — time_sync.sh always deleted/re-added
+#    unconditionally. This version skips if already correct.)
+# ============================================================
+echo "--- [3] Updating chrony server configuration ---"
+EXISTING_SERVER=$(grep "^server" "$TIME_SYNC_CHRONY_CONFIG" || true)
 
-# ------------------------------------------------------------
-# 4. Remove existing server and pool lines, add new server
-#    (replaces: lineinfile remove server, remove pool, add server)
-# ------------------------------------------------------------
-echo "--- [4] Updating chrony.conf ---"
-sed -i '/^server[[:space:]]/d' "$TIME_SYNC_CHRONY_CONFIG"
-sed -i '/^pool[[:space:]]/d'   "$TIME_SYNC_CHRONY_CONFIG"
-echo "server $TIME_SYNC_NTP_SERVER" >> "$TIME_SYNC_CHRONY_CONFIG"
-echo "[OK] Added: server $TIME_SYNC_NTP_SERVER"
+if [ -z "$EXISTING_SERVER" ]; then
+  echo "No server line found — adding server $TIME_SYNC_NTP_SERVER"
+  echo "server $TIME_SYNC_NTP_SERVER" >> "$TIME_SYNC_CHRONY_CONFIG"
+elif echo "$EXISTING_SERVER" | grep -q "$TIME_SYNC_NTP_SERVER"; then
+  echo "Server $TIME_SYNC_NTP_SERVER already configured — no change needed"
+else
+  echo "Replacing existing server line with $TIME_SYNC_NTP_SERVER"
+  sed -i '/^server[[:space:]]/d' "$TIME_SYNC_CHRONY_CONFIG"
+  echo "server $TIME_SYNC_NTP_SERVER" >> "$TIME_SYNC_CHRONY_CONFIG"
+fi
 
-# ------------------------------------------------------------
+# ============================================================
+# 4. Remove pool lines
+# ============================================================
+echo "--- [4] Removing pool lines from chrony.conf ---"
+sed -i '/^pool[[:space:]]/d' "$TIME_SYNC_CHRONY_CONFIG"
+
+# ============================================================
 # 5. Enable and restart chronyd
-#    (replaces: systemd enable + systemd restart + 2s pause)
-# ------------------------------------------------------------
+#    (service name from variable — not hardcoded as in rtclock_sync.sh)
+# ============================================================
 echo "--- [5] Enabling and restarting $TIME_SYNC_CHRONY_SERVICE ---"
 systemctl enable "$TIME_SYNC_CHRONY_SERVICE"
 systemctl restart "$TIME_SYNC_CHRONY_SERVICE"
 sleep 2
 
-# ------------------------------------------------------------
-# 6. Check and display chrony sources
-#    (replaces: chronyc sources command + debug display)
-# ------------------------------------------------------------
+# ============================================================
+# 6. Display chrony sources
+# ============================================================
 echo "--- [6] Chrony sources ---"
 chronyc -a sources
 
-# ------------------------------------------------------------
-# 7. Force chrony burst + makestep if requested
-#    (replaces: chronyc burst task + chronyc makestep task)
-# ------------------------------------------------------------
+# ============================================================
+# 7. Force chrony burst + makestep
+#    (conditional flag from time_sync.sh — rtclock_sync.sh always ran)
+# ============================================================
 if [ "${TIME_SYNC_FORCE_STEP:-false}" = "true" ]; then
   echo "--- [7] Forcing chrony sync (burst + makestep) ---"
   chronyc -a 'burst 4/4'
   chronyc -a makestep
 fi
 
-# ------------------------------------------------------------
-# 8. Sync hardware clock with system time
-#    (replaces: hwclock -w task)
-# ------------------------------------------------------------
+# ============================================================
+# 8. Sync hardware clock
+#    (conditional flag from time_sync.sh — rtclock_sync.sh always ran)
+# ============================================================
 if [ "${TIME_SYNC_HWCLOCK_SYNC:-false}" = "true" ]; then
   echo "--- [8] Syncing hardware clock ---"
   hwclock -w
   echo "[OK] Hardware clock synced"
 fi
 
-# ------------------------------------------------------------
+# ============================================================
 # 9. Set timezone
-#    (replaces: timedatectl set-timezone task)
-# ------------------------------------------------------------
+#    (variable from time_sync.sh — rtclock_sync.sh hardcoded UTC)
+# ============================================================
 echo "--- [9] Setting timezone to $TIME_SYNC_TIMEZONE ---"
 timedatectl set-timezone "$TIME_SYNC_TIMEZONE"
 echo "[OK] Timezone set to $TIME_SYNC_TIMEZONE"
 
-# ------------------------------------------------------------
-# 10. Wait for NTP synchronization
-#     (replaces: pause seconds=time_sync_retry_delay)
-# ------------------------------------------------------------
+# ============================================================
+# 10. Wait for NTP synchronization to settle
+# ============================================================
 echo "--- [10] Waiting ${TIME_SYNC_RETRY_DELAY}s for NTP sync to settle ---"
 sleep "$TIME_SYNC_RETRY_DELAY"
 
-# ------------------------------------------------------------
-# 11. Verify NTP synchronization — attempt 1
-#     (replaces: timedatectl show + parse + convert + display)
-# ------------------------------------------------------------
-echo "--- [11] Verifying NTP synchronization (attempt 1) ---"
-TIMEDATECTL_OUT=$(timedatectl show | tr -d '\r' | sed 's/\[?2004[lh]//g')
-echo "$TIMEDATECTL_OUT"
+# ============================================================
+# 11. Verify sync with retry loop
+#     (3-attempt loop from rtclock_sync.sh — more robust than
+#      time_sync.sh which only did 1 check + 1 single retry.
+#      MAX_RETRIES is configurable, defaults to 3 per Groovy.)
+# ============================================================
+echo "--- [11] Verifying NTP synchronization (max $TIME_SYNC_MAX_RETRIES attempts) ---"
+SYNC_ERR=true
+NTP_ACTIVE=""
+NTP_SYNC=""
 
-NTP_ACTIVE=$(echo "$TIMEDATECTL_OUT" | grep '^NTP=' | cut -d= -f2 | tr -d '[:space:]')
-NTP_SYNC=$(echo "$TIMEDATECTL_OUT"   | grep '^NTPSynchronized=' | cut -d= -f2 | tr -d '[:space:]')
+for i in $(seq 1 "$TIME_SYNC_MAX_RETRIES"); do
+  echo "  Attempt $i of $TIME_SYNC_MAX_RETRIES"
+  TIMEDATECTL_OUT=$(timedatectl show | tr -d '\r' | sed 's/\[?2004[lh]//g')
+  echo "$TIMEDATECTL_OUT"
 
-echo "NTP            : ${NTP_ACTIVE:-unknown}"
-echo "NTPSynchronized: ${NTP_SYNC:-unknown}"
+  NTP_ACTIVE=$(echo "$TIMEDATECTL_OUT" | grep '^NTP='             | cut -d= -f2 | tr -d '[:space:]')
+  NTP_SYNC=$(echo   "$TIMEDATECTL_OUT" | grep '^NTPSynchronized=' | cut -d= -f2 | tr -d '[:space:]')
 
-# ------------------------------------------------------------
-# 12. Retry block if not synchronized
-#     (replaces: retry block with chronyc + attempt 2 + fail)
-# ------------------------------------------------------------
-if [ "${NTP_SYNC:-no}" != "yes" ]; then
-  echo "--- [12] Not synchronized — retrying ---"
+  echo "  NTP            : ${NTP_ACTIVE:-unknown}"
+  echo "  NTPSynchronized: ${NTP_SYNC:-unknown}"
 
-  chronyc -a sources
-  chronyc -a 'burst 4/4'
-  chronyc -a makestep
-
-  echo "--- Waiting ${TIME_SYNC_RETRY_DELAY}s before retry verification ---"
-  sleep "$TIME_SYNC_RETRY_DELAY"
-
-  echo "--- Verifying NTP synchronization (attempt 2) ---"
-  TIMEDATECTL_RETRY=$(timedatectl show | tr -d '\r' | sed 's/\[?2004[lh]//g')
-  echo "$TIMEDATECTL_RETRY"
-
-  NTP_ACTIVE_RETRY=$(echo "$TIMEDATECTL_RETRY" | grep '^NTP=' | cut -d= -f2 | tr -d '[:space:]')
-  NTP_SYNC_RETRY=$(echo "$TIMEDATECTL_RETRY"   | grep '^NTPSynchronized=' | cut -d= -f2 | tr -d '[:space:]')
-
-  echo "NTP (retry)            : ${NTP_ACTIVE_RETRY:-unknown}"
-  echo "NTPSynchronized (retry): ${NTP_SYNC_RETRY:-unknown}"
-
-  if [ "${NTP_SYNC_RETRY:-no}" != "yes" ]; then
-    echo "[FAIL] NTP synchronization failed after retries"
-    exit 1
+  if [ "${NTP_SYNC:-no}" = "yes" ]; then
+    SYNC_ERR=false
+    break
+  else
+    if [ "$i" -lt "$TIME_SYNC_MAX_RETRIES" ]; then
+      echo "  Not synchronized — retrying chrony sync"
+      chronyc -a sources
+      chronyc -a 'burst 4/4'
+      chronyc -a makestep
+      echo "  Waiting ${TIME_SYNC_RETRY_DELAY}s before next attempt"
+      sleep "$TIME_SYNC_RETRY_DELAY"
+    fi
   fi
+done
 
-  # Emit final result from retry values
-  echo "RESULT_NTP=${NTP_ACTIVE_RETRY:-unknown}"
-  echo "RESULT_SYNCED=${NTP_SYNC_RETRY:-no}"
-else
-  # Emit final result from attempt 1 values
-  echo "RESULT_NTP=${NTP_ACTIVE:-unknown}"
-  echo "RESULT_SYNCED=${NTP_SYNC:-no}"
+# ============================================================
+# 12. Fail if not synchronized after all retries
+# ============================================================
+if [ "$SYNC_ERR" = "true" ]; then
+  echo "[FAIL] NTP synchronization error after $TIME_SYNC_MAX_RETRIES attempts"
+  exit 1
 fi
 
+echo "RESULT_NTP=${NTP_ACTIVE:-unknown}"
+echo "RESULT_SYNCED=${NTP_SYNC:-no}"
 echo "--- Time sync completed successfully ---"

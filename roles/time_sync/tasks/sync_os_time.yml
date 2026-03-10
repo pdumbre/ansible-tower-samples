@@ -38,8 +38,13 @@
     bash -s" < /tmp/time_sync_{{ inventory_hostname }}.sh
   delegate_to: "{{ bmc_delegate_host }}"
   register: timesync_result
-  changed_when: timesync_result.rc == 0
+  #changed_when: timesync_result.rc == 0
 
+- name: Set custom stats
+  set_stats:
+    data:
+      result: timesync_result
+      
 - name: Display script output
   debug:
     msg: "{{ timesync_result }}"

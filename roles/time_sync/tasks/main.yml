@@ -20,17 +20,7 @@
 
 - name: Configure OS time synchronization via chrony/NTP
   include_tasks: sync_os_time.yml
-  vars:
-    time_sync_chrony_package: "{{ time_sync_chrony_package }}"
-    time_sync_chrony_config:  "{{ time_sync_chrony_config }}"
-    time_sync_chrony_service: "{{ time_sync_chrony_service }}"
-    time_sync_ntp_server:     "{{ time_sync_ntp_server }}"
-    time_sync_timezone:       "{{ time_sync_timezone }}"
-    time_sync_force_step:     "{{ time_sync_force_step | default(true) }}"
-    time_sync_hwclock_sync:   "{{ time_sync_hwclock_sync | default(true) }}"
-    time_sync_backup_config:  "{{ time_sync_backup_config | default(true) }}"
-    time_sync_retry_delay:    "{{ time_sync_retry_delay | default(10) }}"
-
+  
 - name: Time synchronization completed
   debug:
     msg: "Time synchronization completed successfully"

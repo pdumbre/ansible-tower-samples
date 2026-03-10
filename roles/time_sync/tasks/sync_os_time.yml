@@ -22,9 +22,9 @@
 
 - name: Execute time_sync.sh on target host via SSH from jump host
   shell: >
-    sshpass -p '{{ hostvars[inventory_hostname].bmc_password }}'
+    sshpass -p '{{ hostvars[inventory_hostname].rhel_password }}'
     ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null
-    {{ hostvars[inventory_hostname].bmc_user }}@{{ hostvars[inventory_hostname].ipv6ULA }}
+    {{ hostvars[inventory_hostname].rhel_user }}@{{ hostvars[inventory_hostname].rhel_ip }}
     "sudo
     TIME_SYNC_CHRONY_PACKAGE='{{ time_sync_chrony_package }}'
     TIME_SYNC_CHRONY_CONFIG='{{ time_sync_chrony_config }}'

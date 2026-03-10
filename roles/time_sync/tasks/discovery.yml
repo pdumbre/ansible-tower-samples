@@ -4,6 +4,7 @@
   set_fact:
     ipv4_clean: "{{ ipv4 | default('') | replace('\n','') | replace('\r','') | trim }}"
     ipv6_clean: "{{ ipv6ULA | default('') | replace('\n','') | replace('\r','') | trim }}"
+    rhel_ip: "{{ rhel_ip | default('') | replace('\n','') | replace('\r','') | trim }}"
 
 - name: Generate BMC Base Endpoint
   set_fact:

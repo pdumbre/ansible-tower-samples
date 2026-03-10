@@ -1,16 +1,97 @@
 ---
+# ============================================================
+# PHASE 2: Configure OS time synchronization via chrony/NTP
+# Executes time_sync.sh on target host via SSH from jump host
+# ============================================================
 
-- name: Ensure chrony is installed
-  package:
-    name: "{{ time_sync_chrony_package }}"
-    state: present
-  become: yes
+# ------------------------------------------------------------
+# Step 1: Copy shell script to jump host
+# ------------------------------------------------------------
 
-- name: Backup existing chrony configuration
+- name: Copy time_sync.sh to jump host
   copy:
-    src: "{{ time_sync_chrony_config }}"
-    dest: "{{ time_sync_chrony_config }}.backup"
-    remote_src: yes
-  become: yes
-  failed_when: false
-  when: time_sync_backup_config | bool
+    src: time_sync.sh
+    dest: /tmp/time_sync_{{ inventory_hostname }}.sh
+    mode: '0700'
+  delegate_to: "{{ bmc_delegate_host }}"
+
+# ------------------------------------------------------------
+# Step 2: Execute script on target host via SSH from jump host
+# All Ansible variables passed as env vars inline before bash
+# ------------------------------------------------------------
+
+- name: Execute time_sync.sh on target host via SSH from jump host
+  shell: >
+    sshpass -p '{{ hostvars[inventory_hostname].ansible_password }}'
+    ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null
+    {{ hostvars[inventory_hostname].ansible_user }}@{{ hostvars[inventory_hostname].ipv6ULA }}
+    "sudo
+    TIME_SYNC_CHRONY_PACKAGE='{{ time_sync_chrony_package }}'
+    TIME_SYNC_CHRONY_CONFIG='{{ time_sync_chrony_config }}'
+    TIME_SYNC_CHRONY_SERVICE='{{ time_sync_chrony_service }}'
+    TIME_SYNC_NTP_SERVER='{{ time_sync_ntp_server }}'
+    TIME_SYNC_TIMEZONE='{{ time_sync_timezone }}'
+    TIME_SYNC_FORCE_STEP='{{ time_sync_force_step | bool | lower }}'
+    TIME_SYNC_HWCLOCK_SYNC='{{ time_sync_hwclock_sync | bool | lower }}'
+    TIME_SYNC_BACKUP_CONFIG='{{ time_sync_backup_config | bool | lower }}'
+    TIME_SYNC_RETRY_DELAY='{{ time_sync_retry_delay }}'
+    bash -s" < /tmp/time_sync_{{ inventory_hostname }}.sh
+  delegate_to: "{{ bmc_delegate_host }}"
+  register: timesync_result
+  changed_when: timesync_result.rc == 0
+
+# ------------------------------------------------------------
+# Step 3: Clean up script from jump host
+# ------------------------------------------------------------
+
+- name: Remove time_sync.sh from jump host
+  file:
+    path: /tmp/time_sync_{{ inventory_hostname }}.sh
+    state: absent
+  delegate_to: "{{ bmc_delegate_host }}"
+
+# ------------------------------------------------------------
+# Step 4: Parse RESULT_ marker lines emitted by the script
+# Preserves time_status / time_status_retry fact structure
+# so Phase 3 summary task works unchanged
+# ------------------------------------------------------------
+
+- name: Parse time sync results
+  set_fact:
+    time_status:
+      NTP: >-
+        {{ timesync_result.stdout
+           | regex_search('RESULT_NTP=(.*)', '\1')
+           | first | default('unknown') }}
+      NTPSynchronized: >-
+        {{ 'yes' if 'RESULT_SYNCED=yes' in timesync_result.stdout else 'no' }}
+    time_status_retry:
+      NTPSynchronized: >-
+        {{ 'yes' if 'RESULT_SYNCED=yes' in timesync_result.stdout else 'no' }}
+
+- name: Display script output
+  debug:
+    msg: "{{ timesync_result.stdout_lines }}"
+
+- name: Display NTP synchronization status
+  debug:
+    msg:
+      - "NTP            : {{ time_status.NTP }}"
+      - "NTPSynchronized: {{ time_status.NTPSynchronized }}"
+
+# ============================================================
+# PHASE 3: Summary
+# ============================================================
+
+- name: OS time synchronization completed
+  debug:
+    msg:
+      - "========================================="
+      - "Time Synchronization Summary"
+      - "========================================="
+      - "BMC NTP configured via Redfish API: {{ bmc_ntp_config is changed | default(false) or not (bmc_ntp_needs_update | bool) }}"
+      - "BMC NTP Servers: {{ time_sync_ntp_servers }}"
+      - "OS NTP server  : {{ time_sync_ntp_server }}"
+      - "OS timezone    : {{ time_sync_timezone }}"
+      - "OS NTP synchronized: {{ time_status_retry.NTPSynchronized | default(time_status.NTPSynchronized) | default('unknown') }}"
+      - "========================================="

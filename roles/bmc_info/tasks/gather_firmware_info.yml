@@ -15,37 +15,26 @@
   delegate_to: "{{ bmc_delegate_host }}"
   no_log: true
 
-- name: Get detailed firmware entry
-  uri:
-    url: "{{ bmc_base_url }}{{ item['@odata.id'] }}"
-    method: GET
-    user: "{{ bmc_user }}"
-    password: "{{ bmc_password }}"
-    validate_certs: no
-    force_basic_auth: yes
-    return_content: yes
-    status_code: [200]
-  register: firmware_details
-  loop: "{{ firmware_inventory.json.Members | default([]) }}"
-  delegate_to: "{{ bmc_delegate_host }}"
-  no_log: true
-  loop_control:
-    label: ""
-    
-- name: Build firmware info dict from inventory details
+- name: Check if inventory members have version inline
+  set_fact:
+    members_have_version: "{{ firmware_inventory.json.Members[0].Version is defined }}"
+
+- name: Build firmware info directly from inventory (no detail loop needed)
   set_fact:
     bmc_firmware_info: >-
       {{ bmc_firmware_info | default({}) | combine({
-        item.json.Id: {
-          'name':         item.json.Name        | default(''),
-          'version':      item.json.Version     | default(''),
-          'updateable':   item.json.Updateable  | default(false),
-          'release_date': item.json.ReleaseDate | default('')
+        item['@odata.id'].split('/')[-1]: {
+          'name':       item.Name       | default(''),
+          'version':    item.Version    | default(''),
+          'updateable': item.Updateable | default(false)
         }
       }) }}
-  loop: "{{ firmware_details.results | default([]) }}"
+  loop: "{{ firmware_inventory.json.Members | default([]) }}"
   no_log: true
-
+  loop_control:
+    label: "{{ item['@odata.id'].split('/')[-1] }}"
+  when: members_have_version | bool
+  
 - name: Retrieve BMC manager details
   uri:
     url: "{{ bmc_manager_url }}"

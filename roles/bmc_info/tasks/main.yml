@@ -16,12 +16,12 @@
 - name: Gather firmware information
   include_tasks: gather_firmware_info.yml
 
-#- name: Gather network information
-#  include_tasks: gather_network_info.yml
+- name: Gather network information
+  include_tasks: gather_network_info.yml
 
-#- name: Gather storage information
-#  include_tasks: gather_storage_info.yml
- # when: gather_storage_info | default(true)
+- name: Gather storage information
+  include_tasks: gather_storage_info.yml
+  when: gather_storage_info | default(true)
 
 #- name: Save collected BMC information
  # include_tasks: save_bmc_info.yml

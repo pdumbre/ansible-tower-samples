@@ -128,7 +128,7 @@
     - network_adapter_details.results is defined
     - network_device_functions.results is defined
 
-- name: Get detailed network interface info 
+- name: Get detailed network interface info
   uri:
     url: "{{ bmc_base_url }}{{ item['@odata.id'] }}"
     method: GET
@@ -143,9 +143,30 @@
   delegate_to: "{{ bmc_delegate_host }}"
   when: use_network_interfaces | bool
 
+- name: Debug network interface detail keys
+  debug:
+    msg: "Interface {{ item.json.Id }} keys: {{ item.json.keys() | list }}"
+  loop: "{{ network_interface_details.results | default([]) }}"
+  when: use_network_interfaces | bool and network_interface_details.results is defined
+
+- name: Build NetworkPorts URLs from interface details (Lenovo-style)
+  set_fact:
+    lenovo_port_urls: >-
+      {{ lenovo_port_urls | default([]) + [
+        bmc_base_url + (
+          item.json.NetworkPorts['@odata.id']
+          if item.json.NetworkPorts is defined
+          else item.json.Links.NetworkPorts['@odata.id']
+          if item.json.Links is defined and item.json.Links.NetworkPorts is defined
+          else ''
+        )
+      ] }}
+  loop: "{{ network_interface_details.results | default([]) }}"
+  when: use_network_interfaces | bool and network_interface_details.results is defined
+
 - name: Get NetworkPorts for each interface
   uri:
-    url: "{{ bmc_base_url }}{{ item.json.NetworkPorts['@odata.id'] }}"
+    url: "{{ item }}"
     method: GET
     user: "{{ bmc_user }}"
     password: "{{ bmc_password }}"
@@ -154,20 +175,18 @@
     return_content: yes
     status_code: [200]
   register: network_ports
-  loop: "{{ network_interface_details.results | default([]) }}"
+  loop: "{{ lenovo_port_urls | default([]) | reject('search', bmc_base_url + '$') | list }}"
   delegate_to: "{{ bmc_delegate_host }}"
-  when: use_network_interfaces | bool and network_interface_details.results is defined
+  when: use_network_interfaces | bool and lenovo_port_urls is defined
 
-- name: Extract adapter MACs via NetworkInterfaces path 
+- name: Extract adapter MACs via NetworkInterfaces path (Lenovo-style)
   set_fact:
     bmc_adapter_macs: >-
       {{ bmc_adapter_macs | default({}) | combine({
-        item.json.Id: item.json.Members | map(attribute='@odata.id') | list
+        item.json.Id: item.json.Members | json_query('[*]."@odata.id"')
       }) }}
   loop: "{{ network_ports.results | default([]) }}"
   when: use_network_interfaces | bool and network_ports.results is defined
-
-# --- Summary ---
 
 - name: Display network information summary
   debug:

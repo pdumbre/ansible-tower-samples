@@ -111,13 +111,14 @@
   delegate_to: "{{ bmc_delegate_host }}"
   when: use_network_adapters | bool and network_adapter_details.results is defined
 
-- name: Extract adapter MACs via NetworkAdapters path (Dell-style)
+- name: Extract adapter MACs via NetworkAdapters path
   set_fact:
     bmc_adapter_macs: >-
       {{ bmc_adapter_macs | default({}) | combine({
         network_adapter_details.results[loop_index].json.Id:
           network_device_functions.results[loop_index].json.Members
-            | map(attribute='@odata.id') | list
+            | map('dict2items') | map('selectattr', 'key', 'equalto', '@odata.id')
+            | map('map', attribute='value') | map('first') | list
       }) }}
   loop: "{{ range(network_adapter_details.results | default([]) | length) | list }}"
   loop_control:
@@ -157,7 +158,7 @@
   delegate_to: "{{ bmc_delegate_host }}"
   when: use_network_interfaces | bool and network_interface_details.results is defined
 
-- name: Extract adapter MACs via NetworkInterfaces path (Lenovo-style)
+- name: Extract adapter MACs via NetworkInterfaces path 
   set_fact:
     bmc_adapter_macs: >-
       {{ bmc_adapter_macs | default({}) | combine({
@@ -171,6 +172,6 @@
 - name: Display network information summary
   debug:
     msg:
-      - "Vendor path used: {{ 'NetworkAdapters (Dell-style)' if use_network_adapters else 'NetworkInterfaces (Lenovo-style)' if use_network_interfaces else 'None detected' }}"
+      - "Vendor path used: {{ 'NetworkAdapters ' if use_network_adapters else 'NetworkInterfaces (Lenovo-style)' if use_network_interfaces else 'None detected' }}"
       - "Total Ethernet interfaces: {{ bmc_ethernet_info | default([]) | length }}"
       - "Network adapters found: {{ bmc_adapter_macs | default({}) | length }}"

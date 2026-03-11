@@ -99,15 +99,17 @@
     msg: "Drive {{ item.id }} protocol: '{{ item.protocol }}' media_type: '{{ item.media_type }}'"
   loop: "{{ bmc_all_drives | default([]) }}"
   when: bmc_all_drives is defined
-  
+
 - name: Extract NVMe drive information
   set_fact:
-    bmc_nvme_drives: "{{ bmc_all_drives | selectattr('protocol', 'equalto', 'NVMe') | list }}"
+    bmc_nvme_drives: >-
+      {{ bmc_all_drives | selectattr('protocol', 'in', ['NVMe', 'nvme', 'PCIe', 'pcie']) | list }}
   when: bmc_all_drives is defined
-
+  
 - name: Extract SATA drive information
   set_fact:
-    bmc_sata_drives: "{{ bmc_all_drives | selectattr('protocol', 'equalto', 'SATA') | list }}"
+    bmc_sata_drives: >-
+      {{ bmc_all_drives | selectattr('protocol', 'in', ['SATA', 'sata']) | list }}
   when: bmc_all_drives is defined
 
 # --- PCIe vendor detection via endpoint probing ---

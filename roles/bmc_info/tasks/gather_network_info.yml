@@ -80,6 +80,7 @@
                                 (probe_network_interfaces.json.Members | default([]) | length) > 0 }}"
 
 
+
 - name: Get detailed network adapter info
   uri:
     url: "{{ bmc_base_url }}{{ item['@odata.id'] }}"
@@ -114,13 +115,17 @@
   set_fact:
     bmc_adapter_macs: >-
       {{ bmc_adapter_macs | default({}) | combine({
-        item.0.json.Id: item.1.json.Members | map(attribute='@odata.id') | list
+        network_adapter_details.results[loop_index].json.Id:
+          network_device_functions.results[loop_index].json.Members
+            | map(attribute='@odata.id') | list
       }) }}
-  loop: "{{ network_adapter_details.results | default([]) |
-             zip(network_device_functions.results | default([])) | list }}"
-  when: use_network_adapters | bool and network_adapter_details.results is defined
-
-# --- Lenovo-style path: NetworkInterfaces -> NetworkPorts ---
+  loop: "{{ range(network_adapter_details.results | default([]) | length) | list }}"
+  loop_control:
+    index_var: loop_index
+  when:
+    - use_network_adapters | bool
+    - network_adapter_details.results is defined
+    - network_device_functions.results is defined
 
 - name: Get detailed network interface info 
   uri:

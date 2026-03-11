@@ -5,7 +5,7 @@
 
 - name: Get system information
   uri:
-    url: "{{ bmc_system_url }}"
+    url: "{{ bmc_systems_url }}"
     method: GET
     user: "{{ bmc_user }}"
     password: "{{ bmc_password }}"

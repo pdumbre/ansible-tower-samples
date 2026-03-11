@@ -1,9 +1,7 @@
-
----
 # Gather firmware information from BMC using Redfish API
-# Equivalent to getVpdFwInfo() methods
+# Vendor-agnostic: works for Dell, Lenovo, and any Redfish-compliant BMC
 
-- name: Get firmware inventory for Dell systems
+- name: Get firmware inventory
   uri:
     url: "{{ bmc_base_url }}/redfish/v1/UpdateService/FirmwareInventory"
     method: GET
@@ -13,31 +11,10 @@
     force_basic_auth: yes
     return_content: yes
     status_code: [200]
-  register: dell_firmware_inventory
+  register: firmware_inventory
   delegate_to: "{{ bmc_delegate_host }}"
-  when: is_dell_system | bool
 
-- name: Extract Dell firmware versions
-  set_fact:
-    bmc_firmware_info: "{{ bmc_firmware_info | default({}) | combine({item['@odata.id'].split('/')[-1]: {'name': item.Name | default(''), 'version': item.Version | default(''), 'updateable': item.Updateable | default(false)}}) }}"
-  loop: "{{ dell_firmware_inventory.json.Members | default([]) }}"
-  when: is_dell_system | bool
-
-- name: Get firmware inventory for Lenovo systems
-  uri:
-    url: "{{ bmc_base_url }}/redfish/v1/UpdateService/FirmwareInventory"
-    method: GET
-    user: "{{ bmc_user }}"
-    password: "{{ bmc_password }}"
-    validate_certs: no
-    force_basic_auth: yes
-    return_content: yes
-    status_code: [200]
-  register: lenovo_firmware_inventory
-  delegate_to: "{{ bmc_delegate_host }}"
-  when: is_lenovo_system | bool
-
-- name: Get detailed firmware information for Lenovo
+- name: Get detailed firmware entry
   uri:
     url: "{{ bmc_base_url }}{{ item['@odata.id'] }}"
     method: GET
@@ -47,20 +24,26 @@
     force_basic_auth: yes
     return_content: yes
     status_code: [200]
-  register: lenovo_firmware_details
-  loop: "{{ lenovo_firmware_inventory.json.Members | default([]) }}"
+  register: firmware_details
+  loop: "{{ firmware_inventory.json.Members | default([]) }}"
   delegate_to: "{{ bmc_delegate_host }}"
-  when: is_lenovo_system | bool
 
-- name: Extract Lenovo firmware versions
+- name: Build firmware info dict from inventory details
   set_fact:
-    bmc_firmware_info: "{{ bmc_firmware_info | default({}) | combine({item.json.Id: {'name': item.json.Name | default(''), 'version': item.json.Version | default(''), 'updateable': item.json.Updateable | default(false), 'release_date': item.json.ReleaseDate | default('')}}) }}"
-  loop: "{{ lenovo_firmware_details.results | default([]) }}"
-  when: is_lenovo_system | bool and lenovo_firmware_details.results is defined
+    bmc_firmware_info: >-
+      {{ bmc_firmware_info | default({}) | combine({
+        item.json.Id: {
+          'name':         item.json.Name        | default(''),
+          'version':      item.json.Version     | default(''),
+          'updateable':   item.json.Updateable  | default(false),
+          'release_date': item.json.ReleaseDate | default('')
+        }
+      }) }}
+  loop: "{{ firmware_details.results | default([]) }}"
 
-- name: Get BMC firmware version
+- name: Get BMC manager details
   uri:
-    url: "{{ bmc_base_url }}/redfish/v1/Managers/{{ dell_idrac_id if is_dell_system else 'Self' }}"
+    url: "{{ bmc_manager_url }}"
     method: GET
     user: "{{ bmc_user }}"
     password: "{{ bmc_password }}"
@@ -73,10 +56,17 @@
 
 - name: Add BMC firmware version to info
   set_fact:
-    bmc_firmware_info: "{{ bmc_firmware_info | default({}) | combine({'bmc': {'name': 'BMC', 'version': bmc_manager_info.json.FirmwareVersion | default(''), 'model': bmc_manager_info.json.Model | default('')}}) }}"
+    bmc_firmware_info: "{{ bmc_firmware_info | default({}) | combine({
+      'bmc': {
+        'name':    'BMC',
+        'version': bmc_manager_info.json.FirmwareVersion | default(''),
+        'model':   bmc_manager_info.json.Model           | default('')
+      }
+    }) }}"
 
 - name: Display firmware information summary
   debug:
     msg:
+      - "BMC Model:   {{ bmc_firmware_info.bmc.model }}"
       - "BMC Firmware: {{ bmc_firmware_info.bmc.version }}"
       - "Total firmware components: {{ bmc_firmware_info | length }}"

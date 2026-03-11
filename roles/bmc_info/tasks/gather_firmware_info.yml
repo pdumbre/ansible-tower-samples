@@ -1,7 +1,7 @@
 # Gather firmware information from BMC using Redfish API
 # Vendor-agnostic: works for Dell, Lenovo, and any Redfish-compliant BMC
 
-- name: Get firmware inventory
+- name: Retrieve firmware inventory
   uri:
     url: "{{ bmc_base_url }}/redfish/v1/UpdateService/FirmwareInventory"
     method: GET
@@ -13,8 +13,9 @@
     status_code: [200]
   register: firmware_inventory
   delegate_to: "{{ bmc_delegate_host }}"
+  no_log: true
 
-- name: Get detailed firmware entry
+- name: Retrieve detailed firmware information
   uri:
     url: "{{ bmc_base_url }}{{ item['@odata.id'] }}"
     method: GET
@@ -27,6 +28,7 @@
   register: firmware_details
   loop: "{{ firmware_inventory.json.Members | default([]) }}"
   delegate_to: "{{ bmc_delegate_host }}"
+  no_log: true
 
 - name: Build firmware info dict from inventory details
   set_fact:
@@ -40,8 +42,9 @@
         }
       }) }}
   loop: "{{ firmware_details.results | default([]) }}"
+  no_log: true
 
-- name: Get BMC manager details
+- name: Retrieve BMC manager details
   uri:
     url: "{{ bmc_manager_url }}"
     method: GET

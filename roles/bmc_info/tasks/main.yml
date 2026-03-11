@@ -13,8 +13,8 @@
 - name: Gather system information
   include_tasks: gather_system_info.yml
 
-#- name: Gather firmware information
- # include_tasks: gather_firmware_info.yml
+- name: Gather firmware information
+  include_tasks: gather_firmware_info.yml
 
 #- name: Gather network information
 #  include_tasks: gather_network_info.yml

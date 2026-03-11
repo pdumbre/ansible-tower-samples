@@ -149,24 +149,25 @@
   loop: "{{ network_interface_details.results | default([]) }}"
   when: use_network_interfaces | bool and network_interface_details.results is defined
 
-- name: Build NetworkPorts URLs from interface details (Lenovo-style)
+- name: Build NetworkPorts URL list with interface IDs
   set_fact:
-    lenovo_port_urls: >-
-      {{ lenovo_port_urls | default([]) + [
-        bmc_base_url + (
+    lenovo_port_requests: >-
+      {{ lenovo_port_requests | default([]) + [{
+        'interface_id': item.json.Id,
+        'url': bmc_base_url + (
           item.json.NetworkPorts['@odata.id']
           if item.json.NetworkPorts is defined
           else item.json.Links.NetworkPorts['@odata.id']
-          if item.json.Links is defined and item.json.Links.NetworkPorts is defined
+          if (item.json.Links is defined and item.json.Links.NetworkPorts is defined)
           else ''
         )
-      ] }}
+      }] }}
   loop: "{{ network_interface_details.results | default([]) }}"
   when: use_network_interfaces | bool and network_interface_details.results is defined
 
-- name: Get NetworkPorts for each interface
+- name: Get NetworkPorts for each interface (Lenovo-style)
   uri:
-    url: "{{ item }}"
+    url: "{{ item.url }}"
     method: GET
     user: "{{ bmc_user }}"
     password: "{{ bmc_password }}"
@@ -175,19 +176,26 @@
     return_content: yes
     status_code: [200]
   register: network_ports
-  loop: "{{ lenovo_port_urls | default([]) | reject('search', bmc_base_url + '$') | list }}"
+  loop: "{{ lenovo_port_requests | default([]) | selectattr('url', 'ne', bmc_base_url) | list }}"
   delegate_to: "{{ bmc_delegate_host }}"
-  when: use_network_interfaces | bool and lenovo_port_urls is defined
+  when: use_network_interfaces | bool and lenovo_port_requests is defined
 
 - name: Extract adapter MACs via NetworkInterfaces path (Lenovo-style)
   set_fact:
     bmc_adapter_macs: >-
       {{ bmc_adapter_macs | default({}) | combine({
-        item.json.Id: item.json.Members | json_query('[*]."@odata.id"')
+        lenovo_port_requests[loop_index].interface_id:
+          network_ports.results[loop_index].json.Members
+            | json_query('[*]."@odata.id"')
       }) }}
-  loop: "{{ network_ports.results | default([]) }}"
-  when: use_network_interfaces | bool and network_ports.results is defined
-
+  loop: "{{ range(network_ports.results | default([]) | length) | list }}"
+  loop_control:
+    index_var: loop_index
+  when:
+    - use_network_interfaces | bool
+    - network_ports.results is defined
+    - lenovo_port_requests is defined
+    
 - name: Display network information summary
   debug:
     msg:

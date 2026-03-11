@@ -1,6 +1,8 @@
 - name: Gather BMC Info
   hosts: bmc_servers
   gather_facts: false
+  vars:
+    ansible_no_log: false 
     
   roles:
     - bmc_info

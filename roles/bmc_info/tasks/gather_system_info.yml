@@ -5,7 +5,7 @@
 
 - name: Get system information
   uri:
-    url: "{{ bmc_base_url }}/redfish/v1/Systems/{{ system_id }}"
+    url: "{{ bmc_system_url }}"
     method: GET
     user: "{{ bmc_user }}"
     password: "{{ bmc_password }}"
@@ -18,7 +18,7 @@
 
 - name: Get chassis information
   uri:
-    url: "{{ bmc_base_url }}/redfish/v1/Chassis/{{ system_id }}"
+    url: "{{ bmc_chassis_url }}"
     method: GET
     user: "{{ bmc_user }}"
     password: "{{ bmc_password }}"
@@ -47,27 +47,6 @@
       asset_tag: "{{ chassis_info.json.AssetTag | default('') }}"
       part_number: "{{ chassis_info.json.PartNumber | default('') }}"
       chassis_type: "{{ chassis_info.json.ChassisType | default('') }}"
-  when: is_dell_system | bool
-
-- name: Extract Lenovo system VPD information
-  set_fact:
-    bmc_system_info:
-      manufacturer: "{{ system_info.json.Manufacturer | default('') }}"
-      model: "{{ system_info.json.Model | default('') }}"
-      serial_number: "{{ system_info.json.SerialNumber | default('') }}"
-      machine_type: "{{ system_info.json.Oem.Lenovo.MachineType | default('') }}"
-      product_id: "{{ system_info.json.Oem.Lenovo.ProductId | default('') }}"
-      bios_version: "{{ system_info.json.BiosVersion | default('') }}"
-      processor_model: "{{ system_info.json.ProcessorSummary.Model | default('') }}"
-      processor_count: "{{ system_info.json.ProcessorSummary.Count | default(0) }}"
-      total_memory_gb: "{{ (system_info.json.MemorySummary.TotalSystemMemoryGiB | default(0)) }}"
-      power_state: "{{ system_info.json.PowerState | default('') }}"
-      system_type: "{{ system_info.json.SystemType | default('') }}"
-      uuid: "{{ system_info.json.UUID | default('') }}"
-      asset_tag: "{{ chassis_info.json.AssetTag | default('') }}"
-      part_number: "{{ chassis_info.json.PartNumber | default('') }}"
-      chassis_type: "{{ chassis_info.json.ChassisType | default('') }}"
-  when: is_lenovo_system | bool
 
 - name: Display system information
   debug:

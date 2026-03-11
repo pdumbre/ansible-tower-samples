@@ -1,1 +1,178 @@
 
+---
+# Gather storage controller and NVMe drive information from BMC using Redfish API
+# Equivalent to getNvmeDrives() and getBootDeviceBusNumber() methods
+
+- name: Get storage controllers collection
+  uri:
+    url: "{{ bmc_base_url }}/redfish/v1/Systems/{{ system_id }}/Storage"
+    method: GET
+    user: "{{ bmc_user }}"
+    password: "{{ bmc_password }}"
+    validate_certs: no
+    force_basic_auth: yes
+    return_content: yes
+    status_code: [200]
+  register: storage_controllers
+  delegate_to: "{{ bmc_delegate_host }}"
+
+- name: Get detailed storage controller information
+  uri:
+    url: "{{ bmc_base_url }}{{ item['@odata.id'] }}"
+    method: GET
+    user: "{{ bmc_user }}"
+    password: "{{ bmc_password }}"
+    validate_certs: no
+    force_basic_auth: yes
+    return_content: yes
+    status_code: [200]
+  register: storage_details
+  loop: "{{ storage_controllers.json.Members | default([]) }}"
+  delegate_to: "{{ bmc_delegate_host }}"
+
+- name: Initialize storage information
+  set_fact:
+    bmc_storage_info: []
+    bmc_nvme_drives: []
+    bmc_bus_numbers: {}
+
+- name: Extract storage controller information
+  set_fact:
+    bmc_storage_info: "{{ bmc_storage_info + [{'id': item.json.Id, 'name': item.json.Name | default(''), 'status': item.json.Status.State | default(''), 'controllers': item.json.StorageControllers | default([]), 'drives_count': item.json.Drives | default([]) | length}] }}"
+  loop: "{{ storage_details.results | default([]) }}"
+  when: storage_details.results is defined
+
+- name: Extract drive URLs from storage controllers
+  set_fact:
+    all_drive_urls: "{{ all_drive_urls | default([]) + item.json.Drives | default([]) }}"
+  loop: "{{ storage_details.results | default([]) }}"
+  when:
+    - storage_details.results is defined
+    - item.json.Drives is defined
+
+- name: Get detailed drive information
+  uri:
+    url: "{{ bmc_base_url }}{{ item['@odata.id'] }}"
+    method: GET
+    user: "{{ bmc_user }}"
+    password: "{{ bmc_password }}"
+    validate_certs: no
+    force_basic_auth: yes
+    return_content: yes
+    status_code: [200]
+  register: drive_details
+  loop: "{{ all_drive_urls | default([]) }}"
+  delegate_to: "{{ bmc_delegate_host }}"
+  when: all_drive_urls is defined and all_drive_urls | length > 0
+
+- name: Extract all drive information
+  set_fact:
+    bmc_all_drives: "{{ bmc_all_drives | default([]) + [{'id': item.json.Id, 'name': item.json.Name | default(''), 'model': item.json.Model | default(''), 'serial_number': item.json.SerialNumber | default(''), 'capacity_gb': (item.json.CapacityBytes | default(0) / 1073741824) | round(2), 'protocol': item.json.Protocol | default(''), 'media_type': item.json.MediaType | default(''), 'manufacturer': item.json.Manufacturer | default(''), 'part_number': item.json.PartNumber | default(''), 'status': item.json.Status.State | default(''), 'health': item.json.Status.Health | default('')}] }}"
+  loop: "{{ drive_details.results | default([]) }}"
+  when: drive_details.results is defined
+
+- name: Extract NVMe drive information
+  set_fact:
+    bmc_nvme_drives: "{{ bmc_all_drives | default([]) | selectattr('protocol', 'equalto', 'NVMe') | list }}"
+  when: bmc_all_drives is defined
+
+- name: Extract SATA drive information
+  set_fact:
+    bmc_sata_drives: "{{ bmc_all_drives | default([]) | selectattr('protocol', 'equalto', 'SATA') | list }}"
+  when: bmc_all_drives is defined
+
+- name: Get PCIe devices for Dell systems (for bus numbers)
+  uri:
+    url: "{{ bmc_base_url }}/redfish/v1/Systems/{{ system_id }}/PCIeDevices"
+    method: GET
+    user: "{{ bmc_user }}"
+    password: "{{ bmc_password }}"
+    validate_certs: no
+    force_basic_auth: yes
+    return_content: yes
+    status_code: [200]
+  register: dell_pcie_devices
+  delegate_to: "{{ bmc_delegate_host }}"
+  when: is_dell_system | bool
+  failed_when: false
+
+- name: Get detailed PCIe device information for Dell
+  uri:
+    url: "{{ bmc_base_url }}{{ item['@odata.id'] }}"
+    method: GET
+    user: "{{ bmc_user }}"
+    password: "{{ bmc_password }}"
+    validate_certs: no
+    force_basic_auth: yes
+    return_content: yes
+    status_code: [200]
+  register: dell_pcie_details
+  loop: "{{ dell_pcie_devices.json.Members | default([]) }}"
+  delegate_to: "{{ bmc_delegate_host }}"
+  when: is_dell_system | bool and dell_pcie_devices.json.Members is defined
+
+- name: Extract Dell PCIe bus numbers
+  set_fact:
+    bmc_bus_numbers: "{{ bmc_bus_numbers | combine({item.json.Id: {'bus': item.json.PCIeInterface.PCIeType | default(''), 'device_type': item.json.DeviceType | default('')}}) }}"
+  loop: "{{ dell_pcie_details.results | default([]) }}"
+  when: is_dell_system | bool and dell_pcie_details.results is defined
+
+- name: Get PCIe functions for Lenovo systems (for bus numbers)
+  uri:
+    url: "{{ bmc_base_url }}/redfish/v1/Systems/{{ system_id }}/PCIeDevices"
+    method: GET
+    user: "{{ bmc_user }}"
+    password: "{{ bmc_password }}"
+    validate_certs: no
+    force_basic_auth: yes
+    return_content: yes
+    status_code: [200]
+  register: lenovo_pcie_devices
+  delegate_to: "{{ bmc_delegate_host }}"
+  when: is_lenovo_system | bool
+  failed_when: false
+
+- name: Get detailed PCIe device information for Lenovo
+  uri:
+    url: "{{ bmc_base_url }}{{ item['@odata.id'] }}"
+    method: GET
+    user: "{{ bmc_user }}"
+    password: "{{ bmc_password }}"
+    validate_certs: no
+    force_basic_auth: yes
+    return_content: yes
+    status_code: [200]
+  register: lenovo_pcie_details
+  loop: "{{ lenovo_pcie_devices.json.Members | default([]) }}"
+  delegate_to: "{{ bmc_delegate_host }}"
+  when: is_lenovo_system | bool and lenovo_pcie_devices.json.Members is defined
+
+- name: Get PCIe functions for Lenovo devices
+  uri:
+    url: "{{ bmc_base_url }}{{ item.json.PCIeFunctions['@odata.id'] }}"
+    method: GET
+    user: "{{ bmc_user }}"
+    password: "{{ bmc_password }}"
+    validate_certs: no
+    force_basic_auth: yes
+    return_content: yes
+    status_code: [200]
+  register: lenovo_pcie_functions
+  loop: "{{ lenovo_pcie_details.results | default([]) }}"
+  delegate_to: "{{ bmc_delegate_host }}"
+  when: is_lenovo_system | bool and lenovo_pcie_details.results is defined and item.json.PCIeFunctions is defined
+
+- name: Extract Lenovo PCIe bus numbers
+  set_fact:
+    bmc_bus_numbers: "{{ bmc_bus_numbers | combine({item.0.json.Id: {'functions': item.1.json.Members | map(attribute='@odata.id') | list}}) }}"
+  loop: "{{ lenovo_pcie_details.results | default([]) | zip(lenovo_pcie_functions.results | default([])) | list }}"
+  when: is_lenovo_system | bool and lenovo_pcie_details.results is defined
+
+- name: Display storage information summary
+  debug:
+    msg:
+      - "Storage controllers: {{ bmc_storage_info | length }}"
+      - "Total drives found: {{ bmc_all_drives | default([]) | length }}"
+      - "NVMe drives: {{ bmc_nvme_drives | default([]) | length }}"
+      - "SATA drives: {{ bmc_sata_drives | default([]) | length }}"
+      - "PCIe devices tracked: {{ bmc_bus_numbers | length }}"

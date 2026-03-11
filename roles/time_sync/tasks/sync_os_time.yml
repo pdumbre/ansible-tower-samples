@@ -1,12 +1,3 @@
----
-# ============================================================
-# PHASE 2: Configure OS time synchronization via chrony/NTP
-# Executes time_sync.sh on target host via SSH from jump host
-# ============================================================
-
-# ------------------------------------------------------------
-# Step 1: Copy shell script to jump host
-# ------------------------------------------------------------
 
 - name: Copy time_sync.sh to jump host
   copy:
@@ -14,11 +5,6 @@
     dest: /tmp/time_sync_{{ inventory_hostname }}.sh
     mode: '0700'
   delegate_to: "{{ bmc_delegate_host }}"
-
-# ------------------------------------------------------------
-# Step 2: Execute script on target host via SSH from jump host
-# All Ansible variables passed as env vars inline before bash
-# ------------------------------------------------------------
 
 - name: Execute time_sync.sh on target host via SSH from jump host
   shell: >
@@ -38,38 +24,13 @@
     bash -s" < /tmp/time_sync_{{ inventory_hostname }}.sh
   delegate_to: "{{ bmc_delegate_host }}"
   register: timesync_result
-  #changed_when: timesync_result.rc == 0
-
-- name: Set custom stats
-  set_stats:
-    data:
-      result: timesync_result
-      
-- name: Display script output
-  debug:
-    msg: "{{ timesync_result }}"
-
-- name: Display script output line
-  debug:
-    msg: "{{ timesync_result.stdout_lines }}"
-
-
-    
-# ------------------------------------------------------------
-# Step 3: Clean up script from jump host
-# ------------------------------------------------------------
+  changed_when: timesync_result.rc == 0
 
 - name: Remove time_sync.sh from jump host
   file:
     path: /tmp/time_sync_{{ inventory_hostname }}.sh
     state: absent
   delegate_to: "{{ bmc_delegate_host }}"
-
-# ------------------------------------------------------------
-# Step 4: Parse RESULT_ marker lines emitted by the script
-# Preserves time_status / time_status_retry fact structure
-# so Phase 3 summary task works unchanged
-# ------------------------------------------------------------
 
 - name: Parse time sync results
   set_fact:
@@ -83,20 +44,6 @@
     time_status_retry:
       NTPSynchronized: >-
         {{ 'yes' if 'RESULT_SYNCED=yes' in timesync_result.stdout else 'no' }}
-
-- name: Display script output
-  debug:
-    msg: "{{ timesync_result.stdout_lines }}"
-
-- name: Display NTP synchronization status
-  debug:
-    msg:
-      - "NTP            : {{ time_status.NTP }}"
-      - "NTPSynchronized: {{ time_status.NTPSynchronized }}"
-
-# ============================================================
-# PHASE 3: Summary
-# ============================================================
 
 - name: OS time synchronization completed
   debug:

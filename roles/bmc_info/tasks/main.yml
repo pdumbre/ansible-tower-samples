@@ -1,1 +1,31 @@
 
+# Main tasks file for bmc_info role
+# Gathers BMC/IMM information from Dell and Lenovo systems using Redfish API
+# Equivalent to NodesImmInfo.groovy
+
+- name: Display BMC information gathering start
+  debug:
+    msg: "Starting BMC information gathering for {{ inventory_hostname }}"
+
+- name: Detect system vendor
+  include_tasks: detect_vendor.yml
+
+- name: Gather system information
+  include_tasks: gather_system_info.yml
+
+- name: Gather firmware information
+  include_tasks: gather_firmware_info.yml
+
+- name: Gather network information
+  include_tasks: gather_network_info.yml
+
+- name: Gather storage information
+  include_tasks: gather_storage_info.yml
+  when: gather_storage_info | default(true)
+
+- name: Save collected BMC information
+  include_tasks: save_bmc_info.yml
+
+- name: Display BMC information gathering completion
+  debug:
+    msg: "BMC information gathering completed for {{ inventory_hostname }}"

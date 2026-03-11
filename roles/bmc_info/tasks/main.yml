@@ -23,8 +23,8 @@
   include_tasks: gather_storage_info.yml
   when: gather_storage_info | default(true)
 
-#- name: Save collected BMC information
- # include_tasks: save_bmc_info.yml
+- name: Save collected BMC information
+  include_tasks: save_bmc_info.yml
 
 - name: Display BMC information gathering completion
   debug:

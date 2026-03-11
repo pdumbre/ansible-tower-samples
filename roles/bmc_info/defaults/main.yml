@@ -1,1 +1,26 @@
 
+# Information gathering options
+gather_storage_info: true
+gather_firmware_info: true
+gather_network_info: true
+
+# Output settings
+save_to_file: true
+bmc_info_output_dir: "./bmc_info_output"
+
+# Timeout and retry settings
+api_timeout: 30
+api_retries: 3
+api_delay: 5
+
+# Collected information (initialized as empty)
+bmc_system_info: {}
+bmc_firmware_info: {}
+bmc_ethernet_info: []
+bmc_adapter_macs: {}
+bmc_storage_info: []
+bmc_all_drives: []
+bmc_nvme_drives: []
+bmc_sata_drives: []
+bmc_bus_numbers: {}
+complete_bmc_info: {}

@@ -1,1 +1,59 @@
 
+---
+# Save collected BMC information to file or variable
+# Equivalent to gc.put() operations in NodesImmInfo.groovy
+
+- name: Combine all BMC information
+  set_fact:
+    complete_bmc_info:
+      timestamp: "{{ ansible_date_time.iso8601 }}"
+      hostname: "{{ inventory_hostname }}"
+      vendor: "{{ system_vendor }}"
+      system_id: "{{ system_id }}"
+      system_info: "{{ bmc_system_info | default({}) }}"
+      firmware_info: "{{ bmc_firmware_info | default({}) }}"
+      ethernet_info: "{{ bmc_ethernet_info | default([]) }}"
+      adapter_macs: "{{ bmc_adapter_macs | default({}) }}"
+      storage_info: "{{ bmc_storage_info | default([]) }}"
+      all_drives: "{{ bmc_all_drives | default([]) }}"
+      nvme_drives: "{{ bmc_nvme_drives | default([]) }}"
+      sata_drives: "{{ bmc_sata_drives | default([]) }}"
+      bus_numbers: "{{ bmc_bus_numbers | default({}) }}"
+
+- name: Create output directory
+  file:
+    path: "{{ bmc_info_output_dir }}"
+    state: directory
+    mode: '0755'
+  delegate_to: localhost
+  run_once: true
+  when: save_to_file | default(true)
+
+- name: Save BMC information to JSON file
+  copy:
+    content: "{{ complete_bmc_info | to_nice_json }}"
+    dest: "{{ bmc_info_output_dir }}/{{ inventory_hostname }}_bmc_info.json"
+    mode: '0644'
+  delegate_to: localhost
+  when: save_to_file | default(true)
+
+- name: Save BMC information to YAML file
+  copy:
+    content: "{{ complete_bmc_info | to_nice_yaml }}"
+    dest: "{{ bmc_info_output_dir }}/{{ inventory_hostname }}_bmc_info.yml"
+    mode: '0644'
+  delegate_to: localhost
+  when: save_to_file | default(true)
+
+- name: Display saved file locations
+  debug:
+    msg:
+      - "BMC information saved to:"
+      - "  JSON: {{ bmc_info_output_dir }}/{{ inventory_hostname }}_bmc_info.json"
+      - "  YAML: {{ bmc_info_output_dir }}/{{ inventory_hostname }}_bmc_info.yml"
+  when: save_to_file | default(true)
+
+- name: Set BMC info as host fact
+  set_fact:
+    bmc_collected_info: "{{ complete_bmc_info }}"
+    cacheable: yes

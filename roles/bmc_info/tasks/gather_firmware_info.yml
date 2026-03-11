@@ -15,7 +15,7 @@
   delegate_to: "{{ bmc_delegate_host }}"
   no_log: true
 
-- name: Retrieve detailed firmware information
+- name: Get detailed firmware entry
   uri:
     url: "{{ bmc_base_url }}{{ item['@odata.id'] }}"
     method: GET
@@ -29,7 +29,9 @@
   loop: "{{ firmware_inventory.json.Members | default([]) }}"
   delegate_to: "{{ bmc_delegate_host }}"
   no_log: true
-
+  loop_control:
+    label: ""
+    
 - name: Build firmware info dict from inventory details
   set_fact:
     bmc_firmware_info: >-

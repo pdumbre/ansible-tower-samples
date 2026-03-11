@@ -1,1 +1,144 @@
+---
+# Gather network adapter and MAC address information from BMC using Redfish API
+# Equivalent to getEthernetInterfaceInfo() and getAdapterNetworkAddresses() methods
 
+- name: Get Ethernet interfaces collection
+  uri:
+    url: "{{ bmc_base_url }}/redfish/v1/Systems/{{ system_id }}/EthernetInterfaces"
+    method: GET
+    user: "{{ bmc_user }}"
+    password: "{{ bmc_password }}"
+    validate_certs: no
+    force_basic_auth: yes
+    return_content: yes
+    status_code: [200]
+  register: ethernet_interfaces
+  delegate_to: "{{ bmc_delegate_host }}"
+
+- name: Get detailed Ethernet interface information
+  uri:
+    url: "{{ bmc_base_url }}{{ item['@odata.id'] }}"
+    method: GET
+    user: "{{ bmc_user }}"
+    password: "{{ bmc_password }}"
+    validate_certs: no
+    force_basic_auth: yes
+    return_content: yes
+    status_code: [200]
+  register: ethernet_details
+  loop: "{{ ethernet_interfaces.json.Members | default([]) }}"
+  delegate_to: "{{ bmc_delegate_host }}"
+
+- name: Extract Ethernet interface information
+  set_fact:
+    bmc_ethernet_info: "{{ bmc_ethernet_info | default([]) + [{'id': item.json.Id, 'name': item.json.Name | default(''), 'mac_address': item.json.MACAddress | default(''), 'speed_mbps': item.json.SpeedMbps | default(0), 'link_status': item.json.LinkStatus | default(''), 'status': item.json.Status.State | default('')}] }}"
+  loop: "{{ ethernet_details.results | default([]) }}"
+  when: ethernet_details.results is defined
+
+- name: Get network adapters for Dell systems
+  uri:
+    url: "{{ bmc_base_url }}/redfish/v1/Systems/{{ system_id }}/NetworkAdapters"
+    method: GET
+    user: "{{ bmc_user }}"
+    password: "{{ bmc_password }}"
+    validate_certs: no
+    force_basic_auth: yes
+    return_content: yes
+    status_code: [200]
+  register: dell_network_adapters
+  delegate_to: "{{ bmc_delegate_host }}"
+  when: is_dell_system | bool
+  failed_when: false
+
+- name: Get detailed network adapter information for Dell
+  uri:
+    url: "{{ bmc_base_url }}{{ item['@odata.id'] }}"
+    method: GET
+    user: "{{ bmc_user }}"
+    password: "{{ bmc_password }}"
+    validate_certs: no
+    force_basic_auth: yes
+    return_content: yes
+    status_code: [200]
+  register: dell_adapter_details
+  loop: "{{ dell_network_adapters.json.Members | default([]) }}"
+  delegate_to: "{{ bmc_delegate_host }}"
+  when: is_dell_system | bool and dell_network_adapters.json.Members is defined
+
+- name: Get network device functions for Dell adapters
+  uri:
+    url: "{{ bmc_base_url }}{{ item['@odata.id'] }}/NetworkDeviceFunctions"
+    method: GET
+    user: "{{ bmc_user }}"
+    password: "{{ bmc_password }}"
+    validate_certs: no
+    force_basic_auth: yes
+    return_content: yes
+    status_code: [200]
+  register: dell_device_functions
+  loop: "{{ dell_adapter_details.results | default([]) }}"
+  delegate_to: "{{ bmc_delegate_host }}"
+  when: is_dell_system | bool and dell_adapter_details.results is defined
+
+- name: Extract Dell network adapter MAC addresses
+  set_fact:
+    bmc_adapter_macs: "{{ bmc_adapter_macs | default({}) | combine({item.0.json.Id: item.1.json.Members | map(attribute='@odata.id') | list}) }}"
+  loop: "{{ dell_adapter_details.results | default([]) | zip(dell_device_functions.results | default([])) | list }}"
+  when: is_dell_system | bool and dell_adapter_details.results is defined
+
+- name: Get network adapters for Lenovo systems
+  uri:
+    url: "{{ bmc_base_url }}/redfish/v1/Systems/{{ system_id }}/NetworkInterfaces"
+    method: GET
+    user: "{{ bmc_user }}"
+    password: "{{ bmc_password }}"
+    validate_certs: no
+    force_basic_auth: yes
+    return_content: yes
+    status_code: [200]
+  register: lenovo_network_interfaces
+  delegate_to: "{{ bmc_delegate_host }}"
+  when: is_lenovo_system | bool
+  failed_when: false
+
+- name: Get detailed network interface information for Lenovo
+  uri:
+    url: "{{ bmc_base_url }}{{ item['@odata.id'] }}"
+    method: GET
+    user: "{{ bmc_user }}"
+    password: "{{ bmc_password }}"
+    validate_certs: no
+    force_basic_auth: yes
+    return_content: yes
+    status_code: [200]
+  register: lenovo_interface_details
+  loop: "{{ lenovo_network_interfaces.json.Members | default([]) }}"
+  delegate_to: "{{ bmc_delegate_host }}"
+  when: is_lenovo_system | bool and lenovo_network_interfaces.json.Members is defined
+
+- name: Get network ports for Lenovo interfaces
+  uri:
+    url: "{{ bmc_base_url }}{{ item.json.NetworkPorts['@odata.id'] }}"
+    method: GET
+    user: "{{ bmc_user }}"
+    password: "{{ bmc_password }}"
+    validate_certs: no
+    force_basic_auth: yes
+    return_content: yes
+    status_code: [200]
+  register: lenovo_network_ports
+  loop: "{{ lenovo_interface_details.results | default([]) }}"
+  delegate_to: "{{ bmc_delegate_host }}"
+  when: is_lenovo_system | bool and lenovo_interface_details.results is defined
+
+- name: Extract Lenovo network adapter MAC addresses
+  set_fact:
+    bmc_adapter_macs: "{{ bmc_adapter_macs | default({}) | combine({item.json.Id: item.json.Members | map(attribute='@odata.id') | list}) }}"
+  loop: "{{ lenovo_network_ports.results | default([]) }}"
+  when: is_lenovo_system | bool and lenovo_network_ports.results is defined
+
+- name: Display network information summary
+  debug:
+    msg:
+      - "Total Ethernet interfaces: {{ bmc_ethernet_info | length }}"
+      - "Network adapters found: {{ bmc_adapter_macs | default({}) | length }}"

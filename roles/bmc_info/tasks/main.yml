@@ -7,24 +7,24 @@
   debug:
     msg: "Starting BMC information gathering for {{ inventory_hostname }}"
 
-- name: Detect system vendor
-  include_tasks: detect_vendor.yml
+- name: Discover resources
+  include_tasks: discovery.yml
 
 - name: Gather system information
   include_tasks: gather_system_info.yml
 
-- name: Gather firmware information
-  include_tasks: gather_firmware_info.yml
+#- name: Gather firmware information
+ # include_tasks: gather_firmware_info.yml
 
-- name: Gather network information
-  include_tasks: gather_network_info.yml
+#- name: Gather network information
+#  include_tasks: gather_network_info.yml
 
-- name: Gather storage information
-  include_tasks: gather_storage_info.yml
-  when: gather_storage_info | default(true)
+#- name: Gather storage information
+#  include_tasks: gather_storage_info.yml
+ # when: gather_storage_info | default(true)
 
-- name: Save collected BMC information
-  include_tasks: save_bmc_info.yml
+#- name: Save collected BMC information
+ # include_tasks: save_bmc_info.yml
 
 - name: Display BMC information gathering completion
   debug:

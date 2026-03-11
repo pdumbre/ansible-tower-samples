@@ -6,7 +6,7 @@
 - name: Combine all BMC information
   set_fact:
     complete_bmc_info:
-      timestamp: "{{ ansible_date_time.iso8601 }}"
+      timestamp: "{{ now(utc=True, fmt='%Y-%m-%dT%H:%M:%SZ') }}"
       hostname: "{{ inventory_hostname }}"
       vendor: "{{ system_vendor }}"
       system_id: "{{ system_id }}"

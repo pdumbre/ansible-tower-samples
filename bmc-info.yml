@@ -1,0 +1,6 @@
+- name: Gather BMC Info
+  hosts: bmc_servers
+  gather_facts: false
+    
+  roles:
+    - bmc_info

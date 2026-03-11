@@ -56,7 +56,6 @@
 - set_fact:
     bmc_systems_url: "{{ bmc_base_url }}{{ systems.json.Members[0]['@odata.id'] }}"
     system_id: "{{ systems.json.Members[0]['@odata.id'].split('/')[-1] }}"
-    bmc_chassis_url: "{{ bmc_base_url }}/redfish/v1/Chassis/{{ system_id }}"
     
 - name: Retrieve System details
   uri:
@@ -70,6 +69,7 @@
 
 - set_fact:
     bmc_systems_details: "{{ system_details }}"
+    bmc_chassis_url: "{{ bmc_base_url }}/redfish/v1/Chassis/{{ system_id }}"
 
 - name: Retrieve Manager information
   uri:

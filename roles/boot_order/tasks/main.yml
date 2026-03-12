@@ -1,4 +1,9 @@
 
+- name: Discover resources
+  include_tasks: discovery.yml
+  when:
+    - not (is_service_node | bool and ru_num | int == 23)
+    
 - set_fact:
     is_service_node: "{{ node_type == 'servicenode' }}"
   

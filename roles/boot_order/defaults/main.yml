@@ -1,0 +1,50 @@
+
+# Seconds to wait after power cycle
+power_wait_seconds: 300
+power_off_wait_seconds: 5
+boot_slot_settle_seconds: 240  # 4 minutes for BIOS to settle after reboot
+
+# Max retries for Dell job completion polling
+job_poll_retries: 10
+job_poll_delay: 120  # 2 minutes between polls
+
+# MTM prefix -> model mapping (used for slot selection)
+mtm_model_map:
+  "7D2X": "sr645"
+  "7D73": "sr630v3"
+  "7X02": "sr630"
+  "7D2V": "sr665"
+  "7D76": "sr650"
+  "7D9R": "sr675"
+
+# Legacy PXE mode slots to disable per model
+legacy_pxe_slot_counts:
+  sr645:   8
+  sr630v3: 8
+  sr630:   6
+  sr665:   8
+  sr650:   8
+  sr675:   8
+
+# PXE slot selection map:
+# Key: "<storage_type>/<prov_on_mgmt_switch>/<model>"
+# Value: { slot, port }
+pxe_slot_map:
+  "fdf/false/sr645":   { slot: "1",  port: "0/0" }
+  "fdf/false/sr630v3": { slot: "1",  port: "0/0" }
+  "fdf/false/sr630":   { slot: "3",  port: "0/0" }
+  "fdf/false/sr665":   { slot: "6",  port: "0/0" }
+  "fdf/false/sr650":   { slot: "6",  port: "0/0" }
+  "fdf/false/sr675":   { slot: "20", port: "0/0" }
+  "fdf/true/sr630v3":  { slot: "6",  port: "0/1" }
+  "fdf/true/sr645":    { slot: "4",  port: "0/1" }
+  "fdf/true/sr665":    { slot: "9",  port: "0/1" }
+  "fdf/true/sr650":    { slot: "13", port: "0/1" }
+  "fdf/true/sr675":    { slot: "27", port: "0/1" }
+  "ece/false/default": { slot: "3",  port: "0/0" }
+  "ece/true/default":  { slot: "3",  port: "0/0" }
+
+# Models that use "Disabled/Enabled" (vs "Disable/Enable") for IPv4/IPv6 PXE
+new_asu_syntax_models:
+  - sr630v3
+  - sr675

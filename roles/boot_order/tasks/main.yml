@@ -20,29 +20,29 @@
         msg: "RU {{ ru_num }} is a service node - skipping boot order configuration"
   when: is_service_node | bool and ru_num | int == 23
 
-- name: Probe racadm availability to detect BMC management style
+- name: Probe BMC management interface capability
   ansible.builtin.command:
     cmd: >
       racadm -r {{ bmc_lla }} -u {{ os_username }} -p {{ os_password }} getsysinfo
-  register: probe_racadm
+  register: probe_bmc_interface
   delegate_to: "{{ bmc_delegate_host }}"
   failed_when: false
   changed_when: false
   when: not (is_service_node | bool and ru_num | int == 23)
 
-- name: Set BMC management style flag
+- name: Set BMC interface style flag
   set_fact:
-    use_racadm: "{{ probe_racadm.rc is defined and probe_racadm.rc == 0 }}"
+    use_jobqueue_interface: "{{ probe_bmc_interface.rc is defined and probe_bmc_interface.rc == 0 }}"
   when: not (is_service_node | bool and ru_num | int == 23)
 
-- name: Configure boot order via racadm path
-  include_tasks: racadm_boot_order.yml
+- name: Configure boot order via job queue interface
+  include_tasks: jobqueue_boot_order.yml
   when:
     - not (is_service_node | bool and ru_num | int == 23)
-    - use_racadm | bool
+    - use_jobqueue_interface | bool
 
-- name: Configure boot order via Redfish/ASU path
-  include_tasks: redfish_boot_order.yml
+- name: Configure boot order via BIOS API interface
+  include_tasks: bios_api_boot_order.yml
   when:
     - not (is_service_node | bool and ru_num | int == 23)
-    - not use_racadm | bool
+    - not use_jobqueue_interface | bool

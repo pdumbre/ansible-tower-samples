@@ -1,18 +1,15 @@
 ---
-# Vendor-agnostic PXE boot order configuration
-# Supports: Dell (xe7745, xlr660) and Lenovo (sr645, sr630v3, sr630, sr665, sr650, sr675)
-
 - name: Set mokutil fallback to prevent Secure Boot blue screen
   ansible.builtin.command:
     cmd: sudo mokutil --set-fallback-noreboot true
   delegate_to: "{{ node_ipv6 }}"
   vars:
-    ansible_user: "{{ node_userid }}"
-    ansible_password: "{{ node_password }}"
+    ansible_user: "{{ os_username }}"
+    ansible_password: "{{ os_password }}"
     ansible_ssh_common_args: "-o StrictHostKeyChecking=no -o ConnectTimeout=300"
   failed_when: false
 
-- name: Skip service node (RU 23)
+- name: Handle service node - clear slot label and skip
   block:
     - name: Clear pxeSlotLabel for service node
       set_fact:
@@ -20,17 +17,32 @@
 
     - name: Log service node skip
       debug:
-        msg: "RU {{ ru_num }} is a service node - skipping PXE boot order configuration"
+        msg: "RU {{ ru_num }} is a service node - skipping boot order configuration"
   when: is_service_node | bool and ru_num | int == 23
 
-- name: Configure boot order for Dell nodes
-  include_tasks: dell_boot_order.yml
-  when:
-    - not (is_service_node | bool and ru_num | int == 23)
-    - device_type in ['xe7745', 'xlr660']
+- name: Probe racadm availability to detect BMC management style
+  ansible.builtin.command:
+    cmd: >
+      racadm -r {{ bmc_lla }} -u {{ os_username }} -p {{ os_password }} getsysinfo
+  register: probe_racadm
+  delegate_to: "{{ bmc_delegate_host }}"
+  failed_when: false
+  changed_when: false
+  when: not (is_service_node | bool and ru_num | int == 23)
 
-- name: Configure boot order for Lenovo nodes
-  include_tasks: lenovo_boot_order.yml
+- name: Set BMC management style flag
+  set_fact:
+    use_racadm: "{{ probe_racadm.rc is defined and probe_racadm.rc == 0 }}"
+  when: not (is_service_node | bool and ru_num | int == 23)
+
+- name: Configure boot order via racadm path
+  include_tasks: racadm_boot_order.yml
   when:
     - not (is_service_node | bool and ru_num | int == 23)
-    - device_type not in ['xe7745', 'xlr660']
+    - use_racadm | bool
+
+- name: Configure boot order via Redfish/ASU path
+  include_tasks: redfish_boot_order.yml
+  when:
+    - not (is_service_node | bool and ru_num | int == 23)
+    - not use_racadm | bool

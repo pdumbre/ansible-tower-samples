@@ -1,0 +1,82 @@
+---
+# Boot order configuration via racadm (iDRAC-based nodes)
+
+- name: Clean job queue
+  ansible.builtin.command:
+    cmd: >
+      racadm -r {{ bmc_lla }} -u {{ os_username }} -p {{ os_password }}
+      jobqueue delete --all
+  delegate_to: "{{ bmc_delegate_host }}"
+  register: clean_jobs_result
+  failed_when: clean_jobs_result.rc != 0
+
+- name: Enable PXE on provisioning NIC
+  ansible.builtin.command:
+    cmd: >
+      racadm -r {{ bmc_lla }} -u {{ os_username }} -p {{ os_password }}
+      set BIOS.NetworkSettings.PxeDev1EnDis Enabled
+  delegate_to: "{{ bmc_delegate_host }}"
+  failed_when: false
+
+- name: Set PXE NIC interface slot
+  ansible.builtin.command:
+    cmd: >
+      racadm -r {{ bmc_lla }} -u {{ os_username }} -p {{ os_password }}
+      set BIOS.PxeDev1Settings.PxeDev1Interface {{ pxe_nic_slot }}
+  delegate_to: "{{ bmc_delegate_host }}"
+  register: pxe_slot_result
+  failed_when: pxe_slot_result.rc != 0
+
+- name: Submit BIOS job for boot order change
+  ansible.builtin.command:
+    cmd: >
+      racadm -r {{ bmc_lla }} -u {{ os_username }} -p {{ os_password }}
+      jobqueue create BIOS.Setup.1-1 -s TIME_NOW -r pwrcycle
+  delegate_to: "{{ bmc_delegate_host }}"
+  register: job_create_result
+  failed_when: job_create_result.rc != 0
+
+- name: Extract job ID from racadm output
+  set_fact:
+    bios_job_id: >-
+      {{ job_create_result.stdout
+         | regex_search('Commit\s+JID\s+=\s+([A-Z0-9_]+)', '\1')
+         | first | default('') }}
+
+- name: Fail if job ID not obtained
+  fail:
+    msg: "Job ID not obtained from racadm output: {{ job_create_result.stdout }}"
+  when: bios_job_id == ''
+
+- name: Poll job until completed
+  ansible.builtin.command:
+    cmd: >
+      racadm -r {{ bmc_lla }} -u {{ os_username }} -p {{ os_password }}
+      jobqueue view -i {{ bios_job_id }}
+  delegate_to: "{{ bmc_delegate_host }}"
+  register: job_status_result
+  until: >
+    job_status_result.stdout
+    | regex_search('Status=(.+)', '\1')
+    | first | default('') | trim == 'Completed'
+  retries: "{{ job_poll_retries }}"
+  delay: "{{ job_poll_delay }}"
+  failed_when: >
+    job_status_result.rc != 0 or
+    'Failed' in (job_status_result.stdout
+    | regex_search('Status=(.+)', '\1') | first | default(''))
+
+- name: Wait for node to settle after job completion
+  wait_for:
+    timeout: "{{ boot_slot_settle_seconds }}"
+
+- name: Store pxeSlotLabel
+  set_fact:
+    pxe_slot_label: "{{ pxe_nic_slot }}"
+
+- name: Display racadm boot order summary
+  debug:
+    msg:
+      - "RU: {{ ru_num }}"
+      - "Job ID: {{ bios_job_id }}"
+      - "PXE slot configured: {{ pxe_slot_label }}"

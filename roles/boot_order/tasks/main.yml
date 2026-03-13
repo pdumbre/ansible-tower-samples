@@ -6,7 +6,7 @@
   uri:
     url: "{{ bmc_manager_url }}/Jobs"
     method: GET
-    user: "{{ bmc_username }}"
+    user: "{{ bmc_user }}"
     password: "{{ bmc_password }}"
     validate_certs: no
     force_basic_auth: yes

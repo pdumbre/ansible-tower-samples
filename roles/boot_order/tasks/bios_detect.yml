@@ -15,7 +15,7 @@
 - name: Extract MTM prefix and resolve model
   set_fact:
     system_mtm_prefix: >-
-      {{ redfish_sys_info.json.Model | default('')
+      {{ redfish_sys_info.json.SKU | default('')
          | upper | regex_replace('^([A-Z0-9]{4}).*', '\1') }}
 
 - debug:

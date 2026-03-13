@@ -2,37 +2,33 @@
 # Boot order configuration via racadm (iDRAC-based nodes)
 
 - name: Clean job queue
-  ansible.builtin.command:
+  ansible.builtin.raw:
     cmd: >
-      racadm -r {{ bmc_lla }} -u {{ os_username }} -p {{ os_password }}
+      racadm -r {{ ipv6ULA }} -u {{ bmc_user }} -p {{ bmc_user }}
       jobqueue delete --all
-  delegate_to: "{{ bmc_delegate_host }}"
   register: clean_jobs_result
   failed_when: clean_jobs_result.rc != 0
 
 - name: Enable PXE on provisioning NIC
-  ansible.builtin.command:
+  ansible.builtin.raw:
     cmd: >
-      racadm -r {{ bmc_lla }} -u {{ os_username }} -p {{ os_password }}
+      racadm -r {{ ipv6ULA }} -u {{ bmc_user }} -p {{ bmc_password }}
       set BIOS.NetworkSettings.PxeDev1EnDis Enabled
-  delegate_to: "{{ bmc_delegate_host }}"
   failed_when: false
 
 - name: Set PXE NIC interface slot
-  ansible.builtin.command:
+  ansible.builtin.raw:
     cmd: >
-      racadm -r {{ bmc_lla }} -u {{ os_username }} -p {{ os_password }}
+      racadm -r {{ ipv6ULA }} -u {{ bmc_user }} -p {{ bmc_password }}
       set BIOS.PxeDev1Settings.PxeDev1Interface {{ pxe_nic_slot }}
-  delegate_to: "{{ bmc_delegate_host }}"
   register: pxe_slot_result
   failed_when: pxe_slot_result.rc != 0
 
 - name: Submit BIOS job for boot order change
-  ansible.builtin.command:
+  ansible.builtin.raw:
     cmd: >
-      racadm -r {{ bmc_lla }} -u {{ os_username }} -p {{ os_password }}
+      racadm -r {{ ipv6ULA }} -u {{ bmc_user }} -p {{ bmc_password }}
       jobqueue create BIOS.Setup.1-1 -s TIME_NOW -r pwrcycle
-  delegate_to: "{{ bmc_delegate_host }}"
   register: job_create_result
   failed_when: job_create_result.rc != 0
 
@@ -49,11 +45,10 @@
   when: bios_job_id == ''
 
 - name: Poll job until completed
-  ansible.builtin.command:
+  ansible.builtin.raw:
     cmd: >
-      racadm -r {{ bmc_lla }} -u {{ os_username }} -p {{ os_password }}
+      racadm -r {{ ipv6ULA }} -u {{ bmc_user }} -p {{ bmc_password }}
       jobqueue view -i {{ bios_job_id }}
-  delegate_to: "{{ bmc_delegate_host }}"
   register: job_status_result
   until: >
     job_status_result.stdout

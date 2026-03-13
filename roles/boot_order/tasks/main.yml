@@ -14,7 +14,7 @@
   when: is_service_node | bool and ru_number | int == 23
 
 - name: Probe BMC management interface capability
-  ansible.builtin.command:
+  ansible.builtin.raw:
     cmd: >
       racadm -r {{ ipv6ULA }} -u {{ bmc_user }} -p {{ bmc_password }} getsysinfo
   register: probe_bmc_interface

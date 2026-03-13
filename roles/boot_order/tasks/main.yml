@@ -16,7 +16,7 @@
 - name: Probe BMC management interface capability
   ansible.builtin.command:
     cmd: >
-      racadm -r {{ ipv6ULA }} -u {{ rhel_user }} -p {{ rhel_password }} getsysinfo
+      racadm -r {{ ipv6ULA }} -u {{ bmc_user }} -p {{ bmc_password }} getsysinfo
   register: probe_bmc_interface
   delegate_to: "{{ bmc_delegate_host }}"
   failed_when: false

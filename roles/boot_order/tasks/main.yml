@@ -25,16 +25,16 @@
   include_tasks: bios_detect.yml
   when: not (ru_number | int == 23)
 
-- name: Configure PXE settings and reboot cycles
-  include_tasks: bios_pxe_configure.yml
-  when: not (ru_number | int == 23)
+#- name: Configure PXE settings and reboot cycles
+ # include_tasks: bios_pxe_configure.yml
+  #when: not (ru_number | int == 23)
 
-- name: Apply BIOS settings via job queue
-  include_tasks: bios_jobqueue.yml
-  when:
-    - not (ru_number | int == 23)
-    - use_bios_jobqueue | bool
+#- name: Apply BIOS settings via job queue
+ # include_tasks: bios_jobqueue.yml
+  #when:
+   # - not (ru_number | int == 23)
+    #- use_bios_jobqueue | bool
 
-- name: Resolve and set boot order
-  include_tasks: bios_boot_order.yml
-  when: not (ru_number | int == 23)
+#- name: Resolve and set boot order
+ # include_tasks: bios_boot_order.yml
+  #when: not (ru_number | int == 23)

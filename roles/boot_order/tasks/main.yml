@@ -2,39 +2,39 @@
 - name: Discover resources
   include_tasks: discovery.yml
       
-- name: Handle service node - clear slot label and skip
-  block:
-    - name: Clear pxeSlotLabel for service node
-      set_fact:
-        pxe_slot_label: ""
-
-    - name: Log service node skip
-      debug:
-        msg: "RU {{ ru_number }} is a service node - skipping boot order configuration"
-  when: is_service_node | bool and ru_number | int == 23
-
-- name: Probe BMC management interface capability
-  ansible.builtin.raw:
-    cmd: >
-      racadm -r {{ ipv6ULA }} -u {{ bmc_user }} -p {{ bmc_password }} getsysinfo
-  register: probe_bmc_interface
+- name: Probe job queue endpoint availability
+  uri:
+    url: "{{ bmc_manager_url }}/Jobs"
+    method: GET
+    user: "{{ bmc_username }}"
+    password: "{{ bmc_password }}"
+    validate_certs: no
+    force_basic_auth: yes
+    return_content: yes
+    status_code: [200, 404]
+  register: probe_job_queue
   failed_when: false
-  changed_when: false
-  when: not (is_service_node | bool and ru_number | int == 23)
+  when: not (ru_number | int == 23)
 
-- name: Set BMC interface style flag
+- name: Set BIOS apply method flag
   set_fact:
-    use_jobqueue_interface: "{{ probe_bmc_interface.rc is defined and probe_bmc_interface.rc == 0 }}"
-  when: not (is_service_node | bool and ru_num | int == 23)
+    use_bios_jobqueue: "{{ probe_job_queue.status | default(404) == 200 }}"
+  when: not (ru_number | int == 23)
 
-- name: Configure boot order via job queue interface
-  include_tasks: jobqueue_boot_order.yml
-  when:
-    - not (is_service_node | bool and ru_num | int == 23)
-    - use_jobqueue_interface | bool
+- name: Detect model and resolve configuration flags
+  include_tasks: bios_detect.yml
+  when: not (ru_number | int == 23)
 
-- name: Configure boot order via BIOS API interface
-  include_tasks: bios_api_boot_order.yml
+- name: Configure PXE settings and reboot cycles
+  include_tasks: bios_pxe_configure.yml
+  when: not (ru_number | int == 23)
+
+- name: Apply BIOS settings via job queue
+  include_tasks: bios_jobqueue.yml
   when:
-    - not (is_service_node | bool and ru_num | int == 23)
-    - not use_jobqueue_interface | bool
+    - not (ru_number | int == 23)
+    - use_bios_jobqueue | bool
+
+- name: Resolve and set boot order
+  include_tasks: bios_boot_order.yml
+  when: not (ru_number | int == 23)

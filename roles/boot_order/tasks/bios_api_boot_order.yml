@@ -35,153 +35,12 @@
   debug:
     msg: "RU {{ ru_num }} - MTM prefix: {{ system_mtm_prefix }}, model: {{ node_model }}"
 
-# --- NIC speed check to determine provisioning switch path ---
-
-- name: Check NIC speed to determine provisioning switch routing
-  uri:
-    url: "{{ bmc_base_url }}/redfish/v1/Systems/{{ system_id }}/EthernetInterfaces/{{ nic_25g_slot }}"
-    method: GET
-    user: "{{ bmc_username }}"
-    password: "{{ bmc_password }}"
-    validate_certs: no
-    force_basic_auth: yes
-    return_content: yes
-    status_code: [200]
-  register: nic_speed_result
-  delegate_to: "{{ bmc_delegate_host }}"
-  when: node_model in nic_speed_check_models
-  failed_when: false
-
-- name: Set provisioning switch flag from NIC speed
-  set_fact:
-    prov_on_mgmt_switch: >-
-      {{ false if (nic_speed_result.json.SpeedMbps | default(0) | string).startswith('25')
-         else true }}
-  when: node_model in nic_speed_check_models
-
-- name: Default provisioning switch flag for models without NIC speed check
-  set_fact:
-    prov_on_mgmt_switch: false
-  when: node_model not in nic_speed_check_models
-
-# --- Disable legacy PXE on all slots ---
-
-- name: Disable Legacy PXE mode on all NIC slots
-  uri:
-    url: "{{ bmc_base_url }}/redfish/v1/Systems/{{ system_id }}/Bios/Settings"
-    method: PATCH
-    user: "{{ bmc_username }}"
-    password: "{{ bmc_password }}"
-    validate_certs: no
-    force_basic_auth: yes
-    body_format: json
-    body:
-      Attributes: >-
-        {{ dict(
-          range(1, legacy_pxe_slot_counts[node_model] + 1)
-          | map('string')
-          | map('regex_replace', '^(.*)$', 'NetworkBootSettings.LegacyPXEMode.\1')
-          | list
-          | zip(['Disable'] * legacy_pxe_slot_counts[node_model])
-          | list
-        ) }}
-    status_code: [200, 204]
-  delegate_to: "{{ bmc_delegate_host }}"
-
-# --- Set ASU syntax values based on model capability ---
-
-- name: Set PXE enable/disable syntax based on model capability
-  set_fact:
-    pxe_disable_val: "{{ 'Disabled' if node_model in new_asu_syntax_models else 'Disable' }}"
-    pxe_enable_val:  "{{ 'Enabled'  if node_model in new_asu_syntax_models else 'Enable' }}"
-
-# --- Double reboot cycle to refresh BIOS boot entries ---
-
-- name: Disable IPv4 and IPv6 PXE stack
-  uri:
-    url: "{{ bmc_base_url }}/redfish/v1/Systems/{{ system_id }}/Bios/Settings"
-    method: PATCH
-    user: "{{ bmc_username }}"
-    password: "{{ bmc_password }}"
-    validate_certs: no
-    force_basic_auth: yes
-    body_format: json
-    body:
-      Attributes:
-        NetworkStackSettings.IPv6PXESupport: "{{ pxe_disable_val }}"
-        NetworkStackSettings.IPv4PXESupport: "{{ pxe_disable_val }}"
-    status_code: [200, 204]
-  delegate_to: "{{ bmc_delegate_host }}"
-
-- name: Reboot OS - first cycle to clear stale boot entries
-  uri:
-    url: "{{ bmc_base_url }}/redfish/v1/Systems/{{ system_id }}/Actions/ComputerSystem.Reset"
-    method: POST
-    user: "{{ bmc_username }}"
-    password: "{{ bmc_password }}"
-    validate_certs: no
-    force_basic_auth: yes
-    body_format: json
-    body:
-      ResetType: "GracefulRestart"
-    status_code: [200, 204]
-  delegate_to: "{{ bmc_delegate_host }}"
-
-- name: Wait for OS to come back after first reboot
-  wait_for:
-    host: "{{ node_ipv6 }}"
-    port: 22
-    timeout: "{{ power_wait_seconds }}"
-    delay: 30
-
-- name: Re-enable IPv4 and IPv6 PXE stack
-  uri:
-    url: "{{ bmc_base_url }}/redfish/v1/Systems/{{ system_id }}/Bios/Settings"
-    method: PATCH
-    user: "{{ bmc_username }}"
-    password: "{{ bmc_password }}"
-    validate_certs: no
-    force_basic_auth: yes
-    body_format: json
-    body:
-      Attributes:
-        NetworkStackSettings.IPv6PXESupport: "{{ pxe_enable_val }}"
-        NetworkStackSettings.IPv4PXESupport: "{{ pxe_enable_val }}"
-    status_code: [200, 204]
-  delegate_to: "{{ bmc_delegate_host }}"
-
-- name: Reboot OS - second cycle to rebuild boot entries
-  uri:
-    url: "{{ bmc_base_url }}/redfish/v1/Systems/{{ system_id }}/Actions/ComputerSystem.Reset"
-    method: POST
-    user: "{{ bmc_username }}"
-    password: "{{ bmc_password }}"
-    validate_certs: no
-    force_basic_auth: yes
-    body_format: json
-    body:
-      ResetType: "GracefulRestart"
-    status_code: [200, 204]
-  delegate_to: "{{ bmc_delegate_host }}"
-
-- name: Wait for OS to come back after second reboot
-  wait_for:
-    host: "{{ node_ipv6 }}"
-    port: 22
-    timeout: "{{ power_wait_seconds }}"
-    delay: 30
-
-- name: Wait for BIOS boot slots to fully settle
-  wait_for:
-    timeout: "{{ boot_slot_settle_seconds }}"
-
-# --- Read and parse current boot order ---
 
 - name: Get current BIOS attributes via Redfish
   uri:
-    url: "{{ bmc_base_url }}/redfish/v1/Systems/{{ system_id }}/Bios"
+    url: "{{ bmc_bios_url }}"
     method: GET
-    user: "{{ bmc_username }}"
+    user: "{{ bmc_user }}"
     password: "{{ bmc_password }}"
     validate_certs: no
     force_basic_auth: yes
@@ -198,7 +57,6 @@
          | replace('"', '') | replace('ok', '')
          | split('=') | map('trim') | select | list }}
 
-# --- Resolve target slot from map ---
 
 - name: Resolve pxe_slot_map lookup key
   set_fact:

@@ -80,4 +80,5 @@
   
 - set_fact:
     bmc_manager_url: "{{ bmc_base_url }}{{ managers.json.Members[0]['@odata.id'] }}"
+    is_service_node: "{{ node_type == 'servicenode' }}"
     

@@ -18,7 +18,6 @@
     cmd: >
       racadm -r {{ ipv6ULA }} -u {{ bmc_user }} -p {{ bmc_password }} getsysinfo
   register: probe_bmc_interface
-  delegate_to: "{{ bmc_delegate_host }}"
   failed_when: false
   changed_when: false
   when: not (is_service_node | bool and ru_number | int == 23)

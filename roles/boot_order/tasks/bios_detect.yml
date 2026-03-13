@@ -18,9 +18,15 @@
       {{ redfish_sys_info.json.Model | default('')
          | upper | regex_replace('^([A-Z0-9]{4}).*', '\1') }}
 
+- Debug:
+    msg: "system_mtm_prefix = {{ system_mtm_prefix }}"
+   
 - name: Resolve model name from MTM prefix
   set_fact:
     node_model: "{{ mtm_model_map[system_mtm_prefix] | default('unknown') }}"
+
+- Debug:
+    msg: "node_model = {{ node_model }}"
 
 - name: Fail if MTM prefix not recognized
   fail:

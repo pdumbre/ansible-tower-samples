@@ -1,0 +1,32 @@
+
+- name: Get system info via Redfish
+  uri:
+    url: "{{ bmc_systems_url }}"
+    method: GET
+    user: "{{ bmc_username }}"
+    password: "{{ bmc_password }}"
+    validate_certs: no
+    force_basic_auth: yes
+    return_content: yes
+    status_code: [200]
+  register: redfish_sys_info
+  delegate_to: "{{ bmc_delegate_host }}"
+
+- name: Extract MTM prefix and resolve model
+  set_fact:
+    system_mtm_prefix: >-
+      {{ redfish_sys_info.json.Model | default('')
+         | upper | regex_replace('^([A-Z0-9]{4}).*', '\1') }}
+
+- name: Resolve model name from MTM prefix
+  set_fact:
+    node_model: "{{ mtm_model_map[system_mtm_prefix] | default('unknown') }}"
+
+- name: Fail if MTM prefix not recognized
+  fail:
+    msg: "Unrecognized MTM prefix '{{ system_mtm_prefix }}' for RU {{ ru_number }}"
+  when: node_model == 'unknown'
+
+- name: Log detected model
+  debug:
+    msg: "RU {{ ru_number }} - MTM: {{ system_mtm_prefix }}, model: {{ node_model }}"

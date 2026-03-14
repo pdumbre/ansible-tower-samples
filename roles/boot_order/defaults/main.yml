@@ -8,43 +8,82 @@ boot_slot_settle_seconds: 240  # 4 minutes for BIOS to settle after reboot
 job_poll_retries: 10
 job_poll_delay: 120  # 2 minutes between polls
 
-# MTM prefix -> model mapping (used for slot selection)
-mtm_model_map:
-  "7D2X": "sr645"
-  "7D73": "sr630v3"
-  "7X02": "sr630"
-  "7D2V": "sr665"
-  "7D76": "sr650"
-  "7D9R": "sr675"
+# MTM to Server Model Mapping
+mtm_to_model:
+  # Lenovo ThinkSystem SR645
+  "7D2XCTO1WW": "sr645"
+  
+  # Lenovo ThinkSystem SR630
+  "7X02CTO1WW": "sr630"
+  
+  # Lenovo ThinkSystem SR665
+  "7D2VCTO1WW": "sr665"
+  
+  # Lenovo ThinkSystem SR650
+  "7D76CTO1WW": "sr650"
+  
+  # Lenovo ThinkSystem SR675
+  "7D9RCTO1WW": "sr675"
+  "7D9RCTO2WW": "sr675"
+  
+  # Lenovo ThinkSystem SR630v3
+  "7D73CTO1WW": "sr630v3"
+  
+  # Dell XLR660
+  "2668": "xlr660"
+  
+  # Dell XE7745
+  "3350": "xe7745"
 
-# Legacy PXE mode slots to disable per model
-legacy_pxe_slot_counts:
-  sr645:   8
-  sr630v3: 8
-  sr630:   6
-  sr665:   8
-  sr650:   8
-  sr675:   8
-
-# PXE slot selection map:
-# Key: "<storage_type>/<prov_on_mgmt_switch>/<model>"
-# Value: { slot, port }
-pxe_slot_map:
-  "fdf/false/sr645":   { slot: "1",  port: "0/0" }
-  "fdf/false/sr630v3": { slot: "1",  port: "0/0" }
-  "fdf/false/sr630":   { slot: "3",  port: "0/0" }
-  "fdf/false/sr665":   { slot: "6",  port: "0/0" }
-  "fdf/false/sr650":   { slot: "6",  port: "0/0" }
-  "fdf/false/sr675":   { slot: "20", port: "0/0" }
-  "fdf/true/sr630v3":  { slot: "6",  port: "0/1" }
-  "fdf/true/sr645":    { slot: "4",  port: "0/1" }
-  "fdf/true/sr665":    { slot: "9",  port: "0/1" }
-  "fdf/true/sr650":    { slot: "13", port: "0/1" }
-  "fdf/true/sr675":    { slot: "27", port: "0/1" }
-  "ece/false/default": { slot: "3",  port: "0/0" }
-  "ece/true/default":  { slot: "3",  port: "0/0" }
 
 # Models that use "Disabled/Enabled" (vs "Disable/Enable") for IPv4/IPv6 PXE
 new_asu_syntax_models:
   - sr630v3
   - sr675
+
+
+# Expansion Card Slots by Model
+expansion_cards:
+  sr645:
+    OCP:
+      slots:
+        - - 4
+        
+  sr630:
+    OCP:
+      slots:
+        - - 4
+  sr665:
+    OCP:
+      slots:
+        - - 4
+        
+  sr650:
+    OCP:
+      slots:
+        - - 4
+        
+  sr675:
+    OCP:
+      slots:
+        - - 4
+        
+  sr630v3:
+    OCP:
+      slots:
+        - - 4
+        
+  sr630v3Serv:
+    OCP:
+      slots:
+        - - 4
+        
+  xlr660:
+    OCP:
+      slots:
+        - - 2
+        
+  xe7745:
+    OCP:
+      slots:
+        - - 9

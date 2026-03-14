@@ -23,7 +23,7 @@
    
 - name: Resolve model name from MTM prefix
   set_fact:
-    node_model: "{{ mtm_model_map[system_mtm_prefix] | default('unknown') }}"
+    node_model: "{{ mtm_to_model[system_mtm_prefix] | default('unknown') }}"
 
 - debug:
     msg: "node_model = {{ node_model }}"
@@ -36,3 +36,26 @@
 - name: Log detected model
   debug:
     msg: "RU {{ ru_number }} - MTM: {{ system_mtm_prefix }}, model: {{ node_model }}"
+
+- name: Resolve OCP slot number from expansion cards config
+  set_fact:
+    ocp_slot_num: >-
+      {{ expansion_cards[node_model].OCP.slots[0][0] }}
+
+- name: Fail if OCP slot not defined for model
+  fail:
+    msg: >
+      No OCP slot defined for model '{{ node_model }}'
+      in expansion_cards config. Check defaults/main.yml.
+  when: ocp_slot_num is not defined or ocp_slot_num == ''
+
+- name: Build PXE NIC slot name from OCP slot number
+  set_fact:
+    pxe_nic_slot: "NIC.OCP.{{ ocp_slot_num }}-1-1"
+
+- name: Log resolved OCP PXE slot
+  debug:
+    msg:
+      - "Model: {{ node_model }}"
+      - "OCP slot number: {{ ocp_slot_num }}"
+      - "PXE NIC slot: {{ pxe_nic_slot }}"

@@ -52,7 +52,7 @@ expansion_cards:
   sr630:
     OCP:
       slots:
-        - - 4
+        - - 6
   sr665:
     OCP:
       slots:
@@ -61,12 +61,12 @@ expansion_cards:
   sr650:
     OCP:
       slots:
-        - - 4
+        - - 9
         
   sr675:
     OCP:
       slots:
-        - - 4
+        - - 27
         
   sr630v3:
     OCP:
@@ -76,14 +76,14 @@ expansion_cards:
   sr630v3Serv:
     OCP:
       slots:
-        - - 4
+        - - 6
         
   xlr660:
     OCP:
       slots:
-        - - 2
+        - - 1
         
   xe7745:
     OCP:
       slots:
-        - - 9
+        - - 4

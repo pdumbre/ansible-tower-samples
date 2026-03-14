@@ -1,17 +1,4 @@
 
-- name: Get system info via Redfish
-  uri:
-    url: "{{ bmc_systems_url }}"
-    method: GET
-    user: "{{ bmc_user }}"
-    password: "{{ bmc_password }}"
-    validate_certs: no
-    force_basic_auth: yes
-    return_content: yes
-    status_code: [200]
-  register: redfish_sys_info
-  delegate_to: "{{ bmc_delegate_host }}"
-
 - name: Extract MTM prefix and resolve model
   set_fact:
     system_mtm_prefix: >-
@@ -20,7 +7,10 @@
 
 - debug:
     msg: "system_mtm_prefix = {{ system_mtm_prefix }}"
-   
+    
+- debug:
+    msg: "serial number = {{ redfish_data.json['SerialNumber'] }}"
+ 
 - name: Resolve model name from MTM prefix
   set_fact:
     node_model: "{{ mtm_to_model[system_mtm_prefix] | default('unknown') }}"

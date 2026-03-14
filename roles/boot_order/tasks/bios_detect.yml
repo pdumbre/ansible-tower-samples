@@ -2,14 +2,17 @@
 - name: Extract MTM prefix and resolve model
   set_fact:
     system_mtm_prefix: >-
-      {{ redfish_sys_info.json.SKU | default('')
+      {{ bmc_systems_details.json.SKU | default('')
          | upper | regex_replace('^([A-Z0-9]{4}).*', '\1') }}
 
 - debug:
     msg: "system_mtm_prefix = {{ system_mtm_prefix }}"
     
 - debug:
-    msg: "serial number = {{ redfish_data.json['SerialNumber'] }}"
+    msg: "serial number = {{ bmc_systems_details.json['SerialNumber'] }}"
+
+- debug:
+    msg: "model = {{ bmc_systems_details.json['Model'] }}"
  
 - name: Resolve model name from MTM prefix
   set_fact:

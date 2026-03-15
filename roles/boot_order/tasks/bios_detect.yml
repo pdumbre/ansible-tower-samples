@@ -50,6 +50,11 @@
   set_fact:
     pxe_nic_slot: "NIC.OCP.{{ ocp_slot_num }}-1-1"
 
+- name: Set PXE enable/disable ASU syntax based on model capability
+  set_fact:
+    pxe_disable_val: "{{ 'Disabled' if node_model in new_asu_syntax_models else 'Disable' }}"
+    pxe_enable_val:  "{{ 'Enabled'  if node_model in new_asu_syntax_models else 'Enable' }}"
+
 - name: Log resolved OCP PXE slot
   debug:
     msg:

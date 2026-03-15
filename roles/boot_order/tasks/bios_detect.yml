@@ -9,7 +9,7 @@
 - name: Set system identifier from SystemID
   set_fact:
     system_identifer: >-
-      {{ bmc_systems_details.json.OED.Dell.DellSystem.SystemID }}
+      {{ bmc_systems_details.json.Oem.Dell.DellSystem.SystemID }}
   when:
     - not (use_bios_jobqueue | bool)
 

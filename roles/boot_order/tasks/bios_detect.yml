@@ -11,7 +11,7 @@
     system_identifer: >-
       {{ bmc_systems_details.json.Oem.Dell.DellSystem.SystemID }}
   when:
-    - not use_bios_jobqueue | bool
+    - use_bios_jobqueue | bool
 
 - name: Debug system identifier
   debug:

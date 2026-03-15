@@ -87,3 +87,8 @@ expansion_cards:
     OCP:
       slots:
         - - 4
+
+# Models that use "Disabled/Enabled" (vs "Disable/Enable") for IPv4/IPv6 PXE
+new_asu_syntax_models:
+  - sr630v3
+  - sr675

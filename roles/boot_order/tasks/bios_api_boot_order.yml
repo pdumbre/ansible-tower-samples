@@ -1,25 +1,23 @@
----
-# Boot order configuration via Redfish (XCC-based nodes)
 
-# --- Detect model from MTM via Redfish ---
+# Boot order configuration via Redfish (XCC-based Lenovo nodes)
 
 - name: Get system info via Redfish
   uri:
-    url: "{{ bmc_base_url }}/redfish/v1/Systems/{{ system_id }}"
+    url: "{{ bmc_base_url }}/redfish/v1/Systems/{{ bmc_system_id | default('1') }}"
     method: GET
-    user: "{{ bmc_username }}"
+    user: "{{ bmc_user }}"
     password: "{{ bmc_password }}"
     validate_certs: no
     force_basic_auth: yes
     return_content: yes
     status_code: [200]
   register: redfish_sys_info
-  delegate_to: "{{ bmc_delegate_host }}"
+  delegate_to: localhost
 
-- name: Extract MTM prefix and resolve model
+- name: Extract MTM prefix from SKU (Lenovo uses SKU not Model)
   set_fact:
     system_mtm_prefix: >-
-      {{ redfish_sys_info.json.Model | default('')
+      {{ redfish_sys_info.json.SKU | default('')
          | upper | regex_replace('^([A-Z0-9]{4}).*', '\1') }}
 
 - name: Resolve model name from MTM prefix
@@ -35,10 +33,16 @@
   debug:
     msg: "RU {{ ru_num }} - MTM prefix: {{ system_mtm_prefix }}, model: {{ node_model }}"
 
+- name: Fail if pxe_slot is not defined
+  fail:
+    msg: >
+      pxe_slot is not defined for RU {{ ru_num }}.
+      Ensure pxe_slot is set in an earlier task.
+  when: pxe_slot is not defined or pxe_slot == ''
 
 - name: Get current BIOS attributes via Redfish
   uri:
-    url: "{{ bmc_bios_url }}"
+    url: "{{ bmc_base_url }}/redfish/v1/Systems/{{ bmc_system_id | default('1') }}/Bios"
     method: GET
     user: "{{ bmc_user }}"
     password: "{{ bmc_password }}"
@@ -47,82 +51,57 @@
     return_content: yes
     status_code: [200]
   register: bios_info
-  delegate_to: "{{ bmc_delegate_host }}"
+  delegate_to: localhost
 
-- name: Split boot order into individual entries
+- name: Extract current boot order entries
   set_fact:
     boot_order_entries: >-
-      {{ bios_info.json.Attributes
-         .get('BootOrder.NetworkBootOrder', '')
-         | replace('"', '') | replace('ok', '')
-         | split('=') | map('trim') | select | list }}
+      {{ bios_info.json.Attributes.BootOrder | default([]) }}
 
-
-- name: Resolve pxe_slot_map lookup key
-  set_fact:
-    slot_map_key: >-
-      {%- set base = storage_type | default('ece') | lower + '/' + (prov_on_mgmt_switch | string | lower) -%}
-      {%- set specific = base + '/' + node_model -%}
-      {{ specific if specific in pxe_slot_map else base + '/default' }}
-
-- name: Fail if slot map key not found
-  fail:
-    msg: "No pxe_slot_map entry for '{{ slot_map_key }}'. Check defaults/main.yml."
-  when: slot_map_key not in pxe_slot_map
-
-- name: Extract target slot and port
-  set_fact:
-    target_slot: "{{ pxe_slot_map[slot_map_key].slot }}"
-    target_port: "{{ pxe_slot_map[slot_map_key].port }}"
-
-- name: Log slot resolution
+- name: Debug current boot order
   debug:
     msg:
-      - "Slot map key: {{ slot_map_key }}"
-      - "Target: SLOT {{ target_slot }}, port {{ target_port }}"
+      - "pxe_slot            : {{ pxe_slot }}"
+      - "boot_order_entries  : {{ boot_order_entries }}"
 
-# --- Match IPv4 and IPv6 boot entries ---
-
-- name: Find primary PXE boot entry (IPv4)
+- name: Find IPv4 PXE boot entry matching pxe_slot
   set_fact:
     pxe_slot_ipv4: >-
       {{ boot_order_entries | select('match',
-           '(?i).*UEFI.*SLOT\s*' + target_slot + '\s.*ip[v]?4.*'
-           + (target_port | replace('/', '\/'))
+           '(?i).*' + pxe_slot + '.*ip[v]?4.*'
          ) | list | first | default('') }}
 
-- name: Find fallback PXE boot entry (IPv6)
-  set_fact:
-    pxe_slot_ipv6: >-
-      {{ boot_order_entries | select('match',
-           '(?i).*UEFI.*SLOT\s*' + target_slot + '\s.*ip[v]?6.*'
-           + (target_port | replace('/', '\/'))
-         ) | list | first | default('') }}
-
-- name: Fail if PXE slot entries not found in boot order
+- name: Fail if IPv4 PXE entry not found for pxe_slot
   fail:
     msg: >
-      Could not find PXE entries for RU {{ ru_num }}.
-      Target: SLOT {{ target_slot }} port {{ target_port }}.
-      Available entries: {{ boot_order_entries }}
-  when: pxe_slot_ipv4 == '' or pxe_slot_ipv6 == ''
+      Could not find IPv4 PXE entry for RU {{ ru_num }}.
+      pxe_slot           : {{ pxe_slot }}
+      Available entries  : {{ boot_order_entries }}
+  when: pxe_slot_ipv4 == ''
 
-# --- Apply boot order ---
+- name: Build new boot order with IPv4 PXE entry first
+  set_fact:
+    new_boot_order: >-
+      {{ [pxe_slot_ipv4]
+         + (boot_order_entries
+            | reject('equalto', pxe_slot_ipv4)
+            | list) }}
 
-- name: Set NetworkBootOrder with IPv4 primary and IPv6 fallback
+- name: Apply new boot order via Redfish PATCH
   uri:
-    url: "{{ bmc_base_url }}/redfish/v1/Systems/{{ system_id }}/Bios/Settings"
+    url: "{{ bmc_base_url }}/redfish/v1/Systems/{{ bmc_system_id | default('1') }}/Bios/Settings"
     method: PATCH
-    user: "{{ bmc_username }}"
+    user: "{{ bmc_user }}"
     password: "{{ bmc_password }}"
     validate_certs: no
     force_basic_auth: yes
     body_format: json
     body:
       Attributes:
-        BootOrder.NetworkBootOrder: "{{ pxe_slot_ipv4 }}={{ pxe_slot_ipv6 }}"
-    status_code: [200, 204]
-  delegate_to: "{{ bmc_delegate_host }}"
+        BootOrder: "{{ new_boot_order }}"
+    status_code: [200, 202, 204]
+  register: patch_result
+  delegate_to: localhost
 
 - name: Store pxeSlotLabel
   set_fact:
@@ -131,8 +110,11 @@
 - name: Display boot order configuration summary
   debug:
     msg:
-      - "RU: {{ ru_num }}, Model: {{ node_model }}"
-      - "Storage: {{ storage_type | default('ece') }}, MgmtSwitch: {{ prov_on_mgmt_switch }}"
-      - "Primary PXE (IPv4): {{ pxe_slot_ipv4 }}"
-      - "Fallback PXE (IPv6): {{ pxe_slot_ipv6 }}"
-      - "pxeSlotLabel: {{ pxe_slot_label }}"
+      - "RU             : {{ ru_num }}"
+      - "Model          : {{ node_model }}"
+      - "MTM prefix     : {{ system_mtm_prefix }}"
+      - "pxe_slot       : {{ pxe_slot }}"
+      - "IPv4 PXE entry : {{ pxe_slot_ipv4 }}"
+      - "New boot order : {{ new_boot_order }}"
+      - "pxeSlotLabel   : {{ pxe_slot_label }}"
+      - "Patch status   : {{ patch_result.status }}"

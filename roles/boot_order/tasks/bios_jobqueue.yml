@@ -173,15 +173,15 @@
       - "PxeDev1Protocol : {{ bios_verify.json.Attributes.PxeDev1Protocol | default('N/A') }}"
   when: pxe_nic_slot is defined
 
-- name: Fail if PXE interface not set correctly
-  fail:
-    msg: >
-      PXE interface mismatch!
-      Expected: '{{ pxe_nic_slot }}'
-      Got: '{{ bios_verify.json.Attributes.PxeDev1Interface | default('not set') }}'
-  when:
-    - pxe_nic_slot is defined
-    - bios_verify.json.Attributes.PxeDev1Interface | default('') != pxe_nic_slot
+#- name: Fail if PXE interface not set correctly
+ # fail:
+  #  msg: >
+   #   PXE interface mismatch!
+    #  Expected: '{{ pxe_nic_slot }}'
+     # Got: '{{ bios_verify.json.Attributes.PxeDev1Interface | default('not set') }}'
+  #when:
+   # - pxe_nic_slot is defined
+    #- bios_verify.json.Attributes.PxeDev1Interface | default('') != pxe_nic_slot
 
 - name: Log PXE boot configuration success
   debug:

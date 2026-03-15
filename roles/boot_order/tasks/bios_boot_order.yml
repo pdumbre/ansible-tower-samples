@@ -15,7 +15,7 @@
 
 - set_stats:
     data:
-       details: {{ bios_info }}"
+       details: "{{ bios_info }}"
 
 - name: Extract current boot order entries
   set_fact:

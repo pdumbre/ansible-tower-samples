@@ -24,6 +24,7 @@
         PxeDev1Interface: "{{ pxe_nic_slot }}"
         PxeDev1Protocol: "IPv4"
     status_code: [200, 202, 204]
+  delegate_to: localhost
   register: stage_pxe
   when: pxe_nic_slot is defined
 
@@ -45,7 +46,7 @@
       TargetSettingsURI: "/redfish/v1/Systems/{{ bmc_system_id }}/Bios/Settings"
     status_code: [200, 202, 204]
   register: bios_job
-  delegate_to: "{{ bmc_delegate_host }}"
+  delegate_to: localhost
   when: pxe_nic_slot is defined
 
 - name: Extract BIOS job ID from response
@@ -74,6 +75,7 @@
     body:
       ResetType: "ForceRestart"
     status_code: [200, 202, 204]
+  delegate_to: localhost
   register: reboot_result
   when: pxe_nic_slot is defined
 
@@ -96,6 +98,7 @@
     validate_certs: no
     force_basic_auth: yes
     status_code: [200]
+  delegate_to: localhost
   register: job_poll_result
   until: >
     job_poll_result.json.JobState in [
@@ -140,6 +143,7 @@
     force_basic_auth: yes
     status_code: [200]
   register: system_state
+  delegate_to: localhost
   until: >
     system_state.json.PowerState == 'On' and
     system_state.json.Status.Health == 'OK'
@@ -156,6 +160,7 @@
     validate_certs: no
     force_basic_auth: yes
     status_code: [200]
+  delegate_to: localhost
   register: bios_verify
   delegate_to: "{{ bmc_delegate_host }}"
   when: pxe_nic_slot is defined

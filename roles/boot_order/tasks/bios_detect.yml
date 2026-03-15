@@ -1,16 +1,16 @@
 
-  set_fact:
-    system_identifer: >-
-      {{ bmc_systems_details.json.SKU | default('')
-         | upper | regex_replace('^([A-Z0-9]{4}).*', '\1') }}
-  when:
-    - use_bios_jobqueue | bool
+set_fact:
+  system_identifer: >-
+    {{ bmc_systems_details.json.SKU | default('')
+    | upper | regex_replace('^([A-Z0-9]{4}).*', '\1') }}
+when:
+  - use_bios_jobqueue | bool
 
-  set_fact:
-    system_identifer: >-
-      {{ bmc_systems_details.SystemID }}
-  when:
-    - not (use_bios_jobqueue | bool)
+set_fact:
+  system_identifer: >-
+    {{ bmc_systems_details.SystemID }}
+when:
+  - not (use_bios_jobqueue | bool)
 
 - debug:
     msg: "system_identifer = {{ system_identifer }}"

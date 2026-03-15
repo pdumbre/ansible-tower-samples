@@ -2,7 +2,7 @@
   set_fact:
     system_identifer: >-
       {{ bmc_systems_details.json.SKU | default('')
-      | upper | regex_replace('^([A-Z0-9]{4}).*', '\1') }}
+      | upper }}
   when:
     - not (use_bios_jobqueue | bool)
 

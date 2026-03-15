@@ -108,8 +108,8 @@
       'RebootFailed',
       'RebootCompleted'
     ]
-  retries: 60
-  delay: 30
+  retries: 30
+  delay: 60
   when:
     - pxe_nic_slot is defined
     - bios_job_id is defined

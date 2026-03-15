@@ -12,6 +12,7 @@
     force_basic_auth: yes
     return_content: yes
     status_code: [200, 404]
+  delegate_to: localhost
   register: probe_job_queue 
   failed_when: false
   when: not (ru_number | int == 23)

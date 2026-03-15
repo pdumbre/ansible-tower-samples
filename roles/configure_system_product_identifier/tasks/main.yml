@@ -1,3 +1,6 @@
+- name: Discover resources
+  include_tasks: discovery.yml
+
 - name: Probe job queue endpoint availability
   uri:
     url: "{{ bmc_manager_url }}/Jobs"

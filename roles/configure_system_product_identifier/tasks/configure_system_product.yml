@@ -1,1 +1,206 @@
 
+- name: Display system configuration
+  debug:
+    msg:
+      - "Device Type: {{ node_device_type }}"
+
+- name: Assert supported device type
+  assert:
+    that:
+      - node_device_type in ['sr645', 'sr630v3', 'sr675']
+    fail_msg: "Unsupported device type: {{ node_device_type }}. Must be one of: sr645, sr630v3, sr675"
+
+- name: Check server power state
+  include_tasks: power_management.yml
+  vars:
+    power_action: "check"
+    
+  include_tasks: power_management.yml
+  vars:
+    power_action: "on"
+  when: server_power_state | lower in ["off", "poweroff"]
+
+
+# Configure Product Identifier and Manufacturer for sr645
+- name: Configure system product data for sr645
+  block:
+    - name: Set sr645 Product Identifier and Manufacturer via Redfish
+      uri:
+        url: "{{ bmc_bios_url }}"
+        method: PATCH
+        user: "{{ bmc_username }}"
+        password: "{{ bmc_password }}"
+        validate_certs: false
+        force_basic_auth: yes
+        body_format: json
+        body:
+          Attributes:
+            SysInfoProdIdentifier: "{{ system_product_identifiers.sr645 }}"
+            SysInfoManufacturerFullName: "{{ manufacturer_name }}"
+        status_code: [200, 204]
+      register: sr645_config
+      retries: "{{ retry_count }}"
+      delay: "{{ retry_delay }}"
+      until: sr645_config.status in [200, 204]
+      delegate_to: localhost
+      failed_when: >
+        sr645_config.status not in [200, 204] or
+        (sr645_config.json is defined and 'error' in sr645_config.json)
+
+    - name: Display sr645 configuration result
+      debug:
+        msg:
+          - "Successfully configured sr645 system product data:"
+          - "  Product Identifier: {{ system_product_identifiers.sr645 }}"
+          - "  Manufacturer: {{ manufacturer_name }}"
+
+  when: node_device_type == "sr645"
+
+# Configure Product Identifier and Manufacturer for sr630v3
+- name: Configure system product data for sr630v3
+  block:
+    - name: Set sr630v3 Product Identifier and Manufacturer via Redfish
+      uri:
+        url: "{{ bmc_bios_url }}"
+        method: PATCH
+        user: "{{ bmc_username }}"
+        password: "{{ bmc_password }}"
+        validate_certs: false
+        force_basic_auth: yes
+        body_format: json
+        body:
+          Attributes:
+            SysInfoProdIdentifier: "{{ system_product_identifiers.sr630v3 }}"
+            SysInfoManufacturerFullName: "{{ manufacturer_name }}"
+        status_code: [200, 204]
+      delegate_to: localhost
+      register: sr630v3_config
+      retries: "{{ retry_count }}"
+      delay: "{{ retry_delay }}"
+      until: sr630v3_config.status in [200, 204]
+      failed_when: >
+        sr630v3_config.status not in [200, 204] or
+        (sr630v3_config.json is defined and 'error' in sr630v3_config.json)
+
+    - name: Display sr630v3 configuration result
+      debug:
+        msg:
+          - "Successfully configured sr630v3 system product data:"
+          - "  Product Identifier: {{ system_product_identifiers.sr630v3 }}"
+          - "  Manufacturer: {{ manufacturer_name }}"
+
+  when: node_device_type == "sr630v3"
+
+# Configure sr675 specific settings (Secure Boot and Legacy BIOS)
+- name: Configure sr675 specific settings
+  block:
+    - name: Display sr675 configuration notice
+      debug:
+        msg:
+          - "Configuring sr675 specific settings"
+          - "This requires multiple power cycles"
+
+    - name: Configure Secure Boot Setting via Redfish
+      uri:
+        url: "{{ bmc_bios_url }}"
+        method: PATCH
+        user: "{{ bmc_username }}"
+        password: "{{ bmc_password }}"
+        validate_certs: "{{ redfish_validate_certs | default(false) }}"
+        force_basic_auth: yes
+        body_format: json
+        body:
+          Attributes:
+            SecureBootSetting: "{{ secure_boot_setting }}"
+        status_code: [200, 204]
+      register: secure_boot_config
+      retries: "{{ retry_count }}"
+      delay: "{{ retry_delay }}"
+      until: secure_boot_config.status in [200, 204]
+      failed_when: >
+        secure_boot_config.status not in [200, 204] or
+        (secure_boot_config.json is defined and 'error' in secure_boot_config.json)
+
+    - name: Display Secure Boot configuration result
+      debug:
+        msg: "Successfully configured Secure Boot: {{ secure_boot_setting }}"
+
+    - name: Power cycle for Secure Boot changes
+      include_tasks: power_management.yml
+      vars:
+        power_action: "cycle"
+
+    - name: Wait for BMC to become reachable after Secure Boot power cycle
+      uri:
+        url: "{{ bmc_base_url }}/redfish/v1"
+        method: GET
+        user: "{{ bmc_username }}"
+        password: "{{ bmc_password }}"
+        validate_certs: false
+        force_basic_auth: yes
+        status_code: 200
+      register: bmc_ready_after_sb_cycle
+      retries: 10
+      delay: 30
+      until: bmc_ready_after_sb_cycle.status == 200
+
+    - name: Configure Legacy BIOS via Redfish
+      uri:
+        url: "{{ bmc_bios_url }}"
+        method: PATCH
+        user: "{{ bmc_username }}"
+        password: "{{ bmc_password }}"
+        validate_certs: false
+        force_basic_auth: yes
+        body_format: json
+        body:
+          Attributes:
+            LegacyBIOS: "{{ legacy_bios_setting }}"
+        status_code: [200, 204]
+      register: legacy_bios_config
+      retries: "{{ retry_count }}"
+      delay: "{{ retry_delay }}"
+      until: legacy_bios_config.status in [200, 204]
+      failed_when: >
+        legacy_bios_config.status not in [200, 204] or
+        (legacy_bios_config.json is defined and 'error' in legacy_bios_config.json)
+
+    - name: Display Legacy BIOS configuration result
+      debug:
+        msg: "Successfully configured Legacy BIOS: {{ legacy_bios_setting }}"
+
+    - name: Final power cycle for Legacy BIOS changes
+      include_tasks: power_management.yml
+      vars:
+        power_action: "cycle"
+
+    - name: Wait for BMC to become reachable after Legacy BIOS power cycle
+      uri:
+        url: "{{ bmc_base_url }}/redfish/v1"
+        method: GET
+        user: "{{ bmc_username }}"
+        password: "{{ bmc_password }}"
+        validate_certs: "{{ redfish_validate_certs | default(false) }}"
+        force_basic_auth: yes
+        status_code: 200
+      register: bmc_ready_after_bios_cycle
+      retries: 10
+      delay: 30
+      until: bmc_ready_after_bios_cycle.status == 200
+
+    - name: Display sr675 configuration completion
+      debug:
+        msg: "sr675 configuration completed successfully with all power cycles"
+
+  when: node_device_type == "sr675"
+
+- name: Display Lenovo configuration completion
+  debug:
+    msg:
+      - "Lenovo System Product Configuration Completed Successfully"
+      - "Device: {{ node_device_type }}"
+      - "Rack Unit: {{ rack_unit }}"
+      - "OneCli Version: {{ selected_onecli_version }}"
+      - "Checkpoint: {{ checkpoint_dir }}/{{ rack_mtm }}_{{ rack_unit }}.json"
+
+# Made with Bob

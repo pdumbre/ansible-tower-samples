@@ -1,1 +1,37 @@
 
+
+# Seconds to wait after power cycle
+power_wait_seconds: 300
+power_off_wait_seconds: 5
+boot_slot_settle_seconds: 240  # 4 minutes for BIOS to settle after reboot
+
+# Max retries for Dell job completion polling
+job_poll_retries: 10
+job_poll_delay: 120  # 2 minutes between polls
+
+# MTM to Server Model Mapping
+mtm_to_model:
+  # Lenovo ThinkSystem SR645
+  "7D2XCTO1WW": "sr645"
+  
+  # Lenovo ThinkSystem SR630
+  "7X02CTO1WW": "sr630"
+  
+  # Lenovo ThinkSystem SR665
+  "7D2VCTO1WW": "sr665"
+  
+  # Lenovo ThinkSystem SR650
+  "7D76CTO1WW": "sr650"
+  
+  # Lenovo ThinkSystem SR675
+  "7D9RCTO1WW": "sr675"
+  "7D9RCTO2WW": "sr675"
+  
+  # Lenovo ThinkSystem SR630v3
+  "7D73CTO1WW": "sr630v3"
+  
+  # Dell XLR660
+  "2668": "xlr660"
+  
+  # Dell XE7745
+  "3350": "xe7745"

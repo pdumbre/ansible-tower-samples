@@ -19,7 +19,7 @@
 
 - name: Resolve model name from MTM prefix
   set_fact:
-    node_model: "{{ mtm_to_model[system_identifer] | default('unknown') }}"
+    node_model: "{{ mtm_to_model[system_identifer | string] | default('unknown') }}"
 
 - name: Debug resolved model
   debug:

@@ -1,34 +1,36 @@
 
-- name: Extract MTM prefix and resolve model
   set_fact:
-    system_mtm_prefix: >-
+    system_identifer: >-
       {{ bmc_systems_details.json.SKU | default('')
          | upper | regex_replace('^([A-Z0-9]{4}).*', '\1') }}
+  when:
+       - not jobqueue | bool
+
+  set_fact:
+    system_identifer: >-
+      {{ bmc_systems_details.SystemID }}
+  when:
+       - not jobqueue | bool
 
 - debug:
-    msg: "system_mtm_prefix = {{ system_mtm_prefix }}"
+    msg: "system_identifer = {{ system_identifer }}"
     
-- debug:
-    msg: "serial number = {{ bmc_systems_details.json['SerialNumber'] }}"
-
-- debug:
-    msg: "model = {{ bmc_systems_details.json['Model'] }}"
  
 - name: Resolve model name from MTM prefix
   set_fact:
-    node_model: "{{ mtm_to_model[system_mtm_prefix] | default('unknown') }}"
+    node_model: "{{ mtm_to_model[system_identifer] | default('unknown') }}"
 
 - debug:
     msg: "node_model = {{ node_model }}"
 
 - name: Fail if MTM prefix not recognized
   fail:
-    msg: "Unrecognized MTM prefix '{{ system_mtm_prefix }}' for RU {{ ru_number }}"
+    msg: "Unrecognized MTM prefix '{{ system_identifer }}' for RU {{ ru_number }}"
   when: node_model == 'unknown'
 
 - name: Log detected model
   debug:
-    msg: "RU {{ ru_number }} - MTM: {{ system_mtm_prefix }}, model: {{ node_model }}"
+    msg: "RU {{ ru_number }} - MTM: {{ system_identifer }}, model: {{ node_model }}"
 
 - name: Resolve OCP slot number from expansion cards config
   set_fact:

@@ -13,45 +13,69 @@
   register: bios_info
   delegate_to: localhost
 
-- set_stats:
-    data:
-       details: "{{ bios_info }}"
-
-- name: Extract current boot order entries
+- name: Extract all LegacyBootProtocol keys
   set_fact:
-    boot_order_entries: >-
-      {{ bios_info.json.Attributes.BootOrder | default([]) }}
+    all_legacy_keys: >-
+      {{ bios_info.json.Attributes
+         | dict2items
+         | selectattr('key', 'search', 'LegacyBootProtocol')
+         | map(attribute='key')
+         | list }}
 
-- name: Debug current boot order
+- name: Extract all PxeBootFilters keys
+  set_fact:
+    all_pxe_filter_keys: >-
+      {{ bios_info.json.Attributes
+         | dict2items
+         | selectattr('key', 'search', 'PxeBootFilters')
+         | map(attribute='key')
+         | list }}
+
+- name: Debug available keys
   debug:
     msg:
-      - "pxe_nic_slot            : {{ pxe_nic_slot }}"
-      - "boot_order_entries  : {{ boot_order_entries }}"
+      - "pxe_nic_slot         : {{ pxe_nic_slot }}"
+      - "LegacyBootProtocol   : {{ all_legacy_keys }}"
+      - "PxeBootFilters keys  : {{ all_pxe_filter_keys }}"
 
-- name: Find IPv4 PXE boot entry matching pxe_slot
+- name: Find target PxeBootFilters key matching pxe_nic_slot
   set_fact:
-    pxe_slot_ipv4: >-
-      {{ boot_order_entries | select('match',
-           '(?i).*' + pxe_nic_slot + '.*ip[v]?4.*'
-         ) | list | first | default('') }}
+    target_pxe_filter_key: >-
+      {{ all_pxe_filter_keys
+         | select('search', '(?i)' + pxe_nic_slot)
+         | list | first | default('') }}
 
-- name: Fail if IPv4 PXE entry not found for pxe_slot
+- name: Fail if no PxeBootFilters key found for pxe_nic_slot
   fail:
     msg: >
-      Could not find IPv4 PXE entry for RU {{ ru_num }}.
-      pxe_nic_slot           : {{ pxe_nic_slot }}
-      Available entries  : {{ boot_order_entries }}
-  when: pxe_slot_ipv4 == ''
+      Could not find PxeBootFilters key for
+      pxe_nic_slot     : {{ pxe_nic_slot }}
+      Available keys   : {{ all_pxe_filter_keys }}
+  when: target_pxe_filter_key == ''
 
-- name: Build new boot order with IPv4 PXE entry first
+- name: Debug resolved target key
+  debug:
+    msg:
+      - "pxe_nic_slot          : {{ pxe_nic_slot }}"
+      - "target_pxe_filter_key : {{ target_pxe_filter_key }}"
+
+- name: Build attributes - disable LegacyBootProtocol on ALL ports
   set_fact:
-    new_boot_order: >-
-      {{ [pxe_slot_ipv4]
-         + (boot_order_entries
-            | reject('equalto', pxe_slot_ipv4)
-            | list) }}
+    disable_legacy_attrs: >-
+      {{ dict(all_legacy_keys | zip_longest([], fillvalue='None')) }}
 
-- name: Apply new boot order via Redfish PATCH
+- name: Build attributes - disable UEFI PXE on all OTHER ports
+  set_fact:
+    disable_pxe_filter_attrs: >-
+      {{
+        dict(
+          all_pxe_filter_keys
+          | reject('equalto', target_pxe_filter_key)
+          | zip_longest([], fillvalue='Enabled')
+        )
+      }}
+
+- name: Verify global UEFI network stack is enabled
   uri:
     url: "{{ bmc_bios_url }}/Settings"
     method: PATCH
@@ -62,23 +86,75 @@
     body_format: json
     body:
       Attributes:
-        BootOrder: "{{ new_boot_order }}"
+        NetworkStackSettings_NetworkStack:   "Enabled"
+        NetworkStackSettings_IPv4PXESupport: "Enabled"
     status_code: [200, 202, 204]
-  register: patch_result
+  register: network_stack_result
+  delegate_to: localhost
+
+- name: Disable LegacyBootProtocol on ALL NIC ports
+  uri:
+    url: "{{ bmc_bios_url }}/Settings"
+    method: PATCH
+    user: "{{ bmc_user }}"
+    password: "{{ bmc_password }}"
+    validate_certs: no
+    force_basic_auth: yes
+    body_format: json
+    body:
+      Attributes: "{{ disable_legacy_attrs }}"
+    status_code: [200, 202, 204]
+  register: disable_legacy_result
+  delegate_to: localhost
+  when: all_legacy_keys | length > 0
+
+- name: Disable UEFI PXE on all other NIC ports
+  uri:
+    url: "{{ bmc_bios_url }}/Settings"
+    method: PATCH
+    user: "{{ bmc_user }}"
+    password: "{{ bmc_password }}"
+    validate_certs: no
+    force_basic_auth: yes
+    body_format: json
+    body:
+      Attributes: "{{ disable_pxe_filter_attrs }}"
+    status_code: [200, 202, 204]
+  register: disable_pxe_result
+  delegate_to: localhost
+  when: disable_pxe_filter_attrs | length > 0
+
+- name: Enable UEFI PXE on target NIC port only
+  uri:
+    url: "{{ bmc_bios_url }}/Settings"
+    method: PATCH
+    user: "{{ bmc_user }}"
+    password: "{{ bmc_password }}"
+    validate_certs: no
+    force_basic_auth: yes
+    body_format: json
+    body:
+      Attributes:
+        "{{ target_pxe_filter_key }}": "Disabled"
+    status_code: [200, 202, 204]
+  register: enable_result
   delegate_to: localhost
 
 - name: Store pxeSlotLabel
   set_fact:
-    pxe_slot_label: "{{ pxe_slot_ipv4 }}"
+    pxe_slot_label: "{{ target_pxe_filter_key }}"
 
-- name: Display boot order configuration summary
+- name: Display boot configuration summary
   debug:
     msg:
-      - "RU             : {{ ru_num }}"
-      - "Model          : {{ node_model }}"
-      - "MTM prefix     : {{ system_mtm_prefix }}"
-      - "pxe_slot       : {{ pxe_nic_slot }}"
-      - "IPv4 PXE entry : {{ pxe_slot_ipv4 }}"
-      - "New boot order : {{ new_boot_order }}"
-      - "pxeSlotLabel   : {{ pxe_slot_label }}"
-      - "Patch status   : {{ patch_result.status }}"
+      - "RU                    : {{ ru_number }}"
+      - "Model                 : {{ node_model }}"
+      - "MTM prefix            : {{ system_mtm_prefix }}"
+      - "pxe_nic_slot          : {{ pxe_nic_slot }}"
+      - "target_pxe_filter_key : {{ target_pxe_filter_key }}"
+      - "Legacy disabled on    : {{ all_legacy_keys | length }} ports"
+      - "PXE disabled on       : {{ disable_pxe_filter_attrs.keys() | list }}"
+      - "PXE enabled on        : {{ target_pxe_filter_key }}"
+      - "Network stack status  : {{ network_stack_result.status }}"
+      - "Enable PXE status     : {{ enable_result.status }}"
+      - "pxeSlotLabel          : {{ pxe_slot_label }}"

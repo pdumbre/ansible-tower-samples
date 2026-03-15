@@ -1,48 +1,8 @@
 
-# Boot order configuration via Redfish (XCC-based Lenovo nodes)
-
-- name: Get system info via Redfish
-  uri:
-    url: "{{ bmc_base_url }}/redfish/v1/Systems/{{ bmc_system_id | default('1') }}"
-    method: GET
-    user: "{{ bmc_user }}"
-    password: "{{ bmc_password }}"
-    validate_certs: no
-    force_basic_auth: yes
-    return_content: yes
-    status_code: [200]
-  register: redfish_sys_info
-  delegate_to: localhost
-
-- name: Extract MTM prefix from SKU (Lenovo uses SKU not Model)
-  set_fact:
-    system_mtm_prefix: >-
-      {{ redfish_sys_info.json.SKU | default('')
-         | upper | regex_replace('^([A-Z0-9]{4}).*', '\1') }}
-
-- name: Resolve model name from MTM prefix
-  set_fact:
-    node_model: "{{ mtm_model_map[system_mtm_prefix] | default('unknown') }}"
-
-- name: Fail if MTM prefix not recognized
-  fail:
-    msg: "Unrecognized MTM prefix '{{ system_mtm_prefix }}' for RU {{ ru_num }}"
-  when: node_model == 'unknown'
-
-- name: Log detected model
-  debug:
-    msg: "RU {{ ru_num }} - MTM prefix: {{ system_mtm_prefix }}, model: {{ node_model }}"
-
-- name: Fail if pxe_slot is not defined
-  fail:
-    msg: >
-      pxe_slot is not defined for RU {{ ru_num }}.
-      Ensure pxe_slot is set in an earlier task.
-  when: pxe_slot is not defined or pxe_slot == ''
 
 - name: Get current BIOS attributes via Redfish
   uri:
-    url: "{{ bmc_base_url }}/redfish/v1/Systems/{{ bmc_system_id | default('1') }}/Bios"
+    url: "{{ bmc_bios_url }}"
     method: GET
     user: "{{ bmc_user }}"
     password: "{{ bmc_password }}"
@@ -89,7 +49,7 @@
 
 - name: Apply new boot order via Redfish PATCH
   uri:
-    url: "{{ bmc_base_url }}/redfish/v1/Systems/{{ bmc_system_id | default('1') }}/Bios/Settings"
+    url: "{{ bmc_bios_url }}/Settings"
     method: PATCH
     user: "{{ bmc_user }}"
     password: "{{ bmc_password }}"

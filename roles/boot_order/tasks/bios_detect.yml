@@ -4,18 +4,17 @@
       {{ bmc_systems_details.json.SKU | default('')
          | upper | regex_replace('^([A-Z0-9]{4}).*', '\1') }}
   when:
-       - not jobqueue | bool
+    - use_bios_jobqueue | bool
 
   set_fact:
     system_identifer: >-
       {{ bmc_systems_details.SystemID }}
   when:
-       - not jobqueue | bool
+    - not (use_bios_jobqueue | bool)
 
 - debug:
     msg: "system_identifer = {{ system_identifer }}"
-    
- 
+     
 - name: Resolve model name from MTM prefix
   set_fact:
     node_model: "{{ mtm_to_model[system_identifer] | default('unknown') }}"

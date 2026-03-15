@@ -1,8 +1,4 @@
 
-- set_stats:
-    data:
-      details: "{{ bmc_systems_details }}"
-
 - name: Extract MTM prefix and resolve model
   set_fact:
     system_mtm_prefix: >-

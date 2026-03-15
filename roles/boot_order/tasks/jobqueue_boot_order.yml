@@ -4,7 +4,7 @@
 - name: Clean job queue
   ansible.builtin.raw:
     cmd: >
-      racadm -r {{ ipv6ULA }} -u {{ bmc_user }} -p {{ bmc_user }}
+      racadm -r {{ ipv6ULA }} -u {{ bmc_user }} -p {{ bmc_password }}
       jobqueue delete --all
   register: clean_jobs_result
   failed_when: clean_jobs_result.rc != 0

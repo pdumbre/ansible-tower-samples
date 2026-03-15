@@ -52,6 +52,9 @@
   
 - set_fact:
     bmc_systems_url: "{{ bmc_base_url }}{{ systems.json.Members[0]['@odata.id'] }}"
+    bmc_system_id: >-
+      {{ systems.json.Members[0]['@odata.id']
+         | regex_replace('.*/Systems/', '') }}
     
 - name: Retrieve System details
   uri:

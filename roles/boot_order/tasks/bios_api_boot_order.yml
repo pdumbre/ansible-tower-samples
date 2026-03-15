@@ -21,7 +21,7 @@
 - name: Debug current boot order
   debug:
     msg:
-      - "pxe_slot            : {{ pxe_slot }}"
+      - "pxe_nic_slot            : {{ pxe_nic_slot }}"
       - "boot_order_entries  : {{ boot_order_entries }}"
 
 - name: Find IPv4 PXE boot entry matching pxe_slot
@@ -35,7 +35,7 @@
   fail:
     msg: >
       Could not find IPv4 PXE entry for RU {{ ru_num }}.
-      pxe_slot           : {{ pxe_slot }}
+      pxe_nic_slot           : {{ pxe_nic_slot }}
       Available entries  : {{ boot_order_entries }}
   when: pxe_slot_ipv4 == ''
 
@@ -73,7 +73,7 @@
       - "RU             : {{ ru_num }}"
       - "Model          : {{ node_model }}"
       - "MTM prefix     : {{ system_mtm_prefix }}"
-      - "pxe_slot       : {{ pxe_slot }}"
+      - "pxe_slot       : {{ pxe_nic_slot }}"
       - "IPv4 PXE entry : {{ pxe_slot_ipv4 }}"
       - "New boot order : {{ new_boot_order }}"
       - "pxeSlotLabel   : {{ pxe_slot_label }}"

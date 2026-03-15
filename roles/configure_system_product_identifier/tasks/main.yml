@@ -11,16 +11,12 @@
   delegate_to: localhost
   register: probe_job_queue 
   failed_when: false
-  when: not (ru_number | int == 23)
-
-- debug:
-    msg: "probe_job_queue = {{ probe_job_queue }}"
 
 - name: Set BIOS apply method flag
   set_fact:
     use_bios_jobqueue: "{{ probe_job_queue.status | default(404) == 200 }}"
-  when: not (ru_number | int == 23)
+ 
 
 - name: Detect model and resolve configuration flags
   include_tasks: bios_detect.yml
-  when: not (ru_number | int == 23)
+ 

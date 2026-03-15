@@ -1,1 +1,188 @@
 
+# Boot order configuration
+
+- name: Clean job queue
+  ansible.builtin.raw:
+    cmd: >
+      racadm -r {{ ipv6ULA }} -u {{ bmc_user }} -p {{ bmc_password }}
+      jobqueue delete --all
+  register: clean_jobs_result
+  failed_when: clean_jobs_result.rc != 0
+
+- name: Stage PXE BIOS attribute via Redfish
+  uri:
+    url: "{{ bmc_bios_url }}/Settings"
+    method: PATCH
+    user: "{{ bmc_user }}"
+    password: "{{ bmc_password }}"
+    validate_certs: no
+    force_basic_auth: yes
+    body_format: json
+    body:
+      Attributes:
+        PxeDev1EnDis: "Enabled"
+        PxeDev1Interface: "{{ pxe_nic_slot }}"
+        PxeDev1Protocol: "IPv4"
+    status_code: [200, 202, 204]
+  register: stage_pxe
+  when: pxe_nic_slot is defined
+
+- name: Debug PXE staging result
+  debug:
+    msg: "PXE BIOS attributes staged successfully: {{ stage_pxe.status }}"
+  when: pxe_nic_slot is defined
+
+- name: Create BIOS job to apply staged settings
+  uri:
+    url: "{{ bmc_manager_url }}/Jobs"
+    method: POST
+    user: "{{ bmc_user }}"
+    password: "{{ bmc_password }}"
+    validate_certs: no
+    force_basic_auth: yes
+    body_format: json
+    body:
+      TargetSettingsURI: "/redfish/v1/Systems/{{ bmc_system_id }}/Bios/Settings"
+    status_code: [200, 202, 204]
+  register: bios_job
+  delegate_to: "{{ bmc_delegate_host }}"
+  when: pxe_nic_slot is defined
+
+- name: Extract BIOS job ID from response
+  set_fact:
+    bios_job_id: "{{ bios_job.json.Id
+                     if bios_job.json.Id is defined
+                     else bios_job.location
+                        | default('')
+                        | regex_replace('.*/', '') }}"
+  when: pxe_nic_slot is defined
+
+- name: Debug BIOS job ID
+  debug:
+    msg: "BIOS Job created with ID: {{ bios_job_id }}"
+  when: pxe_nic_slot is defined
+
+- name: Reboot server to trigger BIOS job
+  uri:
+    url: "{{ bmc_reset_url }}"
+    method: POST
+    user: "{{ bmc_user }}"
+    password: "{{ bmc_password }}"
+    validate_certs: no
+    force_basic_auth: yes
+    body_format: json
+    body:
+      ResetType: "ForceRestart"
+    status_code: [200, 202, 204]
+  register: reboot_result
+  when: pxe_nic_slot is defined
+
+- name: Debug reboot result
+  debug:
+    msg: "Server reboot triggered: {{ reboot_result.status }}"
+  when: pxe_nic_slot is defined
+
+- name: Wait for server to start rebooting
+  pause:
+    seconds: 30
+  when: pxe_nic_slot is defined
+
+- name: Poll BIOS job until completed or failed
+  uri:
+    url: "{{ bmc_manager_url }}/Jobs/{{ bios_job_id }}"
+    method: GET
+    user: "{{ bmc_user }}"
+    password: "{{ bmc_password }}"
+    validate_certs: no
+    force_basic_auth: yes
+    status_code: [200]
+  register: job_poll_result
+  until: >
+    job_poll_result.json.JobState in [
+      'Completed',
+      'Failed',
+      'CompletedWithErrors',
+      'RebootFailed',
+      'RebootCompleted'
+    ]
+  retries: 60
+  delay: 30
+  when:
+    - pxe_nic_slot is defined
+    - bios_job_id is defined
+
+- name: Debug job poll result
+  debug:
+    msg:
+      - "Job ID          : {{ bios_job_id }}"
+      - "Job State       : {{ job_poll_result.json.JobState }}"
+      - "Job Message     : {{ job_poll_result.json.Message | default('N/A') }}"
+      - "Percent Complete: {{ job_poll_result.json.PercentComplete | default('N/A') }}%"
+  when: pxe_nic_slot is defined
+
+- name: Fail if BIOS job did not complete successfully
+  fail:
+    msg: >
+      BIOS job {{ bios_job_id }} failed with state
+      '{{ job_poll_result.json.JobState }}'
+      and message: '{{ job_poll_result.json.Message | default('No message') }}'
+  when:
+    - pxe_nic_slot is defined
+    - job_poll_result.json.JobState in ['Failed', 'CompletedWithErrors', 'RebootFailed']
+
+- name: Wait for server to come back online after reboot
+  uri:
+    url: "{{ bmc_systems_url }}"
+    method: GET
+    user: "{{ bmc_user }}"
+    password: "{{ bmc_password }}"
+    validate_certs: no
+    force_basic_auth: yes
+    status_code: [200]
+  register: system_state
+  until: >
+    system_state.json.PowerState == 'On' and
+    system_state.json.Status.Health == 'OK'
+  retries: 40
+  delay: 15
+  when: pxe_nic_slot is defined
+
+- name: Verify PXE BIOS attribute was applied
+  uri:
+    url: "{{ bmc_bios_url }}"
+    method: GET
+    user: "{{ bmc_user }}"
+    password: "{{ bmc_password }}"
+    validate_certs: no
+    force_basic_auth: yes
+    status_code: [200]
+  register: bios_verify
+  delegate_to: "{{ bmc_delegate_host }}"
+  when: pxe_nic_slot is defined
+
+- name: Debug verified BIOS PXE settings
+  debug:
+    msg:
+      - "PxeDev1EnDis   : {{ bios_verify.json.Attributes.PxeDev1EnDis | default('N/A') }}"
+      - "PxeDev1Interface: {{ bios_verify.json.Attributes.PxeDev1Interface | default('N/A') }}"
+      - "PxeDev1Protocol : {{ bios_verify.json.Attributes.PxeDev1Protocol | default('N/A') }}"
+  when: pxe_nic_slot is defined
+
+- name: Fail if PXE interface not set correctly
+  fail:
+    msg: >
+      PXE interface mismatch!
+      Expected: '{{ pxe_nic_slot }}'
+      Got: '{{ bios_verify.json.Attributes.PxeDev1Interface | default('not set') }}'
+  when:
+    - pxe_nic_slot is defined
+    - bios_verify.json.Attributes.PxeDev1Interface | default('') != pxe_nic_slot
+
+- name: Log PXE boot configuration success
+  debug:
+    msg:
+      - "PXE boot configuration completed successfully"
+      - "Server    : {{ inventory_hostname }}"
+      - "NIC Slot  : {{ pxe_nic_slot }}"
+      - "Job ID    : {{ bios_job_id }}"
+      - "Job State : {{ job_poll_result.json.JobState }}"

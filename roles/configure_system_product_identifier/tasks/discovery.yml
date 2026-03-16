@@ -83,4 +83,23 @@
     is_service_node: "{{ node_type == 'servicenode' }}"
     bmc_bios_url: "{{ bmc_systems_url }}/Bios"
     bmc_reset_url: "{{ bmc_systems_url }}/Actions/ComputerSystem.Reset"
+
+- name: Retrieve BMC firmware version
+  uri:
+    url: "{{ bmc_manager_url }}"
+    method: GET
+    user: "{{ bmc_user }}"
+    password: "{{ bmc_password }}"
+    validate_certs: "{{ redfish_validate_certs | default(false) }}"
+    force_basic_auth: yes
+  delegate_to: localhost
+  register: bmc_manager_info
+
+- name: Set BMC firmware version fact
+  set_fact:
+    bmc_firmware_version: "{{ bmc_manager_info.json.FirmwareVersion }}"
+
+- name: Display discovered BMC firmware version
+  debug:
+    msg: "BMC Firmware Version: {{ bmc_firmware_version }}"
     

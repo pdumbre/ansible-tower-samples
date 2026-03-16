@@ -1,1 +1,110 @@
 
+# Power management operations
+# Uses Redfish API for power state management
+
+- name: Check server power state
+  uri:
+    url: "{{ bmc_systems_url }}"
+    method: GET
+    user: "{{ bmc_username }}"
+    password: "{{ bmc_password }}"
+    validate_certs: no
+    force_basic_auth: yes
+    return_content: yes
+    status_code: [200]
+  register: power_state_check
+  when: power_action == "check"
+  retries: "{{ retry_count }}"
+  delay: "{{ retry_delay }}"
+
+- name: Set power state fact
+  set_fact:
+    server_power_state: "{{ power_state_check.json.PowerState | lower }}"
+  when: power_action == "check"
+
+- name: Display current power state
+  debug:
+    msg: "Server power state: {{ server_power_state }}"
+  when: power_action == "check"
+
+- name: Power on server
+  block:
+    - name: Send power on command
+      uri:
+        url: "{{ bmc_reset_url }}"
+        method: POST
+        user: "{{ bmc_username }}"
+        password: "{{ bmc_password }}"
+        validate_certs: no
+        force_basic_auth: yes
+        body_format: json
+        body:
+          ResetType: "On"
+        status_code: [200, 204]
+      register: power_on_result
+
+    - name: Display power on result
+      debug:
+        msg: "Server powered on successfully"
+
+    - name: Wait for server to boot
+      pause:
+        seconds: "{{ power_on_wait_time }}"
+        prompt: "Waiting {{ power_on_wait_time }} seconds for server to boot..."
+
+  when: power_action == "on"
+
+- name: Power off server
+  block:
+    - name: Send power off command
+      uri:
+        url: "{{ bmc_reset_url }}"
+        method: POST
+        user: "{{ bmc_username }}"
+        password: "{{ bmc_password }}"
+        validate_certs: no
+        force_basic_auth: yes
+        body_format: json
+        body:
+          ResetType: "ForceOff"
+        status_code: [200, 204]
+      register: power_off_result
+
+    - name: Display power off result
+      debug:
+        msg: "Server powered off successfully"
+
+    - name: Wait after power off
+      pause:
+        seconds: "{{ power_off_wait_time }}"
+
+  when: power_action == "off" or power_action == "cycle"
+
+- name: Power on after cycle
+  block:
+    - name: Send power on command after cycle
+      uri:
+        url: "{{ bmc_reset_url }}"
+        method: POST
+        user: "{{ bmc_username }}"
+        password: "{{ bmc_password }}"
+        validate_certs: no
+        force_basic_auth: yes
+        body_format: json
+        body:
+          ResetType: "On"
+        status_code: [200, 204]
+      register: power_on_cycle_result
+
+    - name: Display power cycle completion
+      debug:
+        msg: "Server power cycle completed successfully"
+
+    - name: Wait for server to boot after cycle
+      pause:
+        seconds: "{{ power_on_wait_time }}"
+        prompt: "Waiting {{ power_on_wait_time }} seconds for server to boot after power cycle..."
+
+  when: power_action == "cycle"
+
+

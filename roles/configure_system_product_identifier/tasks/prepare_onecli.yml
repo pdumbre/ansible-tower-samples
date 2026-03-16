@@ -1,7 +1,7 @@
 - name: Determine OneCli version based on firmware and device type
   vars:
     _rule: "{{ onecli_version_rules[node_device_type] }}"
-    _firmware_key: "{{ 'old_firmware' if bmc_firmware_version_clean is version(onecli_version_threshold, '<=') else 'new_firmware' }}"
+    _firmware_key: "{{ 'old_firmware' if bmc_firmware_version is version(onecli_version_threshold, '<=') else 'new_firmware' }}"
     _selected_version: "{{ _rule[_firmware_key] }}"
   set_fact:
     selected_onecli_version: "{{ _selected_version }}"

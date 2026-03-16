@@ -1,8 +1,3 @@
----
-# Prepare OneCli working directory and select appropriate version
-# Equivalent to prepareWorkingDir() method in NodesSysProd.groovy
-# OneCli is used for Lenovo BIOS/BMC configuration
-# All tasks delegate_to: localhost — OneCli runs on the Ansible controller
 
 - name: Determine OneCli version based on firmware and device type
   set_fact:
@@ -16,29 +11,63 @@
          if (bmc_firmware_version is version(onecli_version_threshold, '<=')
              and node_device_type == 'sr645')
          else '4.1.0' }}
+    selected_onecli_download_url: >-
+      {{ onecli_34_download_url
+         if (bmc_firmware_version is version(onecli_version_threshold, '<=')
+             and node_device_type == 'sr645')
+         else onecli_41_download_url }}
 
 - name: Display OneCli selection
   debug:
     msg:
-      - "OneCli Version Selection:"
-      - "  BMC Firmware Version: {{ bmc_firmware_version }}"
-      - "  Device Type: {{ node_device_type }}"
-      - "  Version Threshold: {{ onecli_version_threshold }}"
-      - "  Selected OneCli Version: {{ selected_onecli_version }}"
-      - "  Image File: {{ selected_onecli_image }}"
-      - "  Reason: {{ 'Old firmware (<=' + onecli_version_threshold + ') on sr645 requires OneCli 3.4.0' if selected_onecli_version == '3.4.0' else 'Using latest OneCli 4.1.0' }}"
-
+      - "Firmware string:     {{ bmc_firmware_version }}"
+      - "Version threshold:       {{ onecli_version_threshold }}"
+      - "Selected OneCli version: {{ selected_onecli_version }}"
+      - "Selected image:          {{ selected_onecli_image }}"
+      - "Download URL:            {{ selected_onecli_download_url }}"
 
 - name: Warn if non-sr645 device has firmware at or below version threshold
   debug:
     msg:
       - "WARNING: {{ node_device_type }} has firmware {{ bmc_firmware_version }} <= {{ onecli_version_threshold }}"
-      - "OneCli version selection only applies to sr645. Defaulting to 4.1.0."
-      - "If {{ node_device_type }} also requires OneCli 3.4.0 on old firmware, update the version selection logic."
+      - "Version selection only applies to sr645. Defaulting to OneCli 4.1.0."
   when:
     - node_device_type != 'sr645'
     - bmc_firmware_version is version(onecli_version_threshold, '<=')
 
+
+- name: Create firmware repository directory if it does not exist
+  file:
+    path: "{{ firmware_repo_path }}"
+    state: directory
+    mode: '0755'
+  delegate_to: localhost
+
+- name: Check if selected OneCli tarball already exists locally
+  stat:
+    path: "{{ firmware_repo_path }}/{{ selected_onecli_image }}"
+  delegate_to: localhost
+  register: onecli_tarball_check
+
+- name: Download selected OneCli tarball from Lenovo
+  get_url:
+    url: "{{ selected_onecli_download_url }}"
+    dest: "{{ firmware_repo_path }}/{{ selected_onecli_image }}"
+    mode: '0644'
+    timeout: 120
+  delegate_to: localhost
+  register: onecli_download
+  retries: 3
+  delay: 10
+  until: onecli_download is succeeded
+  when: not onecli_tarball_check.stat.exists
+
+- name: Display download result
+  debug:
+    msg: >-
+      {{ 'Downloaded ' + selected_onecli_image
+         if not onecli_tarball_check.stat.exists
+         else selected_onecli_image + ' already exists locally — skipping download' }}
 
 - name: Clean previous working directory
   file:
@@ -58,18 +87,6 @@
     recurse: yes
   delegate_to: localhost
 
-- name: Check if OneCli tarball exists in firmware repository
-  stat:
-    path: "{{ firmware_repo_path }}/{{ selected_onecli_image }}"
-  delegate_to: localhost
-  register: onecli_tarball_check
-
-- name: Fail if OneCli tarball not found
-  fail:
-    msg: "OneCli tarball not found: {{ firmware_repo_path }}/{{ selected_onecli_image }}"
-  when: not onecli_tarball_check.stat.exists
-
-
 - name: Copy OneCli tarball to working directory
   copy:
     src: "{{ firmware_repo_path }}/{{ selected_onecli_image }}"
@@ -77,25 +94,18 @@
     mode: '0644'
   delegate_to: localhost
 
-
 - name: Extract OneCli tarball
   unarchive:
     src: "{{ onecli_base_dir }}/{{ rack_unit }}/{{ selected_onecli_image }}"
     dest: "{{ onecli_base_dir }}/{{ rack_unit }}/onecli/"
     remote_src: yes
   delegate_to: localhost
-  register: extract_result
-
 
 - name: Remove OneCli tarball after extraction
   file:
     path: "{{ onecli_base_dir }}/{{ rack_unit }}/{{ selected_onecli_image }}"
     state: absent
   delegate_to: localhost
-
-- name: Display extraction result
-  debug:
-    msg: "OneCli extracted successfully to {{ onecli_base_dir }}/{{ rack_unit }}/onecli/"
 
 - name: Find OneCli binary
   find:
@@ -112,13 +122,12 @@
   fail:
     msg: >
       OneCli binary not found under {{ onecli_base_dir }}/{{ rack_unit }}/onecli/.
-      Check that the tarball {{ selected_onecli_image }} contains an 'OneCli' or 'onecli' binary.
+      Check that {{ selected_onecli_image }} contains an 'OneCli' or 'onecli' binary.
   when: onecli_binary_search.matched == 0
 
 - name: Set OneCli binary path
   set_fact:
     onecli_bin: "{{ onecli_binary_search.files[0].path }}"
-  when: onecli_binary_search.matched > 0
 
 - name: Make OneCli binary executable
   file:
@@ -133,7 +142,7 @@
   failed_when: false
   delegate_to: localhost
 
-- name: Fail if OneCli binary is not executable or returned unexpected output
+- name: Fail if OneCli binary is not executable
   fail:
     msg: >
       OneCli binary at {{ onecli_bin }} failed to run (rc={{ onecli_version_check.rc }}).
@@ -145,8 +154,7 @@
   debug:
     msg:
       - "OneCli Preparation Complete:"
-      - "  Version: {{ selected_onecli_version }}"
-      - "  Binary Path: {{ onecli_bin }}"
+      - "  Version:           {{ selected_onecli_version }}"
+      - "  Binary Path:       {{ onecli_bin }}"
       - "  Working Directory: {{ onecli_base_dir }}/{{ rack_unit }}"
-      - "  Runtime Version Output: {{ onecli_version_check.stdout_lines[0] | default('unknown') }}"
-
+      - "  Runtime output:    {{ onecli_version_check.stdout_lines[0] | default('unknown') }}"

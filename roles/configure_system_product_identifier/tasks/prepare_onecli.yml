@@ -50,16 +50,11 @@
   delegate_to: localhost
 
 - name: Check if OneCli image exists on mounted host directory
-  stat:
-    path: "{{ firmware_repo_path }}/{{ selected_onecli_image }}"
+  command: test -f {{ firmware_repo_path }}/{{ selected_onecli_image }}
   delegate_to: localhost
   register: onecli_tarball_check
-
-- name: Check if OneCli image exists on mounted host directory
-  stat:
-    path: "{{ firmware_repo_path }}/{{ selected_onecli_image }}"
-  delegate_to: localhost
-  register: onecli_tarball_check
+  changed_when: false
+  failed_when: false
 
 - name: Fail if OneCli image not found on host mount
   fail:
@@ -67,9 +62,7 @@
       OneCli image not found at {{ firmware_repo_path }}/{{ selected_onecli_image }}.
       Ensure the file is present on the Kubernetes host at /data/firmware/onecli/
       and the hostPath volume mount is configured in the AWX CR.
-  when: not onecli_tarball_check.stat.exists
-
-# --- Prepare working directory ---
+  when: onecli_tarball_check.rc != 0
 
 - name: Clean previous working directory for this rack unit
   file:

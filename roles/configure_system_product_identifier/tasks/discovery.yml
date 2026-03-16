@@ -99,6 +99,10 @@
   set_fact:
     bmc_firmware_version: "{{ bmc_manager_info.json.FirmwareVersion }}"
 
+- name: Extract numeric version from BMC firmware string
+  set_fact:
+    bmc_firmware_version: "{{ bmc_firmware_version | regex_search('[0-9]+\\.[0-9]+') }}"
+
 - name: Display discovered BMC firmware version
   debug:
     msg: "BMC Firmware Version: {{ bmc_firmware_version }}"

@@ -13,6 +13,7 @@
     return_content: yes
     status_code: [200]
   register: power_state_check
+  delegate_to: localhost
   when: power_action == "check"
   retries: "{{ retry_count }}"
   delay: "{{ retry_delay }}"
@@ -41,6 +42,7 @@
         body:
           ResetType: "On"
         status_code: [200, 204]
+      delegate_to: localhost
       register: power_on_result
 
     - name: Display power on result
@@ -68,6 +70,7 @@
         body:
           ResetType: "ForceOff"
         status_code: [200, 204]
+      delegate_to: localhost
       register: power_off_result
 
     - name: Display power off result
@@ -94,6 +97,7 @@
         body:
           ResetType: "On"
         status_code: [200, 204]
+      delegate_to: localhost
       register: power_on_cycle_result
 
     - name: Display power cycle completion

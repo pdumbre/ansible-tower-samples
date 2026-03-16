@@ -67,3 +67,27 @@ onecli_base_dir: "/tmp/onecli_work"
 
 # Path to firmware/image repository on Ansible controller
 firmware_repo_path: "/opt/firmware/lenovo"
+
+# OneCLI version definitions — add new versions here without touching task logic
+onecli_versions:
+  "3.4.0":
+    image: "lnvgy_utl_lxce_onecli3.4.0_rhels8_x86-64.tgz"
+    download_url: "https://download.lenovo.com/servers/mig/2024/xx/xx/lnvgy_utl_lxce_onecli3.4.0_rhels8_x86-64.tgz"
+  "4.1.0":
+    image: "lnvgy_utl_lxce_onecli4.1.0_rhels8_x86-64.tgz"
+    download_url: "https://download.lenovo.com/servers/mig/2024/xx/xx/lnvgy_utl_lxce_onecli4.1.0_rhels8_x86-64.tgz"
+
+# Selection rules — maps device_type to version based on firmware threshold
+# Format: device_type: { at_or_below_threshold: version, above_threshold: version }
+onecli_version_rules:
+  sr645:
+    old_firmware: "3.4.0"
+    new_firmware: "4.1.0"
+  sr630v3:
+    old_firmware: "4.1.0"
+    new_firmware: "4.1.0"
+  sr675:
+    old_firmware: "4.1.0"
+    new_firmware: "4.1.0"
+
+onecli_version_threshold: "5.1"

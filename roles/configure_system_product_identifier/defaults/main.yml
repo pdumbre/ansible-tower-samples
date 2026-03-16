@@ -36,20 +36,3 @@ mtm_to_model:
   
   # Dell XE7745
   "3350": "xe7745"
-
-# Supported device types
-lenovo_supported_devices:
-  - sr645
-  - sr630v3
-  - sr675
-
-# System product data configuration
-system_product_identifiers:
-  sr645: "ThinkSystem SR645 BCQQ"
-  sr630v3: "ThinkSystem SR630V3 BRQX"
-
-manufacturer_name: "Lenovo"
-
-# Secure Boot and Legacy BIOS (sr675 specific)
-secure_boot_setting: "Disabled"
-legacy_bios_setting: "Enabled"

@@ -13,23 +13,15 @@
   when:
     - use_bios_jobqueue | bool
 
-- name: Debug system identifier
-  debug:
-    msg: "system_identifer = {{ system_identifer }}"
-
 - name: Resolve model name from MTM prefix
   set_fact:
-    node_model: "{{ mtm_to_model[system_identifer | string] | default('unknown') }}"
-
-- name: Debug resolved model
-  debug:
-    msg: "node_model = {{ node_model }}"
+    node_device_type: "{{ mtm_to_model[system_identifer | string] | default('unknown') }}"
 
 - name: Fail if MTM prefix not recognized
   fail:
     msg: "Unrecognized MTM prefix '{{ system_identifer }}' for RU {{ ru_number }}"
-  when: node_model == 'unknown'
+  when: node_device_type == 'unknown'
 
 - name: Log detected model
   debug:
-    msg: "RU {{ ru_number }} - MTM: {{ system_identifer }}, model: {{ node_model }}"
+    msg: "RU {{ ru_number }} - MTM: {{ system_identifer }}, model: {{ node_device_type }}"

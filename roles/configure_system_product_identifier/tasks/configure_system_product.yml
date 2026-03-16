@@ -14,13 +14,13 @@
   include_tasks: power_management.yml
   vars:
     power_action: "check"
-    
+
+- name: Power on server
   include_tasks: power_management.yml
   vars:
     power_action: "on"
   when: server_power_state | lower in ["off", "poweroff"]
-
-
+    
 # Configure Product Identifier and Manufacturer for sr645
 - name: Configure system product data for sr645
   block:

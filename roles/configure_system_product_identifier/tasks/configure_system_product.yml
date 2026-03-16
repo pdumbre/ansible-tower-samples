@@ -10,6 +10,9 @@
       - node_device_type in ['sr645', 'sr630v3', 'sr675']
     fail_msg: "Unsupported device type: {{ node_device_type }}. Must be one of: sr645, sr630v3, sr675"
 
+- name: Configure one cli
+  include_tasks: prepare_onecli.yml
+
 - name: Check server power state
   include_tasks: power_management.yml
   vars:

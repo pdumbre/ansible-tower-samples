@@ -79,10 +79,6 @@ onecli_version_threshold: "5.1"
 
 firmware_repo_path: "/mnt/firmware"
 onecli_base_dir: "/tmp/awx_onecli"
-checkpoint_dir: "/tmp/awx_checkpoints"
-checkpoint_enabled: true
 
 management_interface: "eth0"
 redfish_validate_certs: false
-retry_count: 3
-retry_delay: 10

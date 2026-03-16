@@ -56,6 +56,10 @@
 
   when: node_device_type == "sr645"
 
+- debug:
+    msg: "url: {{ bmc_bios_url }}/Settings"
+
+
 # Configure Product Identifier and Manufacturer for sr630v3
 - name: Configure system product data for sr630v3
   block:
@@ -82,9 +86,6 @@
         sr630v3_config.status not in [200, 204] or
         (sr630v3_config.json is defined and 'error' in sr630v3_config.json)
         
-    - debug:
-        msg: "url: {{ bmc_bios_url }}/Settings"
-
     - debug:
         msg: "result: {{ sr630v3_config }}"
         

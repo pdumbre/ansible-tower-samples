@@ -53,3 +53,16 @@ manufacturer_name: "Lenovo"
 # Secure Boot and Legacy BIOS (sr675 specific)
 secure_boot_setting: "Disabled"
 legacy_bios_setting: "Enabled"
+
+# OneCLI image filenames as stored in your firmware repository
+onecli_34_image: "lnvgy_utl_lxce_onecli3.4.0_rhels8_x86-64.tgz"
+onecli_41_image: "lnvgy_utl_lxce_onecli4.1.0_rhels8_x86-64.tgz"
+
+# Version threshold — sr645 at or below this firmware gets OneCLI 3.4.0
+onecli_version_threshold: "5.1"
+
+# Base directory on Ansible controller where OneCLI will be extracted
+onecli_base_dir: "/tmp/onecli_work"
+
+# Path to firmware/image repository on Ansible controller
+firmware_repo_path: "/opt/firmware/lenovo"

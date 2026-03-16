@@ -19,7 +19,9 @@
   set_fact:
     use_bios_jobqueue: "{{ probe_job_queue.status | default(404) == 200 }}"
  
-
 - name: Detect model and resolve configuration flags
   include_tasks: bios_detect.yml
  
+- name: Configure system product identifier
+  include_tasks: configure_system_product.yml
+  when: not use_bios_jobqueue | bool

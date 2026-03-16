@@ -1,1 +1,7 @@
 
+- name: Configure system product identifier
+  hosts: bmc_servers
+  gather_facts: false
+    
+  roles:
+    - configure_system_product_identifier

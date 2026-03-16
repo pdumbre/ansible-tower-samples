@@ -1,66 +1,59 @@
+
+- name: Assert node_device_type is supported
+  assert:
+    that:
+      - node_device_type in onecli_version_rules
+    fail_msg: >
+      Unsupported device type '{{ node_device_type }}'.
+      Must be one of: {{ onecli_version_rules.keys() | list | join(', ') }}
+
 - name: Determine OneCli version based on firmware and device type
   vars:
     _rule: "{{ onecli_version_rules[node_device_type] }}"
-    _firmware_key: "{{ 'old_firmware' if bmc_firmware_version is version(onecli_version_threshold, '<=') else 'new_firmware' }}"
+    _firmware_key: "{{ 'old_firmware' if bmc_firmware_version_clean is version(onecli_version_threshold, '<=') else 'new_firmware' }}"
     _selected_version: "{{ _rule[_firmware_key] }}"
   set_fact:
     selected_onecli_version: "{{ _selected_version }}"
     selected_onecli_image: "{{ onecli_versions[_selected_version].image }}"
+    selected_onecli_binary: "{{ onecli_versions[_selected_version].binary_name }}"
     selected_onecli_download_url: "{{ onecli_versions[_selected_version].download_url }}"
 
 - name: Display OneCli selection
   debug:
     msg:
-      - "Firmware string:         {{ bmc_firmware_version }}"
+      - "Raw firmware string:     {{ bmc_firmware_version }}"
       - "Version threshold:       {{ onecli_version_threshold }}"
       - "Selected OneCli version: {{ selected_onecli_version }}"
       - "Selected image:          {{ selected_onecli_image }}"
-      - "Download URL:            {{ selected_onecli_download_url }}"
+      - "Binary name in archive:  {{ selected_onecli_binary }}"
 
 - name: Warn if non-sr645 device has firmware at or below version threshold
   debug:
     msg:
-      - "WARNING: {{ node_device_type }} has firmware {{ bmc_firmware_version }} <= {{ onecli_version_threshold }}"
+      - "WARNING: {{ node_device_type }} has firmware {{ bmc_firmware_version_clean }} <= {{ onecli_version_threshold }}"
       - "Version selection only applies to sr645. Defaulting to OneCli 4.1.0."
   when:
     - node_device_type != 'sr645'
-    - bmc_firmware_version is version(onecli_version_threshold, '<=')
+    - bmc_firmware_version_clean is version(onecli_version_threshold, '<=')
 
+# --- Verify tarball exists on host mount ---
 
-- name: Create firmware repository directory if it does not exist
-  file:
-    path: "{{ firmware_repo_path }}"
-    state: directory
-    mode: '0755'
-  delegate_to: localhost
-
-- name: Check if selected OneCli tarball already exists locally
+- name: Check if OneCli tarball exists on mounted host directory
   stat:
     path: "{{ firmware_repo_path }}/{{ selected_onecli_image }}"
   delegate_to: localhost
   register: onecli_tarball_check
 
-- name: Download selected OneCli tarball from Lenovo
-  get_url:
-    url: "{{ selected_onecli_download_url }}"
-    dest: "{{ firmware_repo_path }}/{{ selected_onecli_image }}"
-    mode: '0644'
-    timeout: 120
-  delegate_to: localhost
-  register: onecli_download
-  retries: 3
-  delay: 10
-  until: onecli_download is succeeded
+- name: Fail if OneCli tarball not found on host mount
+  fail:
+    msg: >
+      OneCli tarball not found at {{ firmware_repo_path }}/{{ selected_onecli_image }}.
+      Ensure the file is present on the Kubernetes host at /data/firmware/onecli/
+      and the hostPath volume mount is configured in the AWX CR.
   when: not onecli_tarball_check.stat.exists
 
-- name: Display download result
-  debug:
-    msg: >-
-      {{ 'Downloaded ' + selected_onecli_image
-         if not onecli_tarball_check.stat.exists
-         else selected_onecli_image + ' already exists locally — skipping download' }}
 
-- name: Clean previous working directory
+- name: Clean previous working directory for this rack unit
   file:
     path: "{{ onecli_base_dir }}/{{ rack_unit }}"
     state: absent
@@ -70,7 +63,7 @@
     - clean_result is failed
     - "'No such file' not in (clean_result.msg | default(''))"
 
-- name: Create working directory structure
+- name: Create OneCli working directory
   file:
     path: "{{ onecli_base_dir }}/{{ rack_unit }}/onecli"
     state: directory
@@ -78,49 +71,35 @@
     recurse: yes
   delegate_to: localhost
 
-- name: Copy OneCli tarball to working directory
-  copy:
-    src: "{{ firmware_repo_path }}/{{ selected_onecli_image }}"
-    dest: "{{ onecli_base_dir }}/{{ rack_unit }}/{{ selected_onecli_image }}"
-    mode: '0644'
-  delegate_to: localhost
-
-- name: Extract OneCli tarball
+- name: Extract OneCli tarball to working directory
   unarchive:
-    src: "{{ onecli_base_dir }}/{{ rack_unit }}/{{ selected_onecli_image }}"
+    src: "{{ firmware_repo_path }}/{{ selected_onecli_image }}"
     dest: "{{ onecli_base_dir }}/{{ rack_unit }}/onecli/"
     remote_src: yes
   delegate_to: localhost
 
-- name: Remove OneCli tarball after extraction
-  file:
-    path: "{{ onecli_base_dir }}/{{ rack_unit }}/{{ selected_onecli_image }}"
-    state: absent
-  delegate_to: localhost
+# --- Locate and validate binary ---
 
-- name: Find OneCli binary
-  find:
-    paths: "{{ onecli_base_dir }}/{{ rack_unit }}/onecli"
-    patterns:
-      - "OneCli"
-      - "onecli"
-    recurse: yes
-    file_type: file
+# Binary name comes from defaults mapping — no ambiguous find needed
+- name: Set OneCli binary path from known binary name
+  set_fact:
+    onecli_bin: "{{ onecli_base_dir }}/{{ rack_unit }}/onecli/{{ selected_onecli_binary }}"
+
+- name: Verify OneCli binary exists after extraction
+  stat:
+    path: "{{ onecli_bin }}"
   delegate_to: localhost
-  register: onecli_binary_search
+  register: onecli_bin_stat
 
 - name: Fail if OneCli binary not found after extraction
   fail:
     msg: >
-      OneCli binary not found under {{ onecli_base_dir }}/{{ rack_unit }}/onecli/.
-      Check that {{ selected_onecli_image }} contains an 'OneCli' or 'onecli' binary.
-  when: onecli_binary_search.matched == 0
+      Expected OneCli binary not found at {{ onecli_bin }}.
+      Archive contents may differ — run:
+      tar -tzf {{ firmware_repo_path }}/{{ selected_onecli_image }} | grep -i onecli
+  when: not onecli_bin_stat.stat.exists
 
-- name: Set OneCli binary path
-  set_fact:
-    onecli_bin: "{{ onecli_binary_search.files[0].path }}"
-
-- name: Make OneCli binary executable
+- name: Ensure OneCli binary is executable
   file:
     path: "{{ onecli_bin }}"
     mode: '0755'
@@ -133,7 +112,7 @@
   failed_when: false
   delegate_to: localhost
 
-- name: Fail if OneCli binary is not executable
+- name: Fail if OneCli binary is not functional
   fail:
     msg: >
       OneCli binary at {{ onecli_bin }} failed to run (rc={{ onecli_version_check.rc }}).
@@ -145,7 +124,9 @@
   debug:
     msg:
       - "OneCli Preparation Complete:"
-      - "  Version:           {{ selected_onecli_version }}"
-      - "  Binary Path:       {{ onecli_bin }}"
-      - "  Working Directory: {{ onecli_base_dir }}/{{ rack_unit }}"
-      - "  Runtime output:    {{ onecli_version_check.stdout_lines[0] | default('unknown') }}"
+      - "  Version:     {{ selected_onecli_version }}"
+      - "  Binary:      {{ selected_onecli_binary }}"
+      - "  Binary Path: {{ onecli_bin }}"
+      - "  Runtime:     {{ onecli_version_check.stdout_lines[0] | default('unknown') }}"
+
+# Made with Bob

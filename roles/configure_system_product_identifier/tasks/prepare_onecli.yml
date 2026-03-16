@@ -1,3 +1,6 @@
+---
+# Prepare OneCli binary for execution
+# All tasks delegate_to: localhost — OneCli runs on the Ansible controller (AWX EE)
 
 - name: Assert node_device_type is supported
   assert:
@@ -36,22 +39,23 @@
     - node_device_type != 'sr645'
     - bmc_firmware_version is version(onecli_version_threshold, '<=')
 
-# --- Verify tarball exists on host mount ---
+# --- Verify image exists on host mount BEFORE attempting anything else ---
 
-- name: Check if OneCli tarball exists on mounted host directory
+- name: Check if OneCli image exists on mounted host directory
   stat:
     path: "{{ firmware_repo_path }}/{{ selected_onecli_image }}"
   delegate_to: localhost
   register: onecli_tarball_check
 
-- name: Fail if OneCli tarball not found on host mount
+- name: Fail if OneCli image not found on host mount
   fail:
     msg: >
-      OneCli tarball not found at {{ firmware_repo_path }}/{{ selected_onecli_image }}.
+      OneCli image not found at {{ firmware_repo_path }}/{{ selected_onecli_image }}.
       Ensure the file is present on the Kubernetes host at /data/firmware/onecli/
       and the hostPath volume mount is configured in the AWX CR.
   when: not onecli_tarball_check.stat.exists
 
+# --- Prepare working directory ---
 
 - name: Clean previous working directory for this rack unit
   file:
@@ -71,16 +75,23 @@
     recurse: yes
   delegate_to: localhost
 
-- name: Extract OneCli tarball to working directory
+# --- Extract archive ---
+# extra_opts forces gzip detection by magic bytes — required because the
+# Lenovo image file has no .tgz extension so Ansible cannot auto-detect format
+
+- name: Extract OneCli archive to working directory
   unarchive:
     src: "{{ firmware_repo_path }}/{{ selected_onecli_image }}"
     dest: "{{ onecli_base_dir }}/{{ rack_unit }}/onecli/"
     remote_src: yes
+    extra_opts:
+      - "--warning=no-unknown-keyword"
   delegate_to: localhost
 
 # --- Locate and validate binary ---
+# Binary name is sourced from defaults/main.yml onecli_versions mapping
+# — no ambiguous find needed, path is fully deterministic
 
-# Binary name comes from defaults mapping — no ambiguous find needed
 - name: Set OneCli binary path from known binary name
   set_fact:
     onecli_bin: "{{ onecli_base_dir }}/{{ rack_unit }}/onecli/{{ selected_onecli_binary }}"
@@ -94,8 +105,8 @@
 - name: Fail if OneCli binary not found after extraction
   fail:
     msg: >
-      Expected OneCli binary not found at {{ onecli_bin }}.
-      Archive contents may differ — run:
+      Expected binary '{{ selected_onecli_binary }}' not found at {{ onecli_bin }}.
+      List archive contents with:
       tar -tzf {{ firmware_repo_path }}/{{ selected_onecli_image }} | grep -i onecli
   when: not onecli_bin_stat.stat.exists
 

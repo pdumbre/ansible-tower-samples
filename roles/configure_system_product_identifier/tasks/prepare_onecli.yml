@@ -1,0 +1,166 @@
+---
+# Prepare OneCli working directory and select appropriate version
+# Equivalent to prepareWorkingDir() method in NodesSysProd.groovy
+# OneCli is used for Lenovo BIOS/BMC configuration
+# All tasks delegate_to: localhost — OneCli runs on the Ansible controller
+
+# FIX #1: Use `is version()` filter instead of `| float` to avoid
+#          miscomparing versions like 5.10 (float = 5.1) vs 5.1 (float = 5.1)
+- name: Determine OneCli version based on firmware and device type
+  set_fact:
+    selected_onecli_image: >-
+      {{ onecli_34_image
+         if (bmc_firmware_version is version(onecli_version_threshold, '<=')
+             and node_device_type == 'sr645')
+         else onecli_41_image }}
+    selected_onecli_version: >-
+      {{ '3.4.0'
+         if (bmc_firmware_version is version(onecli_version_threshold, '<=')
+             and node_device_type == 'sr645')
+         else '4.1.0' }}
+
+- name: Display OneCli selection
+  debug:
+    msg:
+      - "OneCli Version Selection:"
+      - "  BMC Firmware Version: {{ bmc_firmware_version }}"
+      - "  Device Type: {{ node_device_type }}"
+      - "  Version Threshold: {{ onecli_version_threshold }}"
+      - "  Selected OneCli Version: {{ selected_onecli_version }}"
+      - "  Image File: {{ selected_onecli_image }}"
+      - "  Reason: {{ 'Old firmware (<=' + onecli_version_threshold + ') on sr645 requires OneCli 3.4.0' if selected_onecli_version == '3.4.0' else 'Using latest OneCli 4.1.0' }}"
+
+# FIX #6: Warn explicitly if a non-sr645 device has old firmware — version
+#          selection silently defaults to 4.1.0 for all non-sr645 devices,
+#          which may be wrong if sr630v3/sr675 also need 3.4.0 on old firmware.
+- name: Warn if non-sr645 device has firmware at or below version threshold
+  debug:
+    msg:
+      - "WARNING: {{ node_device_type }} has firmware {{ bmc_firmware_version }} <= {{ onecli_version_threshold }}"
+      - "OneCli version selection only applies to sr645. Defaulting to 4.1.0."
+      - "If {{ node_device_type }} also requires OneCli 3.4.0 on old firmware, update the version selection logic."
+  when:
+    - node_device_type != 'sr645'
+    - bmc_firmware_version is version(onecli_version_threshold, '<=')
+
+# FIX #5: Replace bare ignore_errors with explicit failed_when so only
+#          "path does not exist" is tolerated — real permission errors still fail.
+- name: Clean previous working directory
+  file:
+    path: "{{ onecli_base_dir }}/{{ rack_unit }}"
+    state: absent
+  delegate_to: localhost
+  register: clean_result
+  failed_when:
+    - clean_result is failed
+    - "'No such file' not in (clean_result.msg | default(''))"
+
+# FIX #9: All filesystem/command tasks delegate to localhost consistently
+- name: Create working directory structure
+  file:
+    path: "{{ onecli_base_dir }}/{{ rack_unit }}/onecli"
+    state: directory
+    mode: '0755'
+    recurse: yes
+  delegate_to: localhost
+
+- name: Check if OneCli tarball exists in firmware repository
+  stat:
+    path: "{{ firmware_repo_path }}/{{ selected_onecli_image }}"
+  delegate_to: localhost
+  register: onecli_tarball_check
+
+- name: Fail if OneCli tarball not found
+  fail:
+    msg: "OneCli tarball not found: {{ firmware_repo_path }}/{{ selected_onecli_image }}"
+  when: not onecli_tarball_check.stat.exists
+
+# FIX #2: Removed remote_src: yes — without it, copy always reads src from
+#          the Ansible controller, which is where the firmware repo lives.
+- name: Copy OneCli tarball to working directory
+  copy:
+    src: "{{ firmware_repo_path }}/{{ selected_onecli_image }}"
+    dest: "{{ onecli_base_dir }}/{{ rack_unit }}/{{ selected_onecli_image }}"
+    mode: '0644'
+  delegate_to: localhost
+
+# FIX #3: Added delegate_to: localhost — unarchive must run on the controller.
+#          remote_src: yes is correct here because after delegation both src
+#          and dest are local paths on the controller.
+- name: Extract OneCli tarball
+  unarchive:
+    src: "{{ onecli_base_dir }}/{{ rack_unit }}/{{ selected_onecli_image }}"
+    dest: "{{ onecli_base_dir }}/{{ rack_unit }}/onecli/"
+    remote_src: yes
+  delegate_to: localhost
+  register: extract_result
+
+# FIX #7: Delete tarball immediately after extraction to free disk space
+- name: Remove OneCli tarball after extraction
+  file:
+    path: "{{ onecli_base_dir }}/{{ rack_unit }}/{{ selected_onecli_image }}"
+    state: absent
+  delegate_to: localhost
+
+- name: Display extraction result
+  debug:
+    msg: "OneCli extracted successfully to {{ onecli_base_dir }}/{{ rack_unit }}/onecli/"
+
+# FIX #4: Added file_type: file and broadened patterns to handle case
+#          variations (OneCli vs onecli) across firmware package versions.
+- name: Find OneCli binary
+  find:
+    paths: "{{ onecli_base_dir }}/{{ rack_unit }}/onecli"
+    patterns:
+      - "OneCli"
+      - "onecli"
+    recurse: yes
+    file_type: file
+  delegate_to: localhost
+  register: onecli_binary_search
+
+- name: Fail if OneCli binary not found after extraction
+  fail:
+    msg: >
+      OneCli binary not found under {{ onecli_base_dir }}/{{ rack_unit }}/onecli/.
+      Check that the tarball {{ selected_onecli_image }} contains an 'OneCli' or 'onecli' binary.
+  when: onecli_binary_search.matched == 0
+
+- name: Set OneCli binary path
+  set_fact:
+    onecli_bin: "{{ onecli_binary_search.files[0].path }}"
+  when: onecli_binary_search.matched > 0
+
+- name: Make OneCli binary executable
+  file:
+    path: "{{ onecli_bin }}"
+    mode: '0755'
+  delegate_to: localhost
+
+# FIX #8: Use `version` subcommand instead of `--version` flag.
+#          `OneCli --version` returns non-zero on some builds even when healthy.
+- name: Verify OneCli binary is functional
+  command: "{{ onecli_bin }} version"
+  register: onecli_version_check
+  changed_when: false
+  failed_when: false
+  delegate_to: localhost
+
+- name: Fail if OneCli binary is not executable or returned unexpected output
+  fail:
+    msg: >
+      OneCli binary at {{ onecli_bin }} failed to run (rc={{ onecli_version_check.rc }}).
+      Output: {{ onecli_version_check.stdout | default('') }}
+      Error:  {{ onecli_version_check.stderr | default('') }}
+  when: onecli_version_check.rc != 0
+
+- name: Display OneCli preparation summary
+  debug:
+    msg:
+      - "OneCli Preparation Complete:"
+      - "  Version: {{ selected_onecli_version }}"
+      - "  Binary Path: {{ onecli_bin }}"
+      - "  Working Directory: {{ onecli_base_dir }}/{{ rack_unit }}"
+      - "  Runtime Version Output: {{ onecli_version_check.stdout_lines[0] | default('unknown') }}"
+
+# Made with Bob

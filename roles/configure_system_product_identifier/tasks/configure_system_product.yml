@@ -26,7 +26,7 @@
   block:
     - name: Set sr645 Product Identifier and Manufacturer via Redfish
       uri:
-        url: "{{ bmc_bios_url }}"
+        url: "{{ bmc_bios_url }}/Settings"
         method: PATCH
         user: "{{ bmc_user }}"
         password: "{{ bmc_password }}"
@@ -61,7 +61,7 @@
   block:
     - name: Set sr630v3 Product Identifier and Manufacturer
       uri:
-        url: "{{ bmc_bios_url }}"
+        url: "{{ bmc_bios_url }}/Settings"
         method: PATCH
         user: "{{ bmc_user }}"
         password: "{{ bmc_password }}"
@@ -106,7 +106,7 @@
 
     - name: Configure Secure Boot Setting via Redfish
       uri:
-        url: "{{ bmc_bios_url }}"
+        url: "{{ bmc_bios_url }}/Settings"
         method: PATCH
         user: "{{ bmc_user }}"
         password: "{{ bmc_password }}"
@@ -150,7 +150,7 @@
 
     - name: Configure Legacy BIOS via Redfish
       uri:
-        url: "{{ bmc_bios_url }}"
+        url: "{{ bmc_bios_url }}/Settings"
         method: PATCH
         user: "{{ bmc_user }}"
         password: "{{ bmc_password }}"

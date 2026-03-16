@@ -59,7 +59,7 @@
 # Configure Product Identifier and Manufacturer for sr630v3
 - name: Configure system product data for sr630v3
   block:
-    - name: Set sr630v3 Product Identifier and Manufacturer via Redfish
+    - name: Set sr630v3 Product Identifier and Manufacturer
       uri:
         url: "{{ bmc_bios_url }}"
         method: PATCH
@@ -81,6 +81,10 @@
       failed_when: >
         sr630v3_config.status not in [200, 204] or
         (sr630v3_config.json is defined and 'error' in sr630v3_config.json)
+
+    - debug:
+        msg: "result: {{ sr630v3_config }}"
+        
 
     - name: Display sr630v3 configuration result
       debug:

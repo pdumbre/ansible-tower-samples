@@ -28,7 +28,7 @@
       uri:
         url: "{{ bmc_bios_url }}"
         method: PATCH
-        user: "{{ bmc_username }}"
+        user: "{{ bmc_user }}"
         password: "{{ bmc_password }}"
         validate_certs: false
         force_basic_auth: yes

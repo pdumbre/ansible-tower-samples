@@ -41,6 +41,20 @@
 
 # --- Verify image exists on host mount BEFORE attempting anything else ---
 
+- name: Debug — show exact path being checked
+  debug:
+    msg:
+      - "firmware_repo_path:    '{{ firmware_repo_path }}'"
+      - "selected_onecli_image: '{{ selected_onecli_image }}'"
+      - "full path:             '{{ firmware_repo_path }}/{{ selected_onecli_image }}'"
+  delegate_to: localhost
+
+- name: Check if OneCli image exists on mounted host directory
+  stat:
+    path: "{{ firmware_repo_path }}/{{ selected_onecli_image }}"
+  delegate_to: localhost
+  register: onecli_tarball_check
+
 - name: Check if OneCli image exists on mounted host directory
   stat:
     path: "{{ firmware_repo_path }}/{{ selected_onecli_image }}"

@@ -30,11 +30,11 @@
 - name: Warn if non-sr645 device has firmware at or below version threshold
   debug:
     msg:
-      - "WARNING: {{ node_device_type }} has firmware {{ bmc_firmware_version_clean }} <= {{ onecli_version_threshold }}"
+      - "WARNING: {{ node_device_type }} has firmware {{ bmc_firmware_version }} <= {{ onecli_version_threshold }}"
       - "Version selection only applies to sr645. Defaulting to OneCli 4.1.0."
   when:
     - node_device_type != 'sr645'
-    - bmc_firmware_version_clean is version(onecli_version_threshold, '<=')
+    - bmc_firmware_version is version(onecli_version_threshold, '<=')
 
 # --- Verify tarball exists on host mount ---
 

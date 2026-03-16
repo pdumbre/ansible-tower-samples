@@ -63,7 +63,7 @@
       uri:
         url: "{{ bmc_bios_url }}"
         method: PATCH
-        user: "{{ bmc_username }}"
+        user: "{{ bmc_user }}"
         password: "{{ bmc_password }}"
         validate_certs: false
         force_basic_auth: yes
@@ -104,7 +104,7 @@
       uri:
         url: "{{ bmc_bios_url }}"
         method: PATCH
-        user: "{{ bmc_username }}"
+        user: "{{ bmc_user }}"
         password: "{{ bmc_password }}"
         validate_certs: "{{ redfish_validate_certs | default(false) }}"
         force_basic_auth: yes
@@ -134,7 +134,7 @@
       uri:
         url: "{{ bmc_base_url }}/redfish/v1"
         method: GET
-        user: "{{ bmc_username }}"
+        user: "{{ bmc_user }}"
         password: "{{ bmc_password }}"
         validate_certs: false
         force_basic_auth: yes
@@ -148,7 +148,7 @@
       uri:
         url: "{{ bmc_bios_url }}"
         method: PATCH
-        user: "{{ bmc_username }}"
+        user: "{{ bmc_user }}"
         password: "{{ bmc_password }}"
         validate_certs: false
         force_basic_auth: yes
@@ -178,7 +178,7 @@
       uri:
         url: "{{ bmc_base_url }}/redfish/v1"
         method: GET
-        user: "{{ bmc_username }}"
+        user: "{{ bmc_user }}"
         password: "{{ bmc_password }}"
         validate_certs: "{{ redfish_validate_certs | default(false) }}"
         force_basic_auth: yes
@@ -202,5 +202,3 @@
       - "Rack Unit: {{ rack_unit }}"
       - "OneCli Version: {{ selected_onecli_version }}"
       - "Checkpoint: {{ checkpoint_dir }}/{{ rack_mtm }}_{{ rack_unit }}.json"
-
-# Made with Bob

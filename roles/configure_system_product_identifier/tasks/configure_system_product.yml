@@ -6,7 +6,6 @@
     msg:
       - "Starting Lenovo System Product Configuration"
       - "Device Type: {{ node_device_type }}"
-      - "Rack Unit:   {{ rack_unit }}"
 
 - name: Check server power state
   include_tasks: power_management.yml

@@ -1,0 +1,87 @@
+---
+# Prepare OneCli binary for execution via jump host
+# OneCLI binaries are pre-extracted on the jump host — no download or extraction needed
+# All OneCLI commands delegate_to: onecli_jump_host
+
+- name: Assert node_model is supported
+  assert:
+    that:
+      - node_model in onecli_version_rules
+    fail_msg: >
+      Unsupported device type '{{ node_model }}'.
+      Must be one of: {{ onecli_version_rules.keys() | list | join(', ') }}
+
+- name: Assert jump host is defined
+  assert:
+    that:
+      - onecli_jump_host is defined
+      - onecli_jump_host | length > 0
+    fail_msg: >
+      onecli_jump_host is not defined.
+      Set it in defaults/main.yml or group_vars.
+
+- name: Determine firmware version key
+  set_fact:
+    _firmware_key: >-
+      {{ 'old_firmware'
+         if bmc_firmware_version is version(onecli_version_threshold, '<=')
+         else 'new_firmware' }}
+
+- name: Set selected OneCli version
+  set_fact:
+    selected_onecli_version: "{{ onecli_version_rules[node_model][_firmware_key] }}"
+
+- name: Set OneCli binary and libs path on jump host
+  set_fact:
+    onecli_bin: "{{ onecli_versions[selected_onecli_version].bin }}"
+    onecli_libs: "{{ onecli_versions[selected_onecli_version].libs }}"
+
+- name: Warn if non-sr645 device has firmware at or below version threshold
+  debug:
+    msg:
+      - "WARNING: {{ node_model }} has firmware {{ bmc_firmware_version }} <= {{ onecli_version_threshold }}"
+      - "Version selection only applies to sr645. Defaulting to OneCli 4.1.0."
+  when:
+    - node_model != 'sr645'
+    - bmc_firmware_version is version(onecli_version_threshold, '<=')
+
+- name: Verify OneCli binary exists on jump host
+  stat:
+    path: "{{ onecli_bin }}"
+  delegate_to: "{{ onecli_jump_host }}"
+  register: onecli_bin_stat
+
+- name: Fail if OneCli binary not found on jump host
+  fail:
+    msg: >
+      OneCli binary not found at {{ onecli_bin }} on {{ onecli_jump_host }}.
+      Ensure OneCLI is extracted at:
+        /opt/onecli/{{ selected_onecli_version }}/OneCli
+      Run on jump host:
+        mkdir -p /opt/onecli/{{ selected_onecli_version }}
+        tar -xzf <onecli-archive> -C /opt/onecli/{{ selected_onecli_version }}/
+        chmod +x /opt/onecli/{{ selected_onecli_version }}/OneCli
+  when: not onecli_bin_stat.stat.exists
+
+- name: Verify OneCli binary is executable on jump host
+  stat:
+    path: "{{ onecli_bin }}"
+  delegate_to: "{{ onecli_jump_host }}"
+  register: onecli_bin_stat
+
+- name: Fail if OneCli binary is not executable
+  fail:
+    msg: >
+      OneCli binary not found or not executable at {{ onecli_bin }}
+      on {{ onecli_jump_host }}.
+  when: >
+    not onecli_bin_stat.stat.exists or
+    not onecli_bin_stat.stat.executable
+
+- name: Display OneCli preparation summary
+  debug:
+    msg:
+      - "OneCli version: {{ selected_onecli_version }}"
+      - "Binary path:    {{ onecli_bin }}"
+      - "Jump host:      {{ onecli_jump_host }}"
+      - "Binary exists and is executable: {{ onecli_bin_stat.stat.executable }}"

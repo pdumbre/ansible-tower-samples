@@ -1,6 +1,5 @@
 ---
 # Configure PXE Boot Order
-# Equivalent to the PXE BootOrder configuration block in NodesSysProd.groovy
 #
 # Algorithm:
 #   1. Disable LegacyPXEMode.1-8 for all device types
@@ -12,6 +11,10 @@
 #   7. Set boot order to: IPv4_entry=IPv6_entry
 #   8. Store PXE MAC address and slot label
 
+- name: Prepare OneCli on jump host
+  include_tasks: prepare_onecli.yml
+
+  
 - name: Display PXE boot order configuration start
   debug:
     msg:

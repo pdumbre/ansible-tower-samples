@@ -16,7 +16,7 @@
   debug:
     msg:
       - "Configuring PXE BootOrder"
-      - "Device Type: {{ node_device_type }}"
+      - "Device Type: {{ node_model }}"
       - "OCP PXE slot: {{ pxe_boot_slot }}"
 
 - name: Retrieve current LegacyPXEMode entries
@@ -62,8 +62,8 @@
 
 - name: Set IPv6 PXE support value for disable
   set_fact:
-    pxe_disable_value: "{{ 'Disabled' if node_device_type in new_asu_syntax_models else 'Disable' }}"
-    pxe_enable_value: "{{ 'Enabled' if node_device_type in new_asu_syntax_models else 'Enable' }}"
+    pxe_disable_value: "{{ 'Disabled' if node_model in new_asu_syntax_models else 'Disable' }}"
+    pxe_enable_value: "{{ 'Enabled' if node_model in new_asu_syntax_models else 'Enable' }}"
 
 - name: Disable IPv6 PXE support 
   command: >
@@ -200,8 +200,8 @@
 # -----------------------------------------------------------------------
 - name: Get OCP slot from expansion_cards mapping
   set_fact:
-    ocp_slot: "{{ expansion_cards[node_device_type]['OCP']['slots'][0][0] }}"
-  when: expansion_cards[node_device_type] is defined
+    ocp_slot: "{{ expansion_cards[node_model]['OCP']['slots'][0][0] }}"
+  when: expansion_cards[node_model] is defined
 
 - name: Find IPv4 PXE slot entry for OCP slot
   set_fact:
@@ -305,7 +305,7 @@
   debug:
     msg:
       - "PXE Boot Order Configuration Completed"
-      - "  Device:    {{ node_device_type }}"
+      - "  Device:    {{ node_model }}"
       - "  OCP slot:  {{ ocp_slot }}"
       - "  PXE slot:  {{ pxe_slot_ipv4 }}"
       - "  MAC:       {{ pxe_mac_raw }}"

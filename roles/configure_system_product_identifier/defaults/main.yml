@@ -84,6 +84,7 @@ onecli_version_rules:
     new_firmware: "4.1.0"
 
 onecli_version_threshold: "5.1"
+onecli_jump_host: "jump-host"
 
 firmware_repo_path: "/mnt/firmware"
 onecli_base_dir: "/tmp/awx_onecli"

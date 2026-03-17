@@ -1,6 +1,7 @@
 ---
-# Prepare OneCli binary for execution
-# All tasks delegate_to: localhost — OneCli runs on the Ansible controller (AWX EE)
+# Prepare OneCli binary for execution via jump host
+# OneCLI binaries are pre-extracted on the jump host — no download or extraction needed
+# All OneCLI commands delegate_to: onecli_jump_host
 
 - name: Assert node_device_type is supported
   assert:
@@ -10,25 +11,30 @@
       Unsupported device type '{{ node_device_type }}'.
       Must be one of: {{ onecli_version_rules.keys() | list | join(', ') }}
 
-- name: Determine OneCli version based on firmware and device type
-  vars:
-    _rule: "{{ onecli_version_rules[node_device_type] }}"
-    _firmware_key: "{{ 'old_firmware' if bmc_firmware_version is version(onecli_version_threshold, '<=') else 'new_firmware' }}"
-    _selected_version: "{{ _rule[_firmware_key] }}"
-  set_fact:
-    selected_onecli_version: "{{ _selected_version }}"
-    selected_onecli_image: "{{ onecli_versions[_selected_version].image }}"
-    selected_onecli_binary: "{{ onecli_versions[_selected_version].binary_name }}"
-    selected_onecli_download_url: "{{ onecli_versions[_selected_version].download_url }}"
+- name: Assert jump host is defined
+  assert:
+    that:
+      - onecli_jump_host is defined
+      - onecli_jump_host | length > 0
+    fail_msg: >
+      onecli_jump_host is not defined.
+      Set it in defaults/main.yml or group_vars.
 
-- name: Display OneCli selection
-  debug:
-    msg:
-      - "Raw firmware string:     {{ bmc_firmware_version }}"
-      - "Version threshold:       {{ onecli_version_threshold }}"
-      - "Selected OneCli version: {{ selected_onecli_version }}"
-      - "Selected image:          {{ selected_onecli_image }}"
-      - "Binary name in archive:  {{ selected_onecli_binary }}"
+- name: Determine firmware version key
+  set_fact:
+    _firmware_key: >-
+      {{ 'old_firmware'
+         if bmc_firmware_version is version(onecli_version_threshold, '<=')
+         else 'new_firmware' }}
+
+- name: Set selected OneCli version
+  set_fact:
+    selected_onecli_version: "{{ onecli_version_rules[node_device_type][_firmware_key] }}"
+
+- name: Set OneCli binary and libs path on jump host
+  set_fact:
+    onecli_bin: "{{ onecli_versions[selected_onecli_version].bin }}"
+    onecli_libs: "{{ onecli_versions[selected_onecli_version].libs }}"
 
 - name: Warn if non-sr645 device has firmware at or below version threshold
   debug:
@@ -39,139 +45,40 @@
     - node_device_type != 'sr645'
     - bmc_firmware_version is version(onecli_version_threshold, '<=')
 
-- name: Debug — show exact path being checked
-  debug:
-    msg:
-      - "firmware_repo_path:    '{{ firmware_repo_path }}'"
-      - "selected_onecli_image: '{{ selected_onecli_image }}'"
-      - "full path:             '{{ firmware_repo_path }}/{{ selected_onecli_image }}'"
-  delegate_to: localhost
-
-- name: Debug — run ls directly in EE to confirm file visibility
-  command: ls -la {{ firmware_repo_path }}/
-  delegate_to: localhost
-  register: firmware_ls
-  changed_when: false
-  failed_when: false
-
-- name: Display firmware directory listing from EE
-  debug:
-    msg: "{{ firmware_ls.stdout_lines }}"
-
-- name: Debug — test file directly with shell
-  shell: |
-    echo "whoami: $(whoami)"
-    echo "pwd: $(pwd)"
-    echo "test -f result:"
-    test -f {{ firmware_repo_path }}/{{ selected_onecli_image }} && echo "FILE EXISTS" || echo "FILE NOT FOUND"
-    echo "ls of mount:"
-    ls -la {{ firmware_repo_path }}/ 2>&1 || echo "ls failed"
-  delegate_to: localhost
-  register: shell_debug
-  changed_when: false
-  failed_when: false
-
-- name: Display shell debug output
-  debug:
-    msg: "{{ shell_debug.stdout_lines }}"
-
-
-- name: Check if OneCli image exists on mounted host directory
-  command: test -f {{ firmware_repo_path }}/{{ selected_onecli_image }}
-  delegate_to: localhost
-  register: onecli_tarball_check
-  changed_when: false
-  failed_when: false
-
-- name: Fail if OneCli image not found on host mount
-  fail:
-    msg: >
-      OneCli image not found at {{ firmware_repo_path }}/{{ selected_onecli_image }}.
-      Ensure the file is present on the Kubernetes host at /data/firmware/onecli/
-      and the hostPath volume mount is configured in the AWX CR.
-  when: onecli_tarball_check.rc != 0
-
-- name: Clean previous working directory for this rack unit
-  file:
-    path: "{{ onecli_base_dir }}/{{ rack_unit }}"
-    state: absent
-  delegate_to: localhost
-  register: clean_result
-  failed_when:
-    - clean_result is failed
-    - "'No such file' not in (clean_result.msg | default(''))"
-
-- name: Create OneCli working directory
-  file:
-    path: "{{ onecli_base_dir }}/{{ rack_unit }}/onecli"
-    state: directory
-    mode: '0755'
-    recurse: yes
-  delegate_to: localhost
-
-# --- Extract archive ---
-# extra_opts forces gzip detection by magic bytes — required because the
-# Lenovo image file has no .tgz extension so Ansible cannot auto-detect format
-
-- name: Extract OneCli archive to working directory
-  unarchive:
-    src: "{{ firmware_repo_path }}/{{ selected_onecli_image }}"
-    dest: "{{ onecli_base_dir }}/{{ rack_unit }}/onecli/"
-    remote_src: yes
-    extra_opts:
-      - "--warning=no-unknown-keyword"
-  delegate_to: localhost
-
-# --- Locate and validate binary ---
-# Binary name is sourced from defaults/main.yml onecli_versions mapping
-# — no ambiguous find needed, path is fully deterministic
-
-- name: Set OneCli binary path from known binary name
-  set_fact:
-    onecli_bin: "{{ onecli_base_dir }}/{{ rack_unit }}/onecli/{{ selected_onecli_binary }}"
-
-- name: Verify OneCli binary exists after extraction
+- name: Verify OneCli binary exists on jump host
   stat:
     path: "{{ onecli_bin }}"
-  delegate_to: localhost
+  delegate_to: "{{ onecli_jump_host }}"
   register: onecli_bin_stat
 
-- name: Fail if OneCli binary not found after extraction
+- name: Fail if OneCli binary not found on jump host
   fail:
     msg: >
-      Expected binary '{{ selected_onecli_binary }}' not found at {{ onecli_bin }}.
-      List archive contents with:
-      tar -tzf {{ firmware_repo_path }}/{{ selected_onecli_image }} | grep -i onecli
+      OneCli binary not found at {{ onecli_bin }} on {{ onecli_jump_host }}.
+      Ensure OneCLI is extracted at:
+        /opt/onecli/{{ selected_onecli_version }}/OneCli
+      Run on jump host:
+        mkdir -p /opt/onecli/{{ selected_onecli_version }}
+        tar -xzf <onecli-archive> -C /opt/onecli/{{ selected_onecli_version }}/
+        chmod +x /opt/onecli/{{ selected_onecli_version }}/OneCli
   when: not onecli_bin_stat.stat.exists
 
-- name: Ensure OneCli binary is executable
-  file:
-    path: "{{ onecli_bin }}"
-    mode: '0755'
-  delegate_to: localhost
-
-- name: Verify OneCli binary is functional
+- name: Verify OneCli binary is functional on jump host
   command: "{{ onecli_bin }} version"
+  environment:
+    LD_LIBRARY_PATH: "{{ onecli_libs }}"
+  delegate_to: "{{ onecli_jump_host }}"
   register: onecli_version_check
   changed_when: false
-  failed_when: false
-  delegate_to: localhost
-
-- name: Fail if OneCli binary is not functional
-  fail:
-    msg: >
-      OneCli binary at {{ onecli_bin }} failed to run (rc={{ onecli_version_check.rc }}).
-      Output: {{ onecli_version_check.stdout | default('') }}
-      Error:  {{ onecli_version_check.stderr | default('') }}
-  when: onecli_version_check.rc != 0
+  failed_when: onecli_version_check.rc != 0
 
 - name: Display OneCli preparation summary
   debug:
     msg:
-      - "OneCli Preparation Complete:"
-      - "  Version:     {{ selected_onecli_version }}"
-      - "  Binary:      {{ selected_onecli_binary }}"
-      - "  Binary Path: {{ onecli_bin }}"
-      - "  Runtime:     {{ onecli_version_check.stdout_lines[0] | default('unknown') }}"
+      - "OneCli version: {{ selected_onecli_version }}"
+      - "Binary path:    {{ onecli_bin }}"
+      - "Libs path:      {{ onecli_libs }}"
+      - "Jump host:      {{ onecli_jump_host }}"
+      - "Runtime:        {{ onecli_version_check.stdout_lines[0] | default('unknown') }}"
 
 # Made with Bob

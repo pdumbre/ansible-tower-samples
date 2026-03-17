@@ -186,7 +186,7 @@
       - "Entries: {{ boot_order_entries }}"
 
 # -----------------------------------------------------------------------
-# Step 6 — Find OCP slot IPv4 and IPv6 entries matching SLOT <ocp_slot> 0/0
+# Step 6 — Find OCP slot IPv4 matching SLOT <ocp_slot> 0/0
 # -----------------------------------------------------------------------
 - name: Get OCP slot from expansion_cards mapping
   set_fact:
@@ -212,8 +212,7 @@
     msg:
       - "OCP slot:    {{ ocp_slot }}"
       - "IPv4 entry:  {{ pxe_slot_ipv4 }}"
-      - "IPv6 entry:  {{ pxe_slot_ipv6 }}"
-
+  
 - name: Fail if IPv4 PXE slot entry not found
   fail:
     msg: >

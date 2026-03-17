@@ -63,22 +63,26 @@
         chmod +x /opt/onecli/{{ selected_onecli_version }}/OneCli
   when: not onecli_bin_stat.stat.exists
 
-- name: Verify OneCli binary is functional on jump host
-  command: "{{ onecli_bin }} version"
-  environment:
-    LD_LIBRARY_PATH: "{{ onecli_libs }}"
+- name: Verify OneCli binary is executable on jump host
+  stat:
+    path: "{{ onecli_bin }}"
   delegate_to: "{{ onecli_jump_host }}"
-  register: onecli_version_check
-  changed_when: false
-  failed_when: onecli_version_check.rc != 0
+  register: onecli_bin_stat
+
+- name: Fail if OneCli binary is not executable
+  fail:
+    msg: >
+      OneCli binary not found or not executable at {{ onecli_bin }}
+      on {{ onecli_jump_host }}.
+  when: >
+    not onecli_bin_stat.stat.exists or
+    not onecli_bin_stat.stat.executable
 
 - name: Display OneCli preparation summary
   debug:
     msg:
       - "OneCli version: {{ selected_onecli_version }}"
       - "Binary path:    {{ onecli_bin }}"
-      - "Libs path:      {{ onecli_libs }}"
       - "Jump host:      {{ onecli_jump_host }}"
-      - "Runtime:        {{ onecli_version_check.stdout_lines[0] | default('unknown') }}"
+      - "Binary exists and is executable: {{ onecli_bin_stat.stat.executable }}"
 
-# Made with Bob

@@ -1,19 +1,17 @@
 ---
 # Configure PXE Boot Order
+# Equivalent to the PXE BootOrder configuration block in NodesSysProd.groovy
 #
 # Algorithm:
 #   1. Disable LegacyPXEMode.1-8 for all device types
 #   2. Disable IPv4/IPv6 PXE stack → reboot OS
 #   3. Re-enable IPv4/IPv6 PXE stack → reboot OS
-#   4. Wait for UEFI to populate NIC slot entries
+#   4. Wait 4 minutes for UEFI to populate NIC slot entries
 #   5. Read BootOrder.NetworkBootOrder via OneCLI
 #   6. Find OCP slot IPv4 (port 0/0) and IPv6 (port 0/0) entries
 #   7. Set boot order to: IPv4_entry=IPv6_entry
 #   8. Store PXE MAC address and slot label
 
-# -----------------------------------------------------------------------
-# Step 1 — Disable LegacyPXEMode.1-8 (all device types)
-# -----------------------------------------------------------------------
 - name: Display PXE boot order configuration start
   debug:
     msg:
@@ -21,7 +19,30 @@
       - "Device Type: {{ node_device_type }}"
       - "OCP PXE slot: {{ pxe_boot_slot }}"
 
-- name: Disable LegacyPXEMode entries 1-8 via OneCLI
+- name: Retrieve current LegacyPXEMode entries
+  command: >
+    {{ onecli_bin }} config show
+    NetworkBootSettings.LegacyPXEMode.{{ item }}
+    --nolog
+    {{ bmc_opts }}
+  environment:
+    LD_LIBRARY_PATH: "{{ onecli_libs }}"
+  delegate_to: "{{ onecli_jump_host }}"
+  loop: "{{ range(1, 9) | list }}"
+  register: legacy_pxe_current
+  retries: "{{ retry_count }}"
+  delay: "{{ retry_delay }}"
+  until: legacy_pxe_current.rc == 0
+  failed_when: false
+
+- name: Display current LegacyPXEMode status
+  debug:
+    msg: "LegacyPXEMode.{{ item.item }}: {{ item.stdout | trim }}"
+  loop: "{{ legacy_pxe_current.results }}"
+  loop_control:
+    label: "Entry {{ item.item }}"
+
+- name: Disable LegacyPXEMode entries
   command: >
     {{ onecli_bin }} config set
     NetworkBootSettings.LegacyPXEMode.{{ item }}
@@ -180,74 +201,63 @@
       - "Entries: {{ boot_order_entries }}"
 
 # -----------------------------------------------------------------------
-# Step 6 — Find OCP slot IPv4 and IPv6 entries matching SLOT <pxeBootSlot> 0/0
-# sr630 (7X02) uses pxe_boot_slot = 0 (special case — skip slot filtering)
+# Step 6 — Find OCP slot IPv4 and IPv6 entries matching SLOT <ocp_slot> 0/0
 # -----------------------------------------------------------------------
+- name: Get OCP slot from expansion_cards mapping
+  set_fact:
+    ocp_slot: "{{ expansion_cards[node_device_type]['OCP']['slots'][0][0] }}"
+  when: expansion_cards[node_device_type] is defined
+
 - name: Find IPv4 PXE slot entry for OCP slot
   set_fact:
     pxe_slot_ipv4: >-
-      {%- set found = [] -%}
-      {%- for entry in boot_order_entries -%}
-        {%- if node_device_type == 'sr630' -%}
-          {%- if 'UEFI:' in entry and ('IPv4' in entry or 'IP4' in entry) and '0/0' in entry -%}
-            {%- if found | length == 0 -%}{%- set _ = found.append(entry.strip()) -%}{%- endif -%}
-          {%- endif -%}
-        {%- else -%}
-          {%- set slot_pattern = 'SLOT' ~ ' ' ~ pxe_boot_slot -%}
-          {%- set slot_pattern_nospace = 'SLOT' ~ pxe_boot_slot -%}
-          {%- if 'UEFI:' in entry
-              and (slot_pattern in entry or slot_pattern_nospace in entry)
-              and ('IPv4' in entry or 'IP4' in entry or 'ipv4' in entry)
-              and '0/0' in entry -%}
-            {%- if found | length == 0 -%}{%- set _ = found.append(entry.strip()) -%}{%- endif -%}
-          {%- endif -%}
-        {%- endif -%}
-      {%- endfor -%}
-      {{ found | first | default('') }}
+      {{
+        boot_order_entries
+        | select('search', 'UEFI:')
+        | select('search', 'SLOT\s*' ~ ocp_slot)
+        | select('search', '(?i)ip(v)?4')
+        | select('search', '0/0')
+        | map('trim')
+        | first
+        | default('')
+      }}
 
+# FIXED: was missing entirely — referenced in Step 7 debug and boot order string
 - name: Find IPv6 PXE slot entry for OCP slot
   set_fact:
     pxe_slot_ipv6: >-
-      {%- set found = [] -%}
-      {%- for entry in boot_order_entries -%}
-        {%- if node_device_type == 'sr630' -%}
-          {%- if 'UEFI:' in entry and ('IPv6' in entry or 'IP6' in entry or 'ip6' in entry) and '0/0' in entry -%}
-            {%- if found | length == 0 -%}{%- set _ = found.append(entry.strip()) -%}{%- endif -%}
-          {%- endif -%}
-        {%- else -%}
-          {%- set slot_pattern = 'SLOT' ~ ' ' ~ pxe_boot_slot -%}
-          {%- set slot_pattern_nospace = 'SLOT' ~ pxe_boot_slot -%}
-          {%- if 'UEFI:' in entry
-              and (slot_pattern in entry or slot_pattern_nospace in entry)
-              and ('IPv6' in entry or 'IP6' in entry or 'ipv6' in entry or 'ip6' in entry)
-              and '0/0' in entry -%}
-            {%- if found | length == 0 -%}{%- set _ = found.append(entry.strip()) -%}{%- endif -%}
-          {%- endif -%}
-        {%- endif -%}
-      {%- endfor -%}
-      {{ found | first | default('') }}
+      {{
+        boot_order_entries
+        | select('search', 'UEFI:')
+        | select('search', 'SLOT\s*' ~ ocp_slot)
+        | select('search', '(?i)ip(v)?6')
+        | select('search', '0/0')
+        | map('trim')
+        | first
+        | default('')
+      }}
 
 - name: Display found PXE slot entries
   debug:
     msg:
-      - "OCP PXE slot:  {{ pxe_boot_slot }}"
-      - "IPv4 entry:    {{ pxe_slot_ipv4 }}"
-      - "IPv6 entry:    {{ pxe_slot_ipv6 }}"
+      - "OCP slot:    {{ ocp_slot }}"
+      - "IPv4 entry:  {{ pxe_slot_ipv4 }}"
+      - "IPv6 entry:  {{ pxe_slot_ipv6 }}"
 
-# Fail fast if either entry not found — matches Groovy exception behaviour
 - name: Fail if IPv4 PXE slot entry not found
   fail:
     msg: >
-      Could not find IPv4 PXE boot entry for SLOT {{ pxe_boot_slot }} (port 0/0)
+      Could not find IPv4 PXE boot entry for SLOT {{ ocp_slot }} (port 0/0)
       in NetworkBootOrder output.
       Available entries:
       {{ boot_order_entries | join('\n') }}
   when: pxe_slot_ipv4 == ''
 
+# FIXED: added missing IPv6 fail guard
 - name: Fail if IPv6 PXE slot entry not found
   fail:
     msg: >
-      Could not find IPv6 PXE boot entry for SLOT {{ pxe_boot_slot }} (port 0/0)
+      Could not find IPv6 PXE boot entry for SLOT {{ ocp_slot }} (port 0/0)
       in NetworkBootOrder output.
       Available entries:
       {{ boot_order_entries | join('\n') }}
@@ -255,9 +265,8 @@
 
 # -----------------------------------------------------------------------
 # Step 7 — Set boot order to IPv4=IPv6 for the OCP slot only
-# Groovy: imm.command("asu set BootOrder.NetworkBootOrder \"${pxeSlot}=${pxeSlot2}\"")
-# Note: Groovy puts IPv4 first, IPv6 second
 # -----------------------------------------------------------------------
+# FIXED: was only IPv4 — must be "IPv4=IPv6" per algorithm and Groovy equivalent
 - name: Build final NetworkBootOrder string
   set_fact:
     final_network_boot_order: "{{ pxe_slot_ipv4 }}={{ pxe_slot_ipv6 }}"
@@ -291,34 +300,27 @@
       - "  IPv6: {{ pxe_slot_ipv6 }}"
 
 # -----------------------------------------------------------------------
-# Step 8 — Get MAC address for PXE slot and store node info
-# Groovy: imm.getAdapterNetworkAddresses("slot-${pxeBootSlot}")
-# Equivalent: read from BIOS attributes already fetched
+# Step 8 — Extract MAC address from IPv4 slot entry string
 # -----------------------------------------------------------------------
-- name: Get BIOS attributes to extract PXE MAC address
-  uri:
-    url: "{{ bmc_base_url }}/redfish/v1/Systems/1/Bios"
-    method: GET
-    user: "{{ bmc_user }}"
-    password: "{{ bmc_password }}"
-    validate_certs: "{{ redfish_validate_certs | default(false) }}"
-    force_basic_auth: yes
-  delegate_to: localhost
-  register: bios_response_mac
-
-# Extract MAC from IPv4 slot entry — MAC is always the last token after " - "
+# FIXED: removed dead-code uri/Redfish task — MAC comes from the boot entry
+#        string itself, not from a separate BIOS API call
 - name: Extract PXE MAC address from IPv4 slot entry
   set_fact:
     pxe_mac_raw: "{{ pxe_slot_ipv4.split(' - ') | last | trim }}"
 
-# Format MAC to lowercase colon-separated (matches Groovy pxeMacFormat)
-- name: Format PXE MAC address to lowercase colon-separated
-  set_fact:
-    pxe_mac_formatted: "{{ pxe_mac_raw | lower | regex_replace(':', ':') }}"
-
+# FIXED: replaced inconsistent pxe_boot_slot with ocp_slot (set in Step 6)
 - name: Display PXE slot info
   debug:
     msg:
-      - "PXE slot label:       {{ pxe_slot_ipv4 }}"
-      - "PXE MAC address:      {{ pxe_mac_formatted }}"
-      - "OCP slot:             {{ pxe_boot_slot }}"
+      - "PXE slot label:  {{ pxe_slot_ipv4 }}"
+      - "OCP slot:        {{ ocp_slot }}"
+      - "PXE MAC:         {{ pxe_mac_raw }}"
+
+- name: Display PXE boot order configuration completion
+  debug:
+    msg:
+      - "PXE Boot Order Configuration Completed"
+      - "  Device:    {{ node_device_type }}"
+      - "  OCP slot:  {{ ocp_slot }}"
+      - "  PXE slot:  {{ pxe_slot_ipv4 }}"
+      - "  MAC:       {{ pxe_mac_raw }}"

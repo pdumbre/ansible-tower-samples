@@ -8,6 +8,9 @@ boot_slot_settle_seconds: 240  # 4 minutes for BIOS to settle after reboot
 job_poll_retries: 10
 job_poll_delay: 120  # 2 minutes between polls
 
+retry_delay: 10
+retry_count: 3
+
 # MTM to Server Model Mapping
 mtm_to_model:
   # Lenovo ThinkSystem SR645

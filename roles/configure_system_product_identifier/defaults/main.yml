@@ -62,15 +62,15 @@ onecli_versions:
     bin: "/opt/onecli/4.1.0/OneCli"
     libs: "/opt/onecli/4.1.0/libs"
 
-onecli_versions:
-  "3.4.0":
-    image: "lnvgy_utl_lxce_onecli01u-3.4.0_rhel_x86-64"
-    binary_name: "OneCli"
-    download_url: ""
-  "4.1.0":
-    image: "lnvgy_utl_lxce_onecli01u-4.1.0_rhel_x86-64"
-    binary_name: "OneCli"
-    download_url: ""
+#onecli_versions:
+ # "3.4.0":
+  #  image: "lnvgy_utl_lxce_onecli01u-3.4.0_rhel_x86-64"
+   # binary_name: "OneCli"
+    #download_url: ""
+  #"4.1.0":
+   # image: "lnvgy_utl_lxce_onecli01u-4.1.0_rhel_x86-64"
+    #binary_name: "OneCli"
+    #download_url: ""
 
 onecli_version_rules:
   sr645:

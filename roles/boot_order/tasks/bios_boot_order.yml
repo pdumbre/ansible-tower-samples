@@ -134,7 +134,7 @@
 - name: Reboot OS to apply PXE enable (second reboot)
   include_tasks: power_management.yml
   vars:
-    power_action: "reboot"
+    power_action: "cycle"
 
 # -----------------------------------------------------------------------
 # Step 4 — Wait 4 minutes for UEFI to populate NIC slot entries
@@ -207,21 +207,6 @@
         | default('')
       }}
 
-# FIXED: was missing entirely — referenced in Step 7 debug and boot order string
-- name: Find IPv6 PXE slot entry for OCP slot
-  set_fact:
-    pxe_slot_ipv6: >-
-      {{
-        boot_order_entries
-        | select('search', 'UEFI:')
-        | select('search', 'SLOT\s*' ~ ocp_slot)
-        | select('search', '(?i)ip(v)?6')
-        | select('search', '0/0')
-        | map('trim')
-        | first
-        | default('')
-      }}
-
 - name: Display found PXE slot entries
   debug:
     msg:
@@ -238,19 +223,9 @@
       {{ boot_order_entries | join('\n') }}
   when: pxe_slot_ipv4 == ''
 
-- name: Fail if IPv6 PXE slot entry not found
-  fail:
-    msg: >
-      Could not find IPv6 PXE boot entry for SLOT {{ ocp_slot }} (port 0/0)
-      in NetworkBootOrder output.
-      Available entries:
-      {{ boot_order_entries | join('\n') }}
-  when: pxe_slot_ipv6 == ''
-
-
 - name: Build final NetworkBootOrder string
   set_fact:
-    final_network_boot_order: "{{ pxe_slot_ipv4 }}={{ pxe_slot_ipv6 }}"
+    final_network_boot_order: "{{ pxe_slot_ipv4 }}"
 
 - name: Display final NetworkBootOrder to be set
   debug:
@@ -278,7 +253,6 @@
     msg:
       - "NetworkBootOrder configured successfully"
       - "  IPv4: {{ pxe_slot_ipv4 }}"
-      - "  IPv6: {{ pxe_slot_ipv6 }}"
 
 - name: Extract PXE MAC address from IPv4 slot entry
   set_fact:

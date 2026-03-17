@@ -56,6 +56,14 @@ legacy_bios_setting: "Enabled"
 
 onecli_versions:
   "3.4.0":
+    bin: "/opt/onecli/3.4.0/OneCli"
+    libs: "/opt/onecli/3.4.0/libs"
+  "4.1.0":
+    bin: "/opt/onecli/4.1.0/OneCli"
+    libs: "/opt/onecli/4.1.0/libs"
+
+onecli_versions:
+  "3.4.0":
     image: "lnvgy_utl_lxce_onecli01u-3.4.0_rhel_x86-64"
     binary_name: "OneCli"
     download_url: ""

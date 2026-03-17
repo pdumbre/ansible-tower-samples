@@ -1,136 +1,155 @@
 
-- name: Display system configuration
+# Lenovo-specific system product configuration
+
+- name: Display Lenovo configuration start
   debug:
     msg:
+      - "Starting Lenovo System Product Configuration"
       - "Device Type: {{ node_device_type }}"
-
-- name: Assert supported device type
-  assert:
-    that:
-      - node_device_type in ['sr645', 'sr630v3', 'sr675']
-    fail_msg: "Unsupported device type: {{ node_device_type }}. Must be one of: sr645, sr630v3, sr675"
-
-- name: Configure one cli
-  include_tasks: prepare_onecli.yml
+      - "Rack Unit:   {{ rack_unit }}"
 
 - name: Check server power state
   include_tasks: power_management.yml
   vars:
     power_action: "check"
 
-- name: Power on server
+
+- name: Power on server if needed
   include_tasks: power_management.yml
   vars:
     power_action: "on"
   when: server_power_state | lower in ["off", "poweroff"]
-    
-# Configure Product Identifier and Manufacturer for sr645
-- name: Configure system product data for sr645
+
+- name: Prepare OneCli on jump host
+  include_tasks: prepare_onecli.yml
+
+
+- name: Set BMC connection string for OneCLI
+  set_fact:
+    bmc_opts: "--bmc {{ bmc_user }}:{{ bmc_password }}@[{{ ipv6ULA }}]"
+
+- name: Display BMC connection info
+  debug:
+    msg:
+      - "BMC Connection Configuration:"
+      - "  IPv6    :   {{ ipv6ULA }}"
+      - "  Username:   {{ bmc_user }}"
+      - "  Jump host:  {{ onecli_jump_host }}"
+      - "  OneCli bin: {{ onecli_bin }}"
+      - "  OneCli ver: {{ selected_onecli_version }}"
+
+# -----------------------------------------------------------------------
+# sr645 — Product Identifier
+# -----------------------------------------------------------------------
+- name: Configure Product Identifier for sr645
   block:
-    - name: Set sr645 Product Identifier and Manufacturer via Redfish
-      uri:
-        url: "{{ bmc_bios_url }}/Pending"
-        method: PATCH
-        user: "{{ bmc_user }}"
-        password: "{{ bmc_password }}"
-        validate_certs: false
-        force_basic_auth: yes
-        body_format: json
-        body:
-          Attributes:
-            SysInfoProdIdentifier: "{{ system_product_identifiers.sr645 }}"
-            SysInfoManufacturerFullName: "{{ manufacturer_name }}"
-        status_code: [200, 204]
-      register: sr645_config
+    - name: Set sr645 Product Identifier using OneCLI
+      command: >
+        {{ onecli_bin }} config set
+        SYSTEM_PROD_DATA.SysInfoProdIdentifier
+        "{{ system_product_identifiers.sr645 }}"
+        --nolog
+        {{ bmc_opts }}
+      environment:
+        LD_LIBRARY_PATH: "{{ onecli_libs }}"
+      delegate_to: "{{ onecli_jump_host }}"
+      register: sr645_product_id
       retries: "{{ retry_count }}"
       delay: "{{ retry_delay }}"
-      until: sr645_config.status in [200, 204]
-      delegate_to: localhost
-      failed_when: >
-        sr645_config.status not in [200, 204] or
-        (sr645_config.json is defined and 'error' in sr645_config.json)
+      until: sr645_product_id.rc == 0
+      changed_when: "'Successfully' in sr645_product_id.stdout"
+      failed_when: sr645_product_id.rc != 0
 
-    - name: Display sr645 configuration result
+    - name: Display sr645 Product Identifier result
       debug:
-        msg:
-          - "Successfully configured sr645 system product data:"
-          - "  Product Identifier: {{ system_product_identifiers.sr645 }}"
-          - "  Manufacturer: {{ manufacturer_name }}"
+        msg: "Successfully configured Product Identifier for sr645: {{ system_product_identifiers.sr645 }}"
 
   when: node_device_type == "sr645"
 
-- debug:
-    msg: "url: {{ bmc_bios_url }}/Pending"
-
-
-# Configure Product Identifier and Manufacturer for sr630v3
-- name: Configure system product data for sr630v3
+# -----------------------------------------------------------------------
+# sr630v3 — Product Identifier
+# -----------------------------------------------------------------------
+- name: Configure Product Identifier for sr630v3
   block:
-    - name: Set sr630v3 Product Identifier and Manufacturer
-      uri:
-        url: "{{ bmc_bios_url }}/Pending"
-        method: PATCH
-        user: "{{ bmc_user }}"
-        password: "{{ bmc_password }}"
-        validate_certs: false
-        force_basic_auth: yes
-        body_format: json
-        body:
-          Attributes:
-            SysInfoProdIdentifier: "{{ system_product_identifiers.sr630v3 }}"
-            SysInfoManufacturerFullName: "{{ manufacturer_name }}"
-        status_code: [200, 204]
-      delegate_to: localhost
-      register: sr630v3_config
+    - name: Set sr630v3 Product Identifier using OneCLI
+      command: >
+        {{ onecli_bin }} config set
+        SYSTEM_PROD_DATA.SysInfoProdIdentifier
+        "{{ system_product_identifiers.sr630v3 }}"
+        --nolog
+        {{ bmc_opts }}
+      environment:
+        LD_LIBRARY_PATH: "{{ onecli_libs }}"
+      delegate_to: "{{ onecli_jump_host }}"
+      register: sr630v3_product_id
       retries: "{{ retry_count }}"
       delay: "{{ retry_delay }}"
-      until: sr630v3_config.status in [200, 204]
-      failed_when: >
-        sr630v3_config.status not in [200, 204] or
-        (sr630v3_config.json is defined and 'error' in sr630v3_config.json)
-        
-    - debug:
-        msg: "result: {{ sr630v3_config }}"
-        
+      until: sr630v3_product_id.rc == 0
+      changed_when: "'Successfully' in sr630v3_product_id.stdout"
+      failed_when: sr630v3_product_id.rc != 0
 
-    - name: Display sr630v3 configuration result
+    - name: Display sr630v3 Product Identifier result
       debug:
-        msg:
-          - "Successfully configured sr630v3 system product data:"
-          - "  Product Identifier: {{ system_product_identifiers.sr630v3 }}"
-          - "  Manufacturer: {{ manufacturer_name }}"
+        msg: "Successfully configured Product Identifier for sr630v3: {{ system_product_identifiers.sr630v3 }}"
 
   when: node_device_type == "sr630v3"
 
-# Configure sr675 specific settings (Secure Boot and Legacy BIOS)
+# -----------------------------------------------------------------------
+# Manufacturer Name — sr645 and sr630v3 only
+# -----------------------------------------------------------------------
+- name: Configure Manufacturer Name
+  block:
+    - name: Set Manufacturer Name using OneCLI
+      command: >
+        {{ onecli_bin }} config set
+        SYSTEM_PROD_DATA.SysInfoManufacturerFullName
+        "{{ manufacturer_name }}"
+        --nolog
+        --override
+        {{ bmc_opts }}
+      environment:
+        LD_LIBRARY_PATH: "{{ onecli_libs }}"
+      delegate_to: "{{ onecli_jump_host }}"
+      register: manufacturer_config
+      retries: "{{ retry_count }}"
+      delay: "{{ retry_delay }}"
+      until: manufacturer_config.rc == 0
+      changed_when: "'Successfully' in manufacturer_config.stdout"
+      failed_when: manufacturer_config.rc != 0
+
+    - name: Display Manufacturer Name result
+      debug:
+        msg: "Successfully configured Manufacturer Name: {{ manufacturer_name }}"
+
+  when: node_device_type != "sr675"
+
+# -----------------------------------------------------------------------
+# sr675 — Secure Boot and Legacy BIOS via OneCLI
+# -----------------------------------------------------------------------
 - name: Configure sr675 specific settings
   block:
     - name: Display sr675 configuration notice
       debug:
         msg:
-          - "Configuring sr675 specific settings"
+          - "Configuring sr675 specific settings via OneCLI"
           - "This requires multiple power cycles"
 
-    - name: Configure Secure Boot Setting via Redfish
-      uri:
-        url: "{{ bmc_bios_url }}/Pending"
-        method: PATCH
-        user: "{{ bmc_user }}"
-        password: "{{ bmc_password }}"
-        validate_certs: "{{ redfish_validate_certs | default(false) }}"
-        force_basic_auth: yes
-        body_format: json
-        body:
-          Attributes:
-            SecureBootSetting: "{{ secure_boot_setting }}"
-        status_code: [200, 204]
+    - name: Configure Secure Boot Setting using OneCLI
+      command: >
+        {{ onecli_bin }} config set
+        SecureBootConfiguration.SecureBootSetting
+        "{{ secure_boot_setting }}"
+        --nolog
+        {{ bmc_opts }}
+      environment:
+        LD_LIBRARY_PATH: "{{ onecli_libs }}"
+      delegate_to: "{{ onecli_jump_host }}"
       register: secure_boot_config
       retries: "{{ retry_count }}"
       delay: "{{ retry_delay }}"
-      until: secure_boot_config.status in [200, 204]
-      failed_when: >
-        secure_boot_config.status not in [200, 204] or
-        (secure_boot_config.json is defined and 'error' in secure_boot_config.json)
+      until: secure_boot_config.rc == 0
+      changed_when: "'Successfully' in secure_boot_config.stdout"
+      failed_when: secure_boot_config.rc != 0
 
     - name: Display Secure Boot configuration result
       debug:
@@ -141,40 +160,22 @@
       vars:
         power_action: "cycle"
 
-    - name: Wait for BMC to become reachable after Secure Boot power cycle
-      uri:
-        url: "{{ bmc_base_url }}/redfish/v1"
-        method: GET
-        user: "{{ bmc_user }}"
-        password: "{{ bmc_password }}"
-        validate_certs: false
-        force_basic_auth: yes
-        status_code: 200
-      register: bmc_ready_after_sb_cycle
-      retries: 10
-      delay: 30
-      until: bmc_ready_after_sb_cycle.status == 200
-
-    - name: Configure Legacy BIOS via Redfish
-      uri:
-        url: "{{ bmc_bios_url }}/Pending"
-        method: PATCH
-        user: "{{ bmc_user }}"
-        password: "{{ bmc_password }}"
-        validate_certs: false
-        force_basic_auth: yes
-        body_format: json
-        body:
-          Attributes:
-            LegacyBIOS: "{{ legacy_bios_setting }}"
-        status_code: [200, 204]
+    - name: Configure Legacy BIOS using OneCLI
+      command: >
+        {{ onecli_bin }} config set
+        LegacyBIOS.LegacyBIOS
+        "{{ legacy_bios_setting }}"
+        --nolog
+        {{ bmc_opts }}
+      environment:
+        LD_LIBRARY_PATH: "{{ onecli_libs }}"
+      delegate_to: "{{ onecli_jump_host }}"
       register: legacy_bios_config
       retries: "{{ retry_count }}"
       delay: "{{ retry_delay }}"
-      until: legacy_bios_config.status in [200, 204]
-      failed_when: >
-        legacy_bios_config.status not in [200, 204] or
-        (legacy_bios_config.json is defined and 'error' in legacy_bios_config.json)
+      until: legacy_bios_config.rc == 0
+      changed_when: "'Successfully' in legacy_bios_config.stdout"
+      failed_when: legacy_bios_config.rc != 0
 
     - name: Display Legacy BIOS configuration result
       debug:
@@ -185,31 +186,16 @@
       vars:
         power_action: "cycle"
 
-    - name: Wait for BMC to become reachable after Legacy BIOS power cycle
-      uri:
-        url: "{{ bmc_base_url }}/redfish/v1"
-        method: GET
-        user: "{{ bmc_user }}"
-        password: "{{ bmc_password }}"
-        validate_certs: "{{ redfish_validate_certs | default(false) }}"
-        force_basic_auth: yes
-        status_code: 200
-      register: bmc_ready_after_bios_cycle
-      retries: 10
-      delay: 30
-      until: bmc_ready_after_bios_cycle.status == 200
-
     - name: Display sr675 configuration completion
       debug:
         msg: "sr675 configuration completed successfully with all power cycles"
 
   when: node_device_type == "sr675"
 
+
 - name: Display Lenovo configuration completion
   debug:
     msg:
       - "Lenovo System Product Configuration Completed Successfully"
-      - "Device: {{ node_device_type }}"
-      - "Rack Unit: {{ rack_unit }}"
-      - "OneCli Version: {{ selected_onecli_version }}"
-      - "Checkpoint: {{ checkpoint_dir }}/{{ rack_mtm }}_{{ rack_unit }}.json"
+      - "Device:     {{ node_device_type }}"
+      - "OneCli:     {{ selected_onecli_version }}"

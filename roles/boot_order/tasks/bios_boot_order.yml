@@ -111,24 +111,8 @@
     power_action: "reboot"
 
 # -----------------------------------------------------------------------
-# Step 3 — Re-enable IPv4/IPv6 PXE → reboot OS
+# Step 3 — Re-enable IPv4 PXE → reboot OS
 # -----------------------------------------------------------------------
-- name: Enable IPv6 PXE support via OneCLI
-  command: >
-    {{ onecli_bin }} config set
-    NetworkStackSettings.IPv6PXESupport
-    {{ pxe_enable_value }}
-    --nolog
-    {{ bmc_opts }}
-  environment:
-    LD_LIBRARY_PATH: "{{ onecli_libs }}"
-  delegate_to: "{{ onecli_jump_host }}"
-  register: ipv6_pxe_enable
-  retries: "{{ retry_count }}"
-  delay: "{{ retry_delay }}"
-  until: ipv6_pxe_enable.rc == 0
-  changed_when: "'Successfully' in ipv6_pxe_enable.stdout"
-  failed_when: ipv6_pxe_enable.rc != 0
 
 - name: Enable IPv4 PXE support
   command: >

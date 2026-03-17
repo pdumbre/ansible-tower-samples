@@ -92,6 +92,17 @@
 - name: Load vendor variables
   include_vars: "vendors/{{ bmc_vendor }}.yml"
 
+- name: Retrieve BMC firmware version
+  uri:
+    url: "{{ bmc_manager_url }}"
+    method: GET
+    user: "{{ bmc_user }}"
+    password: "{{ bmc_password }}"
+    validate_certs: "{{ redfish_validate_certs | default(false) }}"
+    force_basic_auth: yes
+  delegate_to: localhost
+  register: bmc_manager_info
+
 - name: Set BMC firmware version fact
   set_fact:
     bmc_firmware_version: "{{ bmc_manager_info.json.FirmwareVersion }}"

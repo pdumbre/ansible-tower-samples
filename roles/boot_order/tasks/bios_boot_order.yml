@@ -17,7 +17,7 @@
     msg:
       - "Configuring PXE BootOrder"
       - "Device Type: {{ node_model }}"
-      - "OCP PXE slot: {{ pxe_boot_slot }}"
+      - "OCP PXE slot: {{ pxe_nic_slot }}"
 
 - name: Retrieve current LegacyPXEMode entries
   command: >

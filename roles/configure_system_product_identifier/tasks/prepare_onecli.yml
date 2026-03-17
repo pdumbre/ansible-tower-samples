@@ -10,34 +10,6 @@
       Unsupported device type '{{ node_device_type }}'.
       Must be one of: {{ onecli_version_rules.keys() | list | join(', ') }}
 
-- name: Debug — run ls directly in EE to confirm file visibility
-  command: ls -la {{ firmware_repo_path }}/
-  delegate_to: localhost
-  register: firmware_ls
-  changed_when: false
-  failed_when: false
-
-- name: Display firmware directory listing from EE
-  debug:
-    msg: "{{ firmware_ls.stdout_lines }}"
-
-- name: Debug — test file directly with shell
-  shell: |
-    echo "whoami: $(whoami)"
-    echo "pwd: $(pwd)"
-    echo "test -f result:"
-    test -f {{ firmware_repo_path }}/{{ selected_onecli_image }} && echo "FILE EXISTS" || echo "FILE NOT FOUND"
-    echo "ls of mount:"
-    ls -la {{ firmware_repo_path }}/ 2>&1 || echo "ls failed"
-  delegate_to: localhost
-  register: shell_debug
-  changed_when: false
-  failed_when: false
-
-- name: Display shell debug output
-  debug:
-    msg: "{{ shell_debug.stdout_lines }}"
-
 - name: Determine OneCli version based on firmware and device type
   vars:
     _rule: "{{ onecli_version_rules[node_device_type] }}"
@@ -67,8 +39,6 @@
     - node_device_type != 'sr645'
     - bmc_firmware_version is version(onecli_version_threshold, '<=')
 
-# --- Verify image exists on host mount BEFORE attempting anything else ---
-
 - name: Debug — show exact path being checked
   debug:
     msg:
@@ -76,6 +46,35 @@
       - "selected_onecli_image: '{{ selected_onecli_image }}'"
       - "full path:             '{{ firmware_repo_path }}/{{ selected_onecli_image }}'"
   delegate_to: localhost
+
+- name: Debug — run ls directly in EE to confirm file visibility
+  command: ls -la {{ firmware_repo_path }}/
+  delegate_to: localhost
+  register: firmware_ls
+  changed_when: false
+  failed_when: false
+
+- name: Display firmware directory listing from EE
+  debug:
+    msg: "{{ firmware_ls.stdout_lines }}"
+
+- name: Debug — test file directly with shell
+  shell: |
+    echo "whoami: $(whoami)"
+    echo "pwd: $(pwd)"
+    echo "test -f result:"
+    test -f {{ firmware_repo_path }}/{{ selected_onecli_image }} && echo "FILE EXISTS" || echo "FILE NOT FOUND"
+    echo "ls of mount:"
+    ls -la {{ firmware_repo_path }}/ 2>&1 || echo "ls failed"
+  delegate_to: localhost
+  register: shell_debug
+  changed_when: false
+  failed_when: false
+
+- name: Display shell debug output
+  debug:
+    msg: "{{ shell_debug.stdout_lines }}"
+
 
 - name: Check if OneCli image exists on mounted host directory
   command: test -f {{ firmware_repo_path }}/{{ selected_onecli_image }}

@@ -1,0 +1,44 @@
+
+# Supported device types
+lenovo_supported_devices:
+  - sr645
+  - sr630v3
+  - sr675
+
+# System product data configuration
+system_product_identifiers:
+  sr645: "ThinkSystem SR645 BCQQ"
+  sr630v3: "ThinkSystem SR630V3 BRQX"
+
+manufacturer_name: "Lenovo"
+
+# Secure Boot and Legacy BIOS (sr675 specific)
+secure_boot_setting: "Disabled"
+legacy_bios_setting: "Enabled"
+
+onecli_versions:
+  "3.4.0":
+    bin: "/opt/onecli/3.4.0/OneCli"
+    libs: "/opt/onecli/3.4.0/libs"
+  "4.1.0":
+    bin: "/opt/onecli/4.1.0/OneCli"
+    libs: "/opt/onecli/4.1.0/libs"
+
+onecli_version_rules:
+  sr645:
+    old_firmware: "3.4.0"
+    new_firmware: "4.1.0"
+  sr630v3:
+    old_firmware: "4.1.0"
+    new_firmware: "4.1.0"
+  sr675:
+    old_firmware: "4.1.0"
+    new_firmware: "4.1.0"
+
+onecli_version_threshold: "5.1"
+onecli_jump_host: "jump-host"
+
+firmware_repo_path: "/mnt/firmware"
+onecli_base_dir: "/tmp/awx_onecli"
+
+management_interface: "eth0"

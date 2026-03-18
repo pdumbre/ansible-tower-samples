@@ -253,16 +253,47 @@
       - "NetworkBootOrder configured successfully"
       - "  IPv4: {{ pxe_slot_ipv4 }}"
 
-- name: Extract PXE MAC address from IPv4 slot entry
+
+# REPLACE with OneCLI adapter show — works for all NIC types
+- name: Get PXE port MAC via OneCLI adapter show
+  command: >
+    {{ onecli_bin }} adapter show slot-{{ pxe_boot_slot }}
+    --nolog
+    {{ bmc_opts }}
+  environment:
+    LD_LIBRARY_PATH: "{{ onecli_libs }}"
+  delegate_to: "{{ onecli_jump_host }}"
+  register: adapter_show_output
+  changed_when: false
+  failed_when: adapter_show_output.rc != 0
+
+- name: Extract port 1 MAC from adapter show output
   set_fact:
-    pxe_mac_raw: "{{ pxe_slot_ipv4.split(' - ') | last | trim }}"
+    pxe_mac_raw: >-
+      {{ adapter_show_output.stdout
+         | regex_findall('Permanent Address:\s*([0-9A-Fa-f]{12})')
+         | first | default('') }}
+
+- name: Fail if MAC address not found
+  fail:
+    msg: >
+      Could not extract MAC address from adapter show output for slot {{ pxe_boot_slot }}.
+      Output: {{ adapter_show_output.stdout[:500] }}
+  when: pxe_mac_raw == ''
+
+- name: Format MAC to colon-separated lowercase
+  set_fact:
+    pxe_mac_formatted: >-
+      {{ pxe_mac_raw | lower
+         | regex_replace('([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})',
+                         '\1:\2:\3:\4:\5:\6') }}
 
 - name: Display PXE slot info
   debug:
     msg:
       - "PXE slot label:  {{ pxe_slot_ipv4 }}"
-      - "OCP slot:        {{ ocp_slot }}"
-      - "PXE MAC:         {{ pxe_mac_raw }}"
+      - "Raw MAC:         {{ pxe_mac_raw }}"
+      - "Formatted MAC:   {{ pxe_mac_formatted }}"
 
 - name: Display PXE boot order configuration completion
   debug:
@@ -271,4 +302,4 @@
       - "  Device:    {{ node_model }}"
       - "  OCP slot:  {{ ocp_slot }}"
       - "  PXE slot:  {{ pxe_slot_ipv4 }}"
-      - "  MAC:       {{ pxe_mac_raw }}"
+      - "  MAC:       {{ pxe_mac_formatted }}"

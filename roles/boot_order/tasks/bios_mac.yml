@@ -15,6 +15,9 @@
 # Matches: <VendorPrefix>OCP<anything>__Slot<N>PhysicalPort1LogicalPort1_MACAddress
 # Works for all device types since OCP NIC always contains 'OCP' in key name
 
+- set_fact:
+    ocp_slot_num: 6
+    
 - name: Discover OCP NIC BIOS attribute key pattern for slot
   set_fact:
     pxe_nic_key_pattern: >-
@@ -48,7 +51,10 @@
       {{ bios_response.json.Attributes
          [pxe_nic_key_pattern ~ 'PhysicalPort1LogicalPort1_MACAddress']
          | lower }}
-
+         
+- debug:
+    msg: "pxe_mac_formatted = {{ pxe_mac_formatted }}"
+    
 - name: Fail if MAC not found
   fail:
     msg: >

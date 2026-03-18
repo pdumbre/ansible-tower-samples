@@ -11,9 +11,6 @@
   register: bios_response
   when: bios_response is not defined
 
-- debug:
-    msg: "bios = {{ bios_response }}"
-
 # Finds the OCP NIC key for the configured slot
 # Matches: <VendorPrefix>OCP<anything>__Slot<N>PhysicalPort1LogicalPort1_MACAddress
 # Works for all device types since OCP NIC always contains 'OCP' in key name
@@ -61,8 +58,3 @@
       MAC address not found using key:
       {{ pxe_nic_key_pattern }}PhysicalPort1LogicalPort1_MACAddress
   when: pxe_mac_formatted == ''
-
-- name: Display PXE MAC address
-  debug:
-    msg:
-      - "OCP slot:  {{ ocp_slot_num }}"

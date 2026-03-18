@@ -27,17 +27,6 @@
          if (ipv4 is defined and ipv4 | length > 0)
          else '[' ~ ipv6_clean ~ ']'}}
 
-- name: Configure delegate host
-  set_fact:
-    bmc_delegate_host: >-
-      {{ 'localhost'
-         if (ipv4 is defined and ipv4 | length > 0)
-         else 'jump-host' }}
-
-- name: Normalize BMC delegate host
-  set_fact:
-    bmc_delegate_host: "{{ bmc_delegate_host | trim }}"
-         
 - name: Retrieve Systems information
   uri:
     url: "{{ bmc_base_url }}/redfish/v1/Systems"

@@ -1,0 +1,62 @@
+
+- name: Get BIOS attributes
+  uri:
+    url: "{{ bmc_bios_url }}"
+    method: GET
+    user: "{{ bmc_user }}"
+    password: "{{ bmc_password }}"
+    validate_certs: "{{ redfish_validate_certs | default(false) }}"
+    force_basic_auth: yes
+  delegate_to: localhost
+  register: bios_response
+  when: bios_response is not defined
+
+# Finds the OCP NIC key for the configured slot
+# Matches: <VendorPrefix>OCP<anything>__Slot<N>PhysicalPort1LogicalPort1_MACAddress
+# Works for all device types since OCP NIC always contains 'OCP' in key name
+
+- name: Discover OCP NIC BIOS attribute key pattern for slot
+  set_fact:
+    pxe_nic_key_pattern: >-
+      {{ bios_response.json.Attributes.keys()
+         | select('search', 'Slot' ~ ocp_slot_num)
+         | select('search', 'OCP')
+         | select('search', 'PhysicalPort1LogicalPort1_MACAddress')
+         | first
+         | default('')
+         | regex_replace('PhysicalPort1LogicalPort1_MACAddress', '') }}
+
+- name: Fail if OCP NIC key not discovered
+  fail:
+    msg: >
+      Could not find OCP NIC MACAddress attribute for slot {{ ocp_slot_num }}
+      on {{ node_device_type }}.
+      Expected a BIOS attribute key containing:
+        'Slot{{ ocp_slot_num }}' + 'OCP' + 'PhysicalPort1LogicalPort1' + 'MACAddress'      
+  when: pxe_nic_key_pattern == ''
+
+- name: Display discovered OCP NIC key pattern
+  debug:
+    msg:
+      - "Device type: {{ node_device_type }}"
+      - "OCP slot:    {{ ocp_slot_num }}"
+      - "Key pattern: {{ pxe_nic_key_pattern }}PhysicalPort1LogicalPort1_MACAddress"
+
+- name: Get OCP port 1 MAC from BIOS attributes
+  set_fact:
+    pxe_mac_formatted: >-
+      {{ bios_response.json.Attributes
+         [pxe_nic_key_pattern ~ 'PhysicalPort1LogicalPort1_MACAddress']
+         | lower }}
+
+- name: Fail if MAC not found
+  fail:
+    msg: >
+      MAC address not found using key:
+      {{ pxe_nic_key_pattern }}PhysicalPort1LogicalPort1_MACAddress
+  when: pxe_mac_formatted == ''
+
+- name: Display PXE MAC address
+  debug:
+    msg:
+      - "OCP slot:  {{ ocp_slot_num }}"

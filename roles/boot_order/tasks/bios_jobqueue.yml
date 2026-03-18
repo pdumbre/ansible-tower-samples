@@ -9,6 +9,10 @@
   register: clean_jobs_result
   failed_when: clean_jobs_result.rc != 0
 
+- name: Build PXE NIC slot name from OCP slot number
+  set_fact:
+    pxe_nic_slot: "NIC.OCP.{{ ocp_slot_num }}-1-1"
+
 - name: Stage PXE BIOS attribute via Redfish
   uri:
     url: "{{ bmc_bios_url }}/Settings"
@@ -173,15 +177,15 @@
       - "PxeDev1Protocol : {{ bios_verify.json.Attributes.PxeDev1Protocol | default('N/A') }}"
   when: pxe_nic_slot is defined
 
-#- name: Fail if PXE interface not set correctly
- # fail:
-  #  msg: >
-   #   PXE interface mismatch!
-    #  Expected: '{{ pxe_nic_slot }}'
-     # Got: '{{ bios_verify.json.Attributes.PxeDev1Interface | default('not set') }}'
-  #when:
-   # - pxe_nic_slot is defined
-    #- bios_verify.json.Attributes.PxeDev1Interface | default('') != pxe_nic_slot
+- name: Fail if PXE interface not set correctly
+  fail:
+    msg: >
+      PXE interface mismatch!
+      Expected: '{{ pxe_nic_slot }}'
+      Got: '{{ bios_verify.json.Attributes.PxeDev1Interface | default('not set') }}'
+  when:
+    - pxe_nic_slot is defined
+    - bios_verify.json.Attributes.PxeDev1Interface | default('') != pxe_nic_slot
 
 - name: Log PXE boot configuration success
   debug:

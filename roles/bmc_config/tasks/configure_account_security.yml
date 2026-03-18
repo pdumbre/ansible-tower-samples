@@ -29,11 +29,11 @@
         category: Accounts
         command: ListUsers
         baseuri: "{{ bmc_ip }}"
-        username: "{{ redfish_user }}"
-        password: "{{ redfish_password }}"
+        username: "{{ bmc_user }}"
+        password: "{{ bmc_password }}"
         timeout: 30
       register: current_accounts
-      delegate_to: "{{ bmc_delegate_host }}"
+      delegate_to: localhost
       ignore_errors: yes
 
     # M6 Server Configuration (7X02, 7D2X, 7D2V, 7D76, 7D9R, 7D73)
@@ -57,7 +57,7 @@
               PasswordComplexityCheck: true
         status_code: [200, 202, 204]
       register: m6_account_config_api
-      delegate_to: "{{ bmc_delegate_host }}"
+      delegate_to: localhost
       when:
         - is_m6_server | bool
       changed_when: m6_account_config_api.status in [200, 202, 204]
@@ -76,15 +76,14 @@
         category: Accounts
         command: UpdateAccountServiceProperties
         baseuri: "{{ bmc_ip }}"
-        username: "{{ redfish_user }}"
-        password: "{{ redfish_password }}"
+        username: "{{ bmc_user }}"
+        password: "{{ bmc_password }}"
         timeout: 30
         account_properties:
           MinPasswordLength: 8        # -pl 8: password length
       register: sn550_account_config
-      delegate_to: "{{ bmc_delegate_host }}"
+      delegate_to: localhost
       when: is_sn550 | bool
-      ignore_errors: yes
 
     - name: Configure SN550 account security
       uri:
@@ -105,7 +104,7 @@
               PasswordComplexityCheck: false
         status_code: [200, 202, 204]
       register: sn550_account_config_api
-      delegate_to: "{{ bmc_delegate_host }}"
+      delegate_to: localhost
       when:
         - is_sn550 | bool
         - sn550_account_config is failed

@@ -87,7 +87,8 @@
 - name: Configure BMC network settings via SSH
   shell: >-
     sshpass -p '{{ hostvars[inventory_hostname].bmc_password }}'
-    ssh -6 '{{ bmc_ssh_options | join(' ') }}'
+    ssh -6 
+    {{ bmc_ssh_options | join(' ') }}
     '{{ hostvars[inventory_hostname].bmc_user }}@{{ hostvars[inventory_hostname].ipv6LLA }}%{{ bmc_lla_interface }}'
     "ifconfig {{ bmc_network.bmc_network_interface }} -ipv6static enabled -failover shared && usbeth -en enabled"
   register: ssh_result

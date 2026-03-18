@@ -198,3 +198,4 @@
       - "NIC Slot  : {{ pxe_nic_slot }}"
       - "Job ID    : {{ bios_job_id }}"
       - "Job State : {{ job_poll_result.json.JobState }}"
+      - "MAC       : {{ pxe_mac_formatted }}"

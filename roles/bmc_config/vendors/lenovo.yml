@@ -87,5 +87,5 @@ performance_settings:
 
 bmc_reset:
   reset_type: "ResetAll"
-  url_suffix: "ComputerSystem.Reset"
+  url_suffix: "Manager.ResetToDefaults"
 

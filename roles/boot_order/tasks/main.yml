@@ -38,12 +38,8 @@
     - not (ru_number | int == 23)
     - use_bios_jobqueue | bool
 
-#- name: Resolve and set boot order
- # include_tasks: bios_boot_order.yml
-  #when:
-   # - not (ru_number | int == 23)
-    #- not (use_bios_jobqueue | bool)
-
 - name: Resolve and set boot order
-  include_tasks: bios_mac.yml
-
+  include_tasks: bios_boot_order.yml
+  when:
+    - not (ru_number | int == 23)
+    - not (use_bios_jobqueue | bool)

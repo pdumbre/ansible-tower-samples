@@ -1,1 +1,4 @@
 
+# Max retries for Dell job completion polling
+job_poll_retries: 10
+job_poll_delay: 120  # 2 minutes between polls

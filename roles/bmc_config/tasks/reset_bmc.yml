@@ -107,7 +107,9 @@
         '!'
       }}
 
-  
+- debug:
+    msg: "updated_bmc_password = {{ updated_bmc_password }}"
+    
 - name: Configure BMC Account
   uri:
     url: "https://[{{ ipv6LLA }}%{{ bmc_lla_interface }}]/redfish/v1/AccountService/Accounts/1"

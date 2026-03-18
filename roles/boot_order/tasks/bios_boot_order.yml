@@ -206,7 +206,7 @@
 - name: Display found PXE slot entries
   debug:
     msg:
-      - "OCP slot:    {{ ocp_slot }}"
+      - "OCP slot:    {{ ocp_slot_num }}"
       - "IPv4 entry:  {{ pxe_slot_ipv4 }}"
   
 - name: Fail if IPv4 PXE slot entry not found
@@ -296,6 +296,6 @@
     msg:
       - "PXE Boot Order Configuration Completed"
       - "  Device:    {{ node_model }}"
-      - "  OCP slot:  {{ ocp_slot }}"
+      - "  OCP slot:  {{ ocp_slot_num }}"
       - "  PXE slot:  {{ pxe_slot_ipv4 }}"
       - "  MAC:       {{ pxe_mac_formatted }}"

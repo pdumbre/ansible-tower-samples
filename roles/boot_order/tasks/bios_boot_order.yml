@@ -227,32 +227,6 @@
       - "NetworkBootOrder configured successfully"
       - "  IPv4: {{ pxe_slot_ipv4 }}"
 
-- name: Get PXE port MAC via OneCLI adapter show
-  command: >
-    {{ onecli_bin }} adapter show slot-{{ ocp_slot_num }}
-    --nolog
-    {{ bmc_opts }}
-  environment:
-    LD_LIBRARY_PATH: "{{ onecli_libs }}"
-  delegate_to: "{{ onecli_jump_host }}"
-  register: adapter_show_output
-  changed_when: false
-  failed_when: adapter_show_output.rc != 0
-
-- name: Extract port 1 MAC from adapter show output
-  set_fact:
-    pxe_mac_raw: >-
-      {{ adapter_show_output.stdout
-         | regex_findall('Permanent Address:\s*([0-9A-Fa-f]{12})')
-         | first | default('') }}
-
-- name: Fail if MAC address not found
-  fail:
-    msg: >
-      Could not extract MAC address from adapter show output for slot {{ ocp_slot_num }}.
-      Output: {{ adapter_show_output.stdout[:500] }}
-  when: pxe_mac_raw == ''
-
 - name: Retrieve PXE port MAC
   include_tasks: bios_mac.yml
 

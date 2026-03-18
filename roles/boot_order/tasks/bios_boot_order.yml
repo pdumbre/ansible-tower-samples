@@ -110,10 +110,6 @@
   vars:
     power_action: "reboot"
 
-# -----------------------------------------------------------------------
-# Step 3 — Re-enable IPv4 PXE → reboot OS
-# -----------------------------------------------------------------------
-
 - name: Enable IPv4 PXE support
   command: >
     {{ onecli_bin }} config set
@@ -136,21 +132,7 @@
   vars:
     power_action: "cycle"
 
-# -----------------------------------------------------------------------
-# Step 4 — Wait 4 minutes for UEFI to populate NIC slot entries
-# -----------------------------------------------------------------------
-- name: Wait for UEFI to update NIC slot boot entries
-  debug:
-    msg: "Waiting 4 minutes for UEFI to populate NIC slot entries..."
 
-- name: Pause 4 minutes for slot update
-  pause:
-    seconds: 240
-    prompt: "Waiting for UEFI NIC slot entries to populate (4 min)"
-
-# -----------------------------------------------------------------------
-# Step 5 — Read BootOrder.NetworkBootOrder via OneCLI
-# -----------------------------------------------------------------------
 - name: Read current NetworkBootOrder via OneCLI
   command: >
     {{ onecli_bin }} config show
@@ -184,10 +166,6 @@
     msg:
       - "Total boot order entries: {{ boot_order_entries | length }}"
       - "Entries: {{ boot_order_entries }}"
-
-# -----------------------------------------------------------------------
-# Step 6 — Find OCP slot IPv4 matching SLOT <ocp_slot> 0/0
-# -----------------------------------------------------------------------
 
 - name: Find IPv4 PXE slot entry for OCP slot
   set_fact:
@@ -249,8 +227,6 @@
       - "NetworkBootOrder configured successfully"
       - "  IPv4: {{ pxe_slot_ipv4 }}"
 
-
-# REPLACE with OneCLI adapter show — works for all NIC types
 - name: Get PXE port MAC via OneCLI adapter show
   command: >
     {{ onecli_bin }} adapter show slot-{{ pxe_boot_slot }}

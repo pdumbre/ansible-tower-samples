@@ -4,10 +4,6 @@ power_on_wait_time: 300
 power_off_wait_time: 30
 boot_slot_settle_seconds: 240  # 4 minutes for BIOS to settle after reboot
 
-# Max retries for Dell job completion polling
-job_poll_retries: 10
-job_poll_delay: 120  # 2 minutes between polls
-
 retry_delay: 10
 retry_count: 3
 

@@ -84,18 +84,14 @@
   set_fact:
     ipv6_needs_update: "{{ ipv6ULA is defined and current_ipv6_addr != ipv6ULA }}"
 
-- name: Configure network settings
-  command:
-    argv:
-      - sshpass
-      - -p
-      - "{{ hostvars[inventory_hostname].bmc_password }}"
-      - ssh
-      - -6
-      - "{{ bmc_ssh_options | join(' ') }}"
-      - "{{ hostvars[inventory_hostname].bmc_user }}@{{ hostvars[inventory_hostname].ipv6LLA }}%{{ bmc_lla_interface }}"
-      - "ifconfig {{ bmc_network.bmc_network_interface }} -ipv6static enabled -failover shared && usbeth -en enabled"
+- name: Configure BMC network settings via SSH
+  shell: >-
+    sshpass -p '{{ hostvars[inventory_hostname].bmc_password }}'
+    ssh -6 '{{ bmc_ssh_options | join(' ') }}'
+    '{{ hostvars[inventory_hostname].bmc_user }}@{{ hostvars[inventory_hostname].ipv6LLA }}%{{ bmc_lla_interface }}'
+    "ifconfig {{ bmc_network.bmc_network_interface }} -ipv6static enabled -failover shared && usbeth -en enabled"
   register: ssh_result
+  changed_when: ssh_result.rc == 0
   failed_when: ssh_result.rc != 0
   when: bmc_capabilities.requires_ssh_for_network is defined
   delegate_to: "{{ bmc_jump_host }}"

@@ -14,9 +14,6 @@
 # Finds the OCP NIC key for the configured slot
 # Matches: <VendorPrefix>OCP<anything>__Slot<N>PhysicalPort1LogicalPort1_MACAddress
 # Works for all device types since OCP NIC always contains 'OCP' in key name
-
-- set_fact:
-    ocp_slot_num: 6
     
 - name: Discover OCP NIC BIOS attribute key pattern for slot
   set_fact:

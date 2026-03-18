@@ -66,7 +66,7 @@
   changed_when: "'Successfully' in legacy_pxe_disable.stdout"
   failed_when: legacy_pxe_disable.rc != 0
 
-- name: Set IPv6 PXE support value for disable
+- name: Set PXE support value
   set_fact:
     pxe_disable_value: "{{ 'Disabled' if node_model in new_asu_syntax_models else 'Disable' }}"
     pxe_enable_value: "{{ 'Enabled' if node_model in new_asu_syntax_models else 'Enable' }}"

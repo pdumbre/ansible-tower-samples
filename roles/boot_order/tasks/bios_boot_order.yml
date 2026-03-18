@@ -19,7 +19,7 @@
     msg:
       - "Configuring PXE BootOrder"
       - "Device Type: {{ node_model }}"
-      - "OCP PXE slot: {{ pxe_nic_slot }}"
+      - "OCP PXE slot: {{ ocp_slot_num }}"
       
 - name: Set BMC connection string for OneCLI
   set_fact:
@@ -188,10 +188,6 @@
 # -----------------------------------------------------------------------
 # Step 6 — Find OCP slot IPv4 matching SLOT <ocp_slot> 0/0
 # -----------------------------------------------------------------------
-- name: Get OCP slot from expansion_cards mapping
-  set_fact:
-    ocp_slot: "{{ expansion_cards[node_model]['OCP']['slots'][0][0] }}"
-  when: expansion_cards[node_model] is defined
 
 - name: Find IPv4 PXE slot entry for OCP slot
   set_fact:
@@ -199,7 +195,7 @@
       {{
         boot_order_entries
         | select('search', 'UEFI:')
-        | select('search', 'SLOT\s*' ~ ocp_slot)
+        | select('search', 'SLOT\s*' ~ ocp_slot_num)
         | select('search', '(?i)ip(v)?4')
         | select('search', '1/0')
         | map('trim')

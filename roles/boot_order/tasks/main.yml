@@ -17,12 +17,6 @@
   failed_when: false
   when: not (ru_number | int == 23)
 
-- debug:
-    msg: "bmc_manager_url = {{ bmc_manager_url }}"
-
-- debug:
-    msg: "probe_job_queue = {{ probe_job_queue }}"
-
 - name: Set BIOS apply method flag
   set_fact:
     use_bios_jobqueue: "{{ probe_job_queue.status | default(404) == 200 }}"

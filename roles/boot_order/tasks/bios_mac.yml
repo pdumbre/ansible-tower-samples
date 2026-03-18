@@ -42,7 +42,7 @@
       - "OCP slot:    {{ ocp_slot_num }}"
       - "Key pattern: {{ pxe_nic_key_pattern }}PhysicalPort1LogicalPort1_MACAddress"
 
-- name: Get OCP port 1 MAC from BIOS attributes
+- name: Retrieve MAC Address from BIOS attributes
   set_fact:
     pxe_mac_formatted: >-
       {{ bios_response.json.Attributes
@@ -52,9 +52,46 @@
 - debug:
     msg: "pxe_mac_formatted = {{ pxe_mac_formatted }}"
     
-- name: Fail if MAC not found
+- name: Fail if MAC Address not found
   fail:
     msg: >
       MAC address not found using key:
       {{ pxe_nic_key_pattern }}PhysicalPort1LogicalPort1_MACAddress
   when: pxe_mac_formatted == ''
+
+  - name: Retrieve PXE MAC Address
+  block:
+
+    - name: Retrieve OCP NIC details
+      uri:
+        url: "{{ bmc_base_url }}/redfish/v1/Systems/System.Embedded.1/EthernetInterfaces/{{ dell_pxe_nic_id }}"
+        method: GET
+        user: "{{ bmc_user }}"
+        password: "{{ bmc_password }}"
+        validate_certs: "{{ redfish_validate_certs | default(false) }}"
+        force_basic_auth: yes
+      delegate_to: localhost
+      register: dell_nic_detail
+
+    - name: Set Dell PXE MAC
+      set_fact:
+        pxe_mac_formatted: >-
+          {{ (dell_nic_detail.json.PermanentMACAddress
+              | default(dell_nic_detail.json.MACAddress))
+             | lower }}
+
+    - name: Fail if Dell MAC not found
+      fail:
+        msg: >
+          PXE MAC not found for Dell NIC {{ dell_pxe_nic_id }}.
+          Available interfaces:
+          {{ bmc_base_url }}/redfish/v1/Systems/System.Embedded.1/EthernetInterfaces
+      when: pxe_mac_formatted == ''
+
+    - name: Display Dell PXE MAC
+      debug:
+        msg:
+          - "NIC ID:  {{ dell_pxe_nic_id }}"
+          - "PXE MAC: {{ pxe_mac_formatted }}"
+
+  when: server_vendor == 'dell'

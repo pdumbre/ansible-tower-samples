@@ -253,19 +253,8 @@
       Output: {{ adapter_show_output.stdout[:500] }}
   when: pxe_mac_raw == ''
 
-- name: Format MAC to colon-separated lowercase
-  set_fact:
-    pxe_mac_formatted: >-
-      {{ pxe_mac_raw | lower
-         | regex_replace('([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})',
-                         '\1:\2:\3:\4:\5:\6') }}
-
-- name: Display PXE slot info
-  debug:
-    msg:
-      - "PXE slot label:  {{ pxe_slot_ipv4 }}"
-      - "Raw MAC:         {{ pxe_mac_raw }}"
-      - "Formatted MAC:   {{ pxe_mac_formatted }}"
+- name: Retrieve PXE port MAC
+  include_tasks: bios_mac.yml
 
 - name: Display PXE boot order configuration completion
   debug:

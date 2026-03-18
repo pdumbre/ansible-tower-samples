@@ -12,7 +12,7 @@
         status_code: [200]
       register: current_network
       no_log: true
-      delegate_to: localhost
+      delegate_to: "{{ bmc_jump_host }}"
 
   rescue:
     - name: Fallback - Retrieve network configuration using curl
@@ -22,7 +22,7 @@
           -w "\n%{http_code}" \
           "https://[{{ ipv6LLA }}%{{ bmc_lla_interface | string }}]{{ bmc_urls.ethernet }}"
       register: current_network_curl
-      delegate_to: localhost
+      delegate_to: "{{ bmc_jump_host }}"
       changed_when: false
       failed_when: current_network_curl.rc != 0 or (current_network_curl.stdout_lines[-1] | int) not in [200]
 
@@ -51,7 +51,7 @@
         return_content: yes
       register: network_interface_detail
       no_log: true
-      delegate_to: localhost
+      delegate_to: "{{ bmc_jump_host }}"
 
   rescue:
     - name: Fallback - Retrieve network interface details using curl
@@ -61,7 +61,7 @@
           -w "\n%{http_code}" \
           "https://[{{ ipv6LLA }}%{{ bmc_lla_interface }}]{{ network_interface_uri }}"
       register: network_interface_detail_curl
-      delegate_to: localhost
+      delegate_to: "{{ bmc_jump_host }}"
       changed_when: false
       failed_when: network_interface_detail_curl.rc != 0 or (network_interface_detail_curl.stdout_lines[-1] | int) not in [200]
 
@@ -98,7 +98,7 @@
   register: ssh_result
   failed_when: ssh_result.rc != 0
   when: bmc_capabilities.requires_ssh_for_network is defined
-  delegate_to: localhost
+  delegate_to: "{{ bmc_jump_host }}"
 
 - name: Configure IPv6 and IPv4 Network Settings
   block:
@@ -122,7 +122,7 @@
               Gateway: "{{ bmc_network.ipv6_gateway }}"
               AddressOrigin: "Static"
         status_code: [200, 204]
-      delegate_to: localhost
+      delegate_to: "{{ bmc_jump_host }}"
       no_log: true
       register: ipv6_config
 
@@ -148,7 +148,7 @@
           "https://[{{ ipv6LLA }}%{{ bmc_lla_interface }}]{{ network_interface_uri }}" \
           -w "\n%{http_code}"
       register: ipv6_config_curl
-      delegate_to: localhost
+      delegate_to: "{{ bmc_jump_host }}"
       changed_when: ipv6_config_curl.stdout_lines[-1] in ['200', '204']
       failed_when: ipv6_config_curl.rc != 0 or (ipv6_config_curl.stdout_lines[-1] | int) not in [200, 204]
 
@@ -171,7 +171,6 @@
     - name: Configure OEM network settings using uri module
       uri:
         url: "https://[{{ ipv6LLA }}%{{ bmc_lla_interface }}]{{ network_interface_uri }}"
-        #url: "{{ bmc_base_url }}{{ network_interface_uri }}"
         method: PATCH
         user: "{{ bmc_user }}"
         password: "{{ bmc_password }}"
@@ -187,7 +186,7 @@
             Lenovo:
               NetworkSettingSync: "{{ bmc_network.name_server_sync_enabled | bool }}"
         status_code: [200, 204]
-      delegate_to: localhost
+      delegate_to: "{{ bmc_jump_host }}"
       no_log: true
       register: oem_config
 
@@ -210,7 +209,7 @@
           "https://[{{ ipv6LLA }}%{{ bmc_lla_interface }}]{{ network_interface_uri }}" \
           -w "\n%{http_code}"
       register: oem_config_curl
-      delegate_to: localhost
+      delegate_to: "{{ bmc_jump_host }}"
       changed_when: oem_config_curl.stdout_lines[-1] in ['200', '204']
       failed_when: oem_config_curl.rc != 0 or (oem_config_curl.stdout_lines[-1] | int) not in [200, 204]
 

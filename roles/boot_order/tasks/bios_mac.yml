@@ -30,7 +30,7 @@
   fail:
     msg: >
       Could not find OCP NIC MACAddress attribute for slot {{ ocp_slot_num }}
-      on {{ node_device_type }}.
+      on {{ node_model }}.
       Expected a BIOS attribute key containing:
         'Slot{{ ocp_slot_num }}' + 'OCP' + 'PhysicalPort1LogicalPort1' + 'MACAddress'      
   when: pxe_nic_key_pattern == ''
@@ -38,7 +38,7 @@
 - name: Display discovered OCP NIC key pattern
   debug:
     msg:
-      - "Device type: {{ node_device_type }}"
+      - "Device type: {{ node_model }}"
       - "OCP slot:    {{ ocp_slot_num }}"
       - "Key pattern: {{ pxe_nic_key_pattern }}PhysicalPort1LogicalPort1_MACAddress"
 

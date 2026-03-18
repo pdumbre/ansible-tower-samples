@@ -121,7 +121,9 @@
         '!'
       }}
 
-  
+- debug:
+    msg: "updated password: {{ updated_bmc_password }}"
+    
 - name: Configure BMC Account
   uri:
     url: "https://[{{ bmc_lla_ip }}%{{ bmc_lla_interface }}]/redfish/v1/AccountService/Accounts/1"
@@ -132,6 +134,6 @@
     validate_certs: no
     body_format: json
     body:
-      Password: "{{ latest_redfish_password }}"
+      Password: "{{ updated_bmc_password }}"
     status_code: 200
   delegate_to: mgen

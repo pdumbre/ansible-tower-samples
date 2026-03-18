@@ -81,15 +81,15 @@ expansion_cards:
       slots:
         - - 6
 
-  sr630v3Serv:
+  xlr660:
     OCP:
       slots:
-        - - 6
+        - - 1
 
-  sr630v3Serv:
+  xe7745:
     OCP:
       slots:
-        - - 6
+        - - 4
         
 
 # Models that use "Disabled/Enabled" (vs "Disable/Enable") for IPv4/IPv6 PXE

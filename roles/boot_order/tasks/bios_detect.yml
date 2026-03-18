@@ -51,4 +51,3 @@
     msg:
       - "Model: {{ node_model }}"
       - "OCP slot number: {{ ocp_slot_num }}"
-      - "PXE NIC slot: {{ pxe_nic_slot }}"

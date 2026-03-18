@@ -20,6 +20,9 @@
       - "Current BMC Status: {{ pre_reset_bmc_info.json.Status.State | default('Unknown') }}"
   when: pre_reset_bmc_info is succeeded
 
+- debug:
+    msg: "bmc_reset_url = {{ bmc_reset_url }}"
+    
 - name: Perform factory reset using Redfish ResetToDefaults action
   uri:
     url: "{{ bmc_reset_url }}"

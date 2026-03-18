@@ -61,7 +61,7 @@
           {{ pxe_nic_key_pattern }}PhysicalPort1LogicalPort1_MACAddress
       when: pxe_mac_formatted == ''
 
-  when: use_jobqueue is false
+  when: not (use_bios_jobqueue | bool)
 
 - name: Retrieve PXE MAC Address
   block:
@@ -98,4 +98,4 @@
           - "NIC ID:  {{ dell_pxe_nic_id }}"
           - "PXE MAC: {{ pxe_mac_formatted }}"
 
-  when: use_jobqueue | bool
+  when: use_bios_jobqueue | bool

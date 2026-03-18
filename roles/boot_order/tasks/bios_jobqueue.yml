@@ -11,7 +11,7 @@
 
 - name: Build PXE NIC slot name from OCP slot number
   set_fact:
-    pxe_nic_slot: "NIC.OCP.{{ ocp_slot_num }}-1-1"
+    pxe_nic_slot: "NIC.Integrated.{{ ocp_slot_num }}-1-1"
 
 - name: Stage PXE BIOS attribute via Redfish
   uri:

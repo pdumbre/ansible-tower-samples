@@ -197,7 +197,7 @@
         | select('search', 'UEFI:')
         | select('search', 'SLOT\s*' ~ ocp_slot_num)
         | select('search', '(?i)ip(v)?4')
-        | select('search', '1/0')
+        | select('search', '0/0')
         | map('trim')
         | first
         | default('')
@@ -212,7 +212,7 @@
 - name: Fail if IPv4 PXE slot entry not found
   fail:
     msg: >
-      Could not find IPv4 PXE boot entry for SLOT {{ ocp_slot }} (port 0/0)
+      Could not find IPv4 PXE boot entry for SLOT {{ ocp_slot_num }} (port 0/0)
       in NetworkBootOrder output.
       Available entries:
       {{ boot_order_entries | join('\n') }}

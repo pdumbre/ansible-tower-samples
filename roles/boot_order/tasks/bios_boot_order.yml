@@ -229,7 +229,7 @@
 
 - name: Get PXE port MAC via OneCLI adapter show
   command: >
-    {{ onecli_bin }} adapter show slot-{{ pxe_boot_slot }}
+    {{ onecli_bin }} adapter show slot-{{ ocp_slot_num }}
     --nolog
     {{ bmc_opts }}
   environment:
@@ -249,7 +249,7 @@
 - name: Fail if MAC address not found
   fail:
     msg: >
-      Could not extract MAC address from adapter show output for slot {{ pxe_boot_slot }}.
+      Could not extract MAC address from adapter show output for slot {{ ocp_slot_num }}.
       Output: {{ adapter_show_output.stdout[:500] }}
   when: pxe_mac_raw == ''
 

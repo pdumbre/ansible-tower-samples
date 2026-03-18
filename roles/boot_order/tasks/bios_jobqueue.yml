@@ -187,6 +187,9 @@
     - pxe_nic_slot is defined
     - bios_verify.json.Attributes.PxeDev1Interface | default('') != pxe_nic_slot
 
+- name: Retrieve PXE port MAC
+  include_tasks: bios_mac.yml
+
 - name: Log PXE boot configuration success
   debug:
     msg:

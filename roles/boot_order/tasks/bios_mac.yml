@@ -63,12 +63,14 @@
 
   when: not (use_bios_jobqueue | bool)
 
+- debug:
+    msg: "url: {{ bmc_systems_url }}/EthernetInterfaces/{{ pxe_nic_slot }}"
+
 - name: Retrieve PXE MAC Address
   block:
-
     - name: Retrieve OCP NIC details
       uri:
-        url: "{{ bmc_base_url }}/redfish/v1/Systems/System.Embedded.1/EthernetInterfaces/{{ dell_pxe_nic_id }}"
+        url: "{{ bmc_systems_url }}/EthernetInterfaces/{{ pxe_nic_slot }}"
         method: GET
         user: "{{ bmc_user }}"
         password: "{{ bmc_password }}"
@@ -87,15 +89,15 @@
     - name: Fail if Dell MAC not found
       fail:
         msg: >
-          PXE MAC not found for Dell NIC {{ dell_pxe_nic_id }}.
+          PXE MAC not found for Dell NIC {{ pxe_nic_slot }}.
           Available interfaces:
-          {{ bmc_base_url }}/redfish/v1/Systems/System.Embedded.1/EthernetInterfaces
+          {{ bmc_systems_url }}/EthernetInterfaces
       when: pxe_mac_formatted == ''
 
     - name: Display Dell PXE MAC
       debug:
         msg:
-          - "NIC ID:  {{ dell_pxe_nic_id }}"
+          - "NIC ID:  {{ pxe_nic_slot }}"
           - "PXE MAC: {{ pxe_mac_formatted }}"
 
   when: use_bios_jobqueue | bool

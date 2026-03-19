@@ -1,4 +1,4 @@
-
+---
 - name: Check if password change is required
   set_fact:
     bmc_password_change_required: >-
@@ -25,3 +25,31 @@
       delegate_to: "{{ bmc_delegate_host }}"
       register: password_patch_result
       failed_when: false
+
+    - name: Generate BMC secret
+      set_fact:
+        updated_bmc_password: >-
+          {{
+            lookup('password', '/dev/null length=20 chars=ascii_letters,digits') +
+            '!'
+          }}
+
+    - debug:
+        msg: "updated_bmc_password = {{ updated_bmc_password }}"
+        
+    - name: Configure BMC Account
+      uri:
+        url: "{{ bmc_base_url }}/redfish/v1/AccountService/Accounts/1"
+        method: PATCH
+        user: "{{ xcc_default_user }}"
+        password: "{{ xcc_default_user }}"
+        validate_certs: "{{ redfish_validate_certs | default(false) }}"
+        force_basic_auth: yes
+        body_format: json
+        body:
+          Password: "{{ updated_bmc_password }}"
+        status_code: 200
+      when: bmc_capabilities.require_patch_default_acct is defined  
+      delegate_to: "{{ bmc_delegate_host }}"
+
+  when: bmc_password_change_required | bool

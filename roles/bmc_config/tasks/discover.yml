@@ -133,6 +133,18 @@
       include_tasks: bmc_recovery.yml
 
   when: systems is failed
+
+- name: Retrieve Systems information
+  uri:
+    url: "{{ bmc_base_url }}/redfish/v1/Systems"
+    method: GET
+    user: "{{ bmc_user }}"
+    password: "{{ bmc_password }}"
+    validate_certs: false
+    status_code: [200, 201]
+  delegate_to: "{{ bmc_delegate_host }}"
+  register: systems
+
   
 - set_fact:
     bmc_systems_url: "{{ bmc_base_url }}{{ systems.json.Members[0]['@odata.id'] }}"
@@ -144,6 +156,7 @@
     user: "{{ bmc_user }}"
     password: "{{ bmc_password }}"
     validate_certs: false
+    status_code: [200, 201]
   delegate_to: "{{ bmc_delegate_host }}"
   register: system_details
 
@@ -157,6 +170,7 @@
     user: "{{ bmc_user }}"
     password: "{{ bmc_password }}"
     validate_certs: false
+    status_code: [200, 201]
   delegate_to: "{{ bmc_delegate_host }}"
   register: managers
   

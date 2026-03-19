@@ -1,31 +1,113 @@
 # roles/bmc_config/tasks/discover.yml
 
+- name: Discover interface for BMC link local address
+  shell: |
+    for iface in $(ls /sys/class/net); do
+      ping -6 -c1 -I $iface {{ ipv6ULA }} >/dev/null 2>&1 && echo $iface
+    done
+  register: detected_iface
+  delegate_to: jump-host
+  failed_when: detected_iface.stdout_lines|length == 0
+  changed_when: false
+
+- name: Configure BMC link local address interface
+  set_fact:
+    bmc_lla_interface: "{{ detected_iface.stdout_lines[0] | trim }}"
+
+- name: Debug interface
+  debug:
+     var: "interface: {{ bmc_lla_interface }}"
+
 - name: Reset BMC IP Variables
   set_fact:
-    ipv4_clean: "{{ ipv4 | default('') | replace('\n','') | replace('\r','') | trim }}"
     ipv6_clean: "{{ ipv6ULA | default('') | replace('\n','') | replace('\r','') | trim }}"
 
-- name: Generate BMC Base Endpoint
+- name: Check global IPv6 BMC reachability
+  uri:
+    url: "https://[{{ ipv6_clean }}]/redfish/v1"
+    method: GET
+    user: "{{ bmc_user }}"
+    password: "{{ bmc_password }}"
+    validate_certs: "{{ redfish_validate_certs | default(false) }}"
+    force_basic_auth: yes
+    status_code: 200
+    timeout: 10
+  delegate_to: "{{ bmc_delegate_host }}"
+  register: ipv6_check
+  failed_when: false
+  when:
+    - ipv6_clean | length > 0
+
+# Use curl for LLA — handles zone ID reliably without %25 encoding issues
+- name: Check LLA BMC reachability via curl
+  command: >
+    curl -sk
+    --max-time 10
+    --user '{{ bmc_user }}:{{ bmc_password }}'
+    --output /dev/null
+    --write-out '%{http_code}'
+    'https://[{{ ipv6LLA }}%{{ bmc_lla_interface }}]/redfish/v1'
+  delegate_to: "{{ bmc_jump_host }}"
+  register: lla_check
+  changed_when: false
+  failed_when: false
+  when:
+    - ipv6LLA is defined
+    - ipv6LLA | length > 0
+    - ipv6_check is not defined or ipv6_check.status | default(0) != 200
+
+- name: Set reachability facts
+  set_fact:
+    ipv6_reachable: "{{ ipv6_check.status | default(0) == 200 }}"
+    lla_reachable: "{{ lla_check.stdout | default('0') | trim == '200' }}"
+
+- name: Display reachability results
+  debug:
+    msg:
+      - "IPv6 ({{ ipv6_clean | default('not defined') }}):  {{ 'reachable' if ipv6_reachable else 'unreachable' }}"
+      - "LLA  ({{ ipv6LLA | default('not defined') }}%{{ bmc_lla_interface | default('') }}): {{ 'reachable' if lla_reachable else 'unreachable' }}"
+
+- name: Set BMC base URL from first reachable address
   set_fact:
     bmc_base_url: >-
-      {% if ipv4_clean | length > 0 %}
-      https://{{ ipv4_clean }}
-      {% elif ipv6_clean | length > 0 %}
+      {%- if ipv6_reachable -%}
       https://[{{ ipv6_clean }}]
-      {% else %}
-      
-      {% endif %}
+      {%- elif lla_reachable -%}
+      https://[{{ bmc_ipv6_lla }}%{{ bmc_lla_interface }}]
+      {%- else -%}
+      {%- endif -%}
+    bmc_using_lla: "{{ lla_reachable and not ipv6_reachable }}"
+
+- name: Fail if no BMC address is reachable
+  fail:
+    msg: >
+      BMC not reachable via any address for {{ inventory_hostname }}.
+      IPv6: {{ ipv6_clean | default('not defined') }} — {{ 'reachable' if ipv6_reachable else 'unreachable' }}
+      LLA:  {{ ipv6LLA | default('not defined') }}%{{ bmc_lla_interface | default('') }} — {{ 'reachable' if lla_reachable else 'unreachable' }}
+  when: bmc_base_url | trim | length == 0
+
+
+- name: Configure bmc delegation
+  set_fact:
+    bmc_delegate_host: "localhost"
+
+- name: Switch delegate host to jump host if using LLA
+  set_fact:
+    bmc_delegate_host: "jump-host"
+  when: bmc_using_lla | bool
+
+- name: Warn if using LLA
+  debug:
+    msg:
+      - "WARNING: BMC only reachable via LLA"
+      - "  URL:           {{ bmc_base_url }}"
+      - "  Delegate host: {{ bmc_delegate_host }}"
+      - "  All BMC tasks will delegate to {{ bmc_jump_host }}"
+  when: bmc_using_lla | bool
 
 - name: Configure BMC Base Endpoint
   set_fact:
     bmc_base_url: "{{ bmc_base_url | trim }}"
-
-- name: Configure BMC IP address
-  set_fact:
-    bmc_ip: >-
-      {{ ipv4_clean
-         if (ipv4 is defined and ipv4 | length > 0)
-         else '[' ~ ipv6_clean ~ ']'}}
 
 - name: Retrieve Systems information
   uri:
@@ -78,22 +160,3 @@
     bmc_bios_url: "{{ bmc_systems_url }}/Bios"
     bmc_reset_url: "{{ bmc_manager_url }}/Actions/{{ bmc_reset.url_suffix }}"
     bmc_manager_ethernet_url: "{{ bmc_manager_url }}/EthernetInterfaces"
-
-  
-- name: Discover interface for BMC link local address
-  shell: |
-    for iface in $(ls /sys/class/net); do
-      ping -6 -c1 -I $iface {{ ipv6ULA }} >/dev/null 2>&1 && echo $iface
-    done
-  register: detected_iface
-  delegate_to: jump-host
-  failed_when: detected_iface.stdout_lines|length == 0
-  changed_when: false
-
-- name: Configure BMC link local address interface
-  set_fact:
-    bmc_lla_interface: "{{ detected_iface.stdout_lines[0] | trim }}"
-
-- name: Debug interface
-  debug:
-     var: "interface: {{ bmc_lla_interface }}"

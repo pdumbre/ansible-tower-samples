@@ -1,4 +1,8 @@
 
+- name: Set bmc lla interface
+  set_fact:
+    bmc_lla_interface: "eno2"
+
 - name: Wait for BMC SSH to become reachable
   shell: |
     nc -z -6 {{ ipv6LLA }}%{{ bmc_lla_interface }} 22
@@ -29,7 +33,12 @@
     validate_certs: no
     body_format: json
     body:
-      Password: "{{ latest_redfish_password }}"
+      Password: "{{ updated_bmc_password }}"
     status_code: 200
   when: bmc_capabilities.require_patch_default_acct is defined  
   delegate_to: jump-host
+
+
+- name: Generate BMC secret
+  set_fact:
+    bmc_password: "{{ updated_bmc_password }}"

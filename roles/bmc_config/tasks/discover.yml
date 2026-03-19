@@ -123,6 +123,15 @@
     validate_certs: false
   delegate_to: "{{ bmc_delegate_host }}"
   register: systems
+
+- name: Check if password change is required
+  set_fact:
+    bmc_password_change_required: >-
+      {{ 'PasswordChangeRequired' in (systems.json.error
+         ['@Message.ExtendedInfo'][0].MessageId | default(''))
+         if systems.json is defined and 'error' in systems.json
+         else false }}
+  when: systems is defined
   
 - set_fact:
     bmc_systems_url: "{{ bmc_base_url }}{{ systems.json.Members[0]['@odata.id'] }}"

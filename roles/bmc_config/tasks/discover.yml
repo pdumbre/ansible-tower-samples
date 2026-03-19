@@ -39,6 +39,9 @@
   when:
     - ipv6_clean | length > 0
 
+- debug:
+    msg: "url: https://[{{ ipv6LLA }}%{{ bmc_lla_interface }}]/redfish/v1"
+
 # Use curl for LLA — handles zone ID reliably without %25 encoding issues
 - name: Check LLA BMC reachability via curl
   shell: >

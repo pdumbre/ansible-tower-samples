@@ -41,12 +41,9 @@
 
 # Use curl for LLA — handles zone ID reliably without %25 encoding issues
 - name: Check LLA BMC reachability via curl
-  command: >
+  shell: >
     curl -sk
-    --max-time 10
     --user '{{ bmc_user }}:{{ bmc_password }}'
-    --output /dev/null
-    --write-out '%{http_code}'
     'https://[{{ ipv6LLA }}%{{ bmc_lla_interface }}]/redfish/v1'
   delegate_to: "{{ bmc_jump_host }}"
   register: lla_check

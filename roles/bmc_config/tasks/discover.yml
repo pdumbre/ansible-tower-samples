@@ -121,6 +121,7 @@
     password: "{{ bmc_password }}"
     validate_certs: false
   delegate_to: "{{ bmc_delegate_host }}"
+  failed_when: false
   register: systems
 
 - name: Handle Systems retrieval failure

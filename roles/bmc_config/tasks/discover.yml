@@ -7,12 +7,13 @@
     done
   register: detected_iface
   delegate_to: jump-host
-  failed_when: detected_iface.stdout_lines|length == 0
+  failed_when: false
   changed_when: false
-
+        
 - name: Configure BMC link local address interface
   set_fact:
-    bmc_lla_interface: "{{ detected_iface.stdout_lines[0] | trim }}"
+    bmc_lla_interface: "{{ bmc_lla_interface_override }}"
+  when: detected_iface.stdout_lines|length == 0
 
 - name: Debug interface
   debug:

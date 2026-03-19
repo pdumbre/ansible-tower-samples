@@ -56,8 +56,7 @@
     - ipv6LLA is defined
     - ipv6LLA | length > 0
     - ipv6_check is not defined or ipv6_check.status | default(0) != 200
-
-    
+  
 - name: Set reachability facts
   set_fact:
     ipv6_reachable: "{{ ipv6_check.status | default(0) == 200 }}"
@@ -124,14 +123,16 @@
   delegate_to: "{{ bmc_delegate_host }}"
   register: systems
 
-- name: Check if password change is required
-  set_fact:
-    bmc_password_change_required: >-
-      {{ 'PasswordChangeRequired' in (systems.json.error
-         ['@Message.ExtendedInfo'][0].MessageId | default(''))
-         if systems.json is defined and 'error' in systems.json
-         else false }}
-  when: systems is defined
+- name: Handle Systems retrieval failure
+  block:
+    - name: Log failure
+      debug:
+        msg: "Systems retrieval failed — attempting recovery"
+
+    - name: Trigger recovery tasks
+      include_tasks: bmc_recovery.yml
+
+  when: systems is failed
   
 - set_fact:
     bmc_systems_url: "{{ bmc_base_url }}{{ systems.json.Members[0]['@odata.id'] }}"

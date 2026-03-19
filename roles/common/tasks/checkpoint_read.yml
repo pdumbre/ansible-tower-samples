@@ -63,6 +63,23 @@
         else -1
       }}
 
+# -----------------------------------------------------------------------
+# Common Task — Check if stage already done
+# Required vars:
+#   checkpoint_workflow  : workflow name
+#   checkpoint_host      : inventory_hostname
+#   checkpoint_until     : skip if checkpoint is AT or PAST this stage
+# Sets fact:
+#   checkpoint_skip      : true if stage already completed
+# -----------------------------------------------------------------------
+
+- name: "[Checkpoint] Evaluate skip condition — {{ checkpoint_until }}"
+  set_fact:
+    checkpoint_skip: >-
+      {{
+        checkpoint_until in checkpoint_stages_done
+      }}
+      
 - name: "[Checkpoint] Display checkpoint status — {{ checkpoint_workflow }}"
   debug:
     msg:

@@ -110,7 +110,10 @@
 - name: Configure BMC Base Endpoint
   set_fact:
     bmc_base_url: "{{ bmc_base_url | trim }}"
-
+    
+- debug:
+    msg: "bmc_base_url = {{ bmc_base_url }}"
+    
 - name: Retrieve Systems information
   uri:
     url: "{{ bmc_base_url }}/redfish/v1/Systems"

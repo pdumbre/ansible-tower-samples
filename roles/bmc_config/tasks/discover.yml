@@ -133,7 +133,7 @@
     - name: Trigger recovery tasks
       include_tasks: bmc_recovery.yml
 
-  when: systems is failed
+  when: systems.failed | default(false) | bool
 
 - name: Retrieve Systems information
   uri:

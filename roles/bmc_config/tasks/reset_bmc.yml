@@ -123,7 +123,7 @@
     validate_certs: no
     body_format: json
     body:
-      Password: "{{ latest_redfish_password }}"
+      Password: "{{ updated_bmc_password }}"
     status_code: 200
   when: bmc_capabilities.require_patch_default_acct is defined  
   delegate_to: jump-host

@@ -1,1 +1,74 @@
 
+# -----------------------------------------------------------------------
+# Common Task — Read Checkpoint
+# Required vars:
+#   checkpoint_workflow : workflow name e.g. 'pxe_boot_order'
+#   checkpoint_host     : inventory_hostname
+# Sets facts:
+#   checkpoint_data         : full checkpoint dict
+#   checkpoint_stage        : latest completed stage or 'begin'
+#   checkpoint_stages_done  : list of all completed stages
+#   checkpoint_stage_index  : index of latest stage in order registry
+# -----------------------------------------------------------------------
+
+- name: "[Checkpoint] Load stage order registry"
+  include_vars:
+    file: "{{ role_path }}/../../common/vars/checkpoint_stages.yml"
+
+- name: "[Checkpoint] Ensure directory exists — {{ checkpoint_workflow }}"
+  file:
+    path: "/var/lib/awx/checkpoints/{{ checkpoint_workflow }}"
+    state: directory
+    mode: '0755'
+  delegate_to: "{{ onecli_jump_host }}"
+  run_once: true
+
+- name: "[Checkpoint] Read checkpoint — {{ checkpoint_workflow }}/{{ checkpoint_host }}"
+  slurp:
+    src: "/var/lib/awx/checkpoints/{{ checkpoint_workflow }}/{{ checkpoint_host }}.json"
+  delegate_to: "{{ onecli_jump_host }}"
+  register: _checkpoint_raw
+  failed_when: false
+
+- name: "[Checkpoint] Parse checkpoint"
+  set_fact:
+    checkpoint_data: >-
+      {{
+        _checkpoint_raw.content | b64decode | from_json
+        if _checkpoint_raw.content is defined
+        else {}
+      }}
+    checkpoint_stages_done: >-
+      {{
+        (_checkpoint_raw.content | b64decode | from_json).stages_done
+        if _checkpoint_raw.content is defined
+        else []
+      }}
+    checkpoint_stage: >-
+      {{
+        (_checkpoint_raw.content | b64decode | from_json).stages_done | last
+        if (
+          _checkpoint_raw.content is defined and
+          (_checkpoint_raw.content | b64decode | from_json).stages_done | length > 0
+        )
+        else 'begin'
+      }}
+
+- name: "[Checkpoint] Resolve stage index"
+  set_fact:
+    checkpoint_stage_index: >-
+      {{
+        checkpoint_stage_order[checkpoint_workflow].index(checkpoint_stage)
+        if checkpoint_stage != 'begin'
+        else -1
+      }}
+
+- name: "[Checkpoint] Display checkpoint status — {{ checkpoint_workflow }}"
+  debug:
+    msg:
+      - "Workflow      : {{ checkpoint_workflow }}"
+      - "Host          : {{ checkpoint_host }}"
+      - "Stages done   : {{ checkpoint_stages_done }}"
+      - "Latest stage  : {{ checkpoint_stage }}"
+      - "Stage index   : {{ checkpoint_stage_index }}"
+      - "Last updated  : {{ checkpoint_data.ts | default('N/A') }}"

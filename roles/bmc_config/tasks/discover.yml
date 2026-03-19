@@ -57,13 +57,11 @@
     - ipv6LLA | length > 0
     - ipv6_check is not defined or ipv6_check.status | default(0) != 200
 
-- debug:
-    msg: "lla_check: {{ lla_check }}"
     
 - name: Set reachability facts
   set_fact:
     ipv6_reachable: "{{ ipv6_check.status | default(0) == 200 }}"
-    lla_reachable: "{{ lla_check.stdout | default('0') | trim == '200' }}"
+    lla_reachable: "{{ lla_check.rc == 0 }}"
 
 - name: Display reachability results
   debug:

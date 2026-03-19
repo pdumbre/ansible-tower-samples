@@ -75,7 +75,7 @@
       {%- if ipv6_reachable -%}
       https://[{{ ipv6_clean }}]
       {%- elif lla_reachable -%}
-      https://[{{ bmc_ipv6_lla }}%{{ bmc_lla_interface }}]
+      https://[{{ ipv6LLA }}%{{ bmc_lla_interface }}]
       {%- else -%}
       {%- endif -%}
     bmc_using_lla: "{{ lla_reachable and not ipv6_reachable }}"

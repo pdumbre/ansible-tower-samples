@@ -1,35 +1,4 @@
 
-- name: Set interface
-  set_fact:
-    bmc_lla_interface: "eno2"
-
-- name: Build Redfish URL
-  set_fact:
-    bmc_url: "https://[{{ ipv6LLA }}%{{ bmc_lla_interface }}]/redfish/v1"
-
-- debug:
-   msg: "{{ bmc_url }}"
-   
-- name: Wait until BMC is available
-  vars:
-    bmc_url: "https://[{{ ipv6LLA }}%{{ bmc_lla_interface }}]/redfish/v1"
-  shell: curl -k -L -s {{ bmc_url }}
-  register: bmc_status
-  failed_when: false
-  retries: 30
-  delay: 10
-  until:
-    - bmc_status.rc == 0
-    - bmc_status.stdout is search('RedfishVersion')
-  loop_control:
-    label: "Checking BMC status..." 
-  delegate_to: jump-host
-
-- name: Inform that BMC is available
-  debug:
-    msg:
-      - "BMC reboot completed successfully."
-
 - name: Wait for BMC SSH to become reachable
   shell: |
     nc -z -6 {{ ipv6LLA }}%{{ bmc_lla_interface }} 22
@@ -47,7 +16,9 @@
         '!'
       }}
 
-  
+- debug:
+    msg: "updated_bmc_password = {{ updated_bmc_password }}"
+    
 - name: Configure BMC Account
   uri:
     url: "https://[{{ ipv6LLA }}%{{ bmc_lla_interface }}]/redfish/v1/AccountService/Accounts/1"
@@ -60,4 +31,5 @@
     body:
       Password: "{{ latest_redfish_password }}"
     status_code: 200
+  when: bmc_capabilities.require_patch_default_acct is defined  
   delegate_to: jump-host

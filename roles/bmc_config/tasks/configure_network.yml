@@ -13,7 +13,10 @@
       register: current_network
       no_log: true
       delegate_to: "{{ bmc_jump_host }}"
-
+      
+  - debug:
+       msg: "current_network = {{ current_network }}"
+       
   rescue:
     - name: Fallback - Retrieve network configuration using curl
       shell: |
@@ -25,6 +28,10 @@
       delegate_to: "{{ bmc_jump_host }}"
       changed_when: false
       failed_when: current_network_curl.rc != 0 or (current_network_curl.stdout_lines[-1] | int) not in [200]
+      
+   - set_stats:
+       data:
+         current_network: "{{ current_network_curl }}"
 
     - name: Parse curl response for network configuration
       set_fact:

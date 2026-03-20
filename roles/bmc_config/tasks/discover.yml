@@ -65,7 +65,11 @@
 - name: Set reachability facts
   set_fact:
     ipv6_reachable: "{{ ipv6_check.status | default(0) == 200 }}"
-    lla_reachable: "{{ lla_check.rc == 0 }}"
+
+- name: Set LLA reachable fact
+  set_fact:
+    lla_reachable: "{{ lla_check.rc | default(-1) == 0 }}"
+  when: lla_check is defined
 
 - name: Display reachability results
   debug:

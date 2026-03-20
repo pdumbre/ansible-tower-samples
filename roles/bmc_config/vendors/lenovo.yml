@@ -52,6 +52,9 @@ power_policy:
   desired_power_policy: "LastState"
 powerrp: "restore"      # Options: restore, off, on
 
+default_user: "USERID"
+default_password: "PASSW0RD"
+
 operating_mode:
   attribute_key: "OperatingModes_ChooseOperatingMode"
   desired_operating_mode: "MaximumPerformance"

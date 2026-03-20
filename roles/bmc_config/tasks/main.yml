@@ -3,8 +3,8 @@
 - name: Discover vendor
   include_tasks: discover.yml
 
-- name: Reset BMC to factory defaults
-  include_tasks: reset_bmc.yml
+#- name: Reset BMC to factory defaults
+ # include_tasks: reset_bmc.yml
 
 #- name: Reset BMC to factory defaults
  # include_tasks: temp.yml

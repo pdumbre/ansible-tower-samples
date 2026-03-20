@@ -14,17 +14,12 @@
       uri:
         url: "{{ bmc_base_url }}/redfish/v1/AccountService/Accounts/1"
         method: PATCH
-        user: "{{ xcc_default_user }}"
-        password: "{{ xcc_default_password }}"
+        user: "{{ default_user }}"
+        password: "{{ default_password }}"
         validate_certs: "{{ redfish_validate_certs | default(false) }}"
         force_basic_auth: yes
         body_format: json
         body:
           Password: "{{ bmc_password }}"
         status_code: 200
-      delegate_to: "{{ bmc_delegate_host }}"
-
-    - set_fact:
-        bmc_password: "{{ updated_bmc_password }}"
-    
-  when: bmc_password_change_required | bool
+      delegate_to: "{{ bmc_delegate_host }

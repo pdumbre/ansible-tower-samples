@@ -133,7 +133,7 @@
     - name: Trigger recovery tasks
       include_tasks: bmc_recovery.yml
 
-  when: systems.failed | default(false) | bool
+  when: systems.status | default(0) not in [200, 201]
 
 - name: Retrieve Systems information
   uri:
@@ -145,7 +145,7 @@
     status_code: [200, 201]
   delegate_to: "{{ bmc_delegate_host }}"
   register: systems
-
+  when: systems.status | default(0) not in [200, 201]
   
 - set_fact:
     bmc_systems_url: "{{ bmc_base_url }}{{ systems.json.Members[0]['@odata.id'] }}"

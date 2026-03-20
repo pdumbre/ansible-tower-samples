@@ -61,5 +61,5 @@ bmc_reset:
   reset_type: "ResetAll"
   url_suffix: "Manager.ResetToDefaults"
 
-default_user: "USERID"
-default_password: "PASSW0RD"
+default_user: "root"
+default_password: "calvin"

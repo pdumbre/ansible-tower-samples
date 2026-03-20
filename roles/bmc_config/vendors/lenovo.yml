@@ -89,3 +89,6 @@ bmc_reset:
   reset_type: "ResetAll"
   url_suffix: "Manager.ResetToDefaults"
 
+xcc_default_user: "USERID"
+xcc_default_password: "PASSW0RD"
+

@@ -10,9 +10,10 @@
   failed_when: false
   changed_when: false
 
-- name: Debug interface
-  debug:
-     var: "detected_iface: {{ detected_iface }}"
+- name: Configure BMC link local address interface
+  set_fact:
+    bmc_lla_interface: "{{ detected_iface.stdout_lines[0] | trim }}"
+  when: detected_iface.stdout_lines|length > 0
         
 - name: Configure BMC link local address interface
   set_fact:

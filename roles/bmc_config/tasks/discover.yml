@@ -96,6 +96,12 @@
       LLA:  {{ ipv6LLA | default('not defined') }}%{{ bmc_lla_interface | default('') }} — {{ 'reachable' if lla_reachable else 'unreachable' }}
   when: bmc_base_url | trim | length == 0
 
+- name: Configure BMC IP address
+  set_fact:
+    bmc_ip: >-
+      {{ ipv4_clean
+         if (ipv4 is defined and ipv4 | length > 0)
+         else '[' ~ ipv6_clean ~ ']'}}
 
 - name: Configure bmc delegation
   set_fact:

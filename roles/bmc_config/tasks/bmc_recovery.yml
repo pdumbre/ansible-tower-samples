@@ -1,4 +1,3 @@
----
 - name: Check if password change is required
   set_fact:
     bmc_password_change_required: >-
@@ -8,18 +7,18 @@
          else false }}
   when: systems is defined
 
-- name: Recovery — change mandatory password after factory reset
-  block:
-    - name: Configure BMC Account
-      uri:
-        url: "{{ bmc_base_url }}/redfish/v1/AccountService/Accounts/1"
-        method: PATCH
-        user: "{{ default_user }}"
-        password: "{{ default_password }}"
-        validate_certs: "{{ redfish_validate_certs | default(false) }}"
-        force_basic_auth: yes
-        body_format: json
-        body:
-          Password: "{{ bmc_password }}"
-        status_code: 200
-      delegate_to: "{{ bmc_delegate_host }
+- name: Configure BMC Account
+  uri:
+    url: "{{ bmc_base_url }}/redfish/v1/AccountService/Accounts/1"
+    method: PATCH
+    user: "{{ default_user }}"
+    password: "{{ default_password }}"
+    validate_certs: "{{ redfish_validate_certs | default(false) }}"
+    force_basic_auth: yes
+    body_format: json
+    body:
+      Password: "{{ bmc_password }}"
+    status_code: 200
+  delegate_to: "{{ bmc_delegate_host }}"
+  register: bmc_account_result
+

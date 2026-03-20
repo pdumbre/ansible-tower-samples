@@ -154,7 +154,6 @@
     status_code: [200, 201]
   delegate_to: "{{ bmc_delegate_host }}"
   register: systems
-  when: systems.status | default(0) not in [200, 201]
 
 - debug:
     msg: "systems = {{ systems }}"

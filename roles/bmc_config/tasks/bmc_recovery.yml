@@ -49,7 +49,6 @@
         body:
           Password: "{{ updated_bmc_password }}"
         status_code: 200
-      when: bmc_capabilities.require_patch_default_acct is defined  
       delegate_to: "{{ bmc_delegate_host }}"
 
     - set_fact:

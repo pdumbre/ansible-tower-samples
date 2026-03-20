@@ -52,4 +52,7 @@
       when: bmc_capabilities.require_patch_default_acct is defined  
       delegate_to: "{{ bmc_delegate_host }}"
 
+    - set_fact:
+        bmc_password: "{{ updated_bmc_password }}"
+    
   when: bmc_password_change_required | bool

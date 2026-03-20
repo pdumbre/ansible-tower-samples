@@ -86,7 +86,7 @@
     - bmc_status.stdout is search('RedfishVersion')
   loop_control:
     label: "Checking BMC status..." 
-  delegate_to: jump-host
+  delegate_to: "{{ bmc_delegate_host }}"
 
 - name: Inform that BMC is available
   debug:
@@ -100,30 +100,18 @@
   retries: 60
   delay: 10
   until: ssh_check.rc == 0
-  delegate_to: jump-host
+  delegate_to: "{{ bmc_delegate_host }}"
 
-- name: Generate BMC secret
-  set_fact:
-    updated_bmc_password: >-
-      {{
-        lookup('password', '/dev/null length=20 chars=ascii_letters,digits') +
-        '!'
-      }}
-
-- debug:
-    msg: "updated_bmc_password = {{ updated_bmc_password }}"
-    
 - name: Configure BMC Account
   uri:
     url: "https://[{{ ipv6LLA }}%{{ bmc_lla_interface }}]/redfish/v1/AccountService/Accounts/1"
     method: PATCH
-    user: "{{ bmc_user }}"
-    password: "{{ bmc_password }}"
+    user: "{{ default_user }}"
+    password: "{{ default_password }}"
     force_basic_auth: yes
     validate_certs: no
     body_format: json
     body:
-      Password: "{{ updated_bmc_password }}"
+      Password: "{{ bmc_password }}"
     status_code: 200
-  when: bmc_capabilities.require_patch_default_acct is defined  
-  delegate_to: jump-host
+  delegate_to: "{{ bmc_delegate_host }}"

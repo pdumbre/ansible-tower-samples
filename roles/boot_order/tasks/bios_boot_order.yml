@@ -108,7 +108,7 @@
 - name: Reboot OS to apply PXE disable (first reboot)
   include_tasks: power_management.yml
   vars:
-    power_action: "reboot"
+    power_action: "cycle"
 
 - name: Enable IPv4 PXE support
   command: >

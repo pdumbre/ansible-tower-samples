@@ -21,17 +21,22 @@
     method: GET
     user: "{{ bmc_user }}"
     password: "{{ bmc_password }}"
-    validate_certs: no
+    validate_certs: "{{ redfish_validate_certs | default(false) }}"
     force_basic_auth: yes
-    return_content: yes
     status_code: [200]
   register: firmware_details
   loop: "{{ firmware_inventory.json.Members | default([]) }}"
   delegate_to: "{{ bmc_delegate_host }}"
   loop_control:
-    label: ""
+    label: "{{ item['@odata.id'] | basename }}"
   no_log: true
-
+  retries: "{{ retry_count | default(3) }}"
+  delay: "{{ retry_delay | default(10) }}"
+  until: firmware_details.status == 200
+  failed_when: >
+    firmware_details.status | default(0) != 200 or
+    (firmware_details.json is defined and 'error' in firmware_details.json)
+    
 - name: Build firmware info dict from inventory details
   set_fact:
     bmc_firmware_info: >-

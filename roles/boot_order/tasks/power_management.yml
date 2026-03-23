@@ -1,22 +1,31 @@
-
+---
 # Power management operations
 # Uses Redfish API for power state management
+# Requires: power_action (check|on|off|cycle|reboot)
+#           bmc_systems_url, bmc_reset_url, bmc_user, bmc_password
+#           bmc_delegate_host, retry_count, retry_delay
 
+# -----------------------------------------------------------------------
+# Check power state
+# -----------------------------------------------------------------------
 - name: Check server power state
   uri:
     url: "{{ bmc_systems_url }}"
     method: GET
     user: "{{ bmc_user }}"
     password: "{{ bmc_password }}"
-    validate_certs: no
+    validate_certs: "{{ redfish_validate_certs | default(false) }}"
     force_basic_auth: yes
-    return_content: yes
     status_code: [200]
   register: power_state_check
-  delegate_to: localhost
+  delegate_to: "{{ bmc_delegate_host }}"
+  retries: "{{ retry_count | default(3) }}"
+  delay: "{{ retry_delay | default(10) }}"
+  until: power_state_check.status == 200
+  failed_when: >
+    power_state_check.status | default(0) != 200 or
+    (power_state_check.json is defined and 'error' in power_state_check.json)
   when: power_action == "check"
-  retries: "{{ retry_count }}"
-  delay: "{{ retry_delay }}"
 
 - name: Set power state fact
   set_fact:
@@ -28,6 +37,9 @@
     msg: "Server power state: {{ server_power_state }}"
   when: power_action == "check"
 
+# -----------------------------------------------------------------------
+# Power on
+# -----------------------------------------------------------------------
 - name: Power on server
   block:
     - name: Send power on command
@@ -36,26 +48,59 @@
         method: POST
         user: "{{ bmc_user }}"
         password: "{{ bmc_password }}"
-        validate_certs: no
+        validate_certs: "{{ redfish_validate_certs | default(false) }}"
         force_basic_auth: yes
         body_format: json
         body:
           ResetType: "On"
-        status_code: [200, 204]
-      delegate_to: localhost
+        status_code: [200, 202, 204]
+      delegate_to: "{{ bmc_delegate_host }}"
       register: power_on_result
+      retries: "{{ retry_count | default(3) }}"
+      delay: "{{ retry_delay | default(10) }}"
+      until: power_on_result.status in [200, 202, 204]
+      failed_when: >
+        power_on_result.status | default(0) not in [200, 202, 204] or
+        (power_on_result.json is defined and 'error' in power_on_result.json)
+
+    # Wait for power state to transition to on before continuing
+    - name: Wait for server to reach powered on state
+      uri:
+        url: "{{ bmc_systems_url }}"
+        method: GET
+        user: "{{ bmc_user }}"
+        password: "{{ bmc_password }}"
+        validate_certs: "{{ redfish_validate_certs | default(false) }}"
+        force_basic_auth: yes
+        status_code: [200]
+      delegate_to: "{{ bmc_delegate_host }}"
+      register: power_on_state_check
+      retries: 20
+      delay: 15
+      until: power_on_state_check.json.PowerState | lower == 'on'
+      failed_when: false
+
+    - name: Fail if server did not reach powered on state
+      fail:
+        msg: >
+          Server did not reach powered on state after {{ 20 * 15 }} seconds.
+          Current state: {{ power_on_state_check.json.PowerState | default('unknown') }}
+      when: power_on_state_check.json.PowerState | lower != 'on'
+
+    - name: Wait for server to finish booting
+      pause:
+        seconds: "{{ power_on_wait_time | default(60) }}"
+        prompt: "Waiting {{ power_on_wait_time | default(60) }} seconds for server to boot..."
 
     - name: Display power on result
       debug:
-        msg: "Server powered on successfully"
-
-    - name: Wait for server to boot
-      pause:
-        seconds: "{{ power_on_wait_time }}"
-        prompt: "Waiting {{ power_on_wait_time }} seconds for server to boot..."
+        msg: "Server powered on successfully — state: {{ power_on_state_check.json.PowerState }}"
 
   when: power_action == "on"
 
+# -----------------------------------------------------------------------
+# Power off
+# -----------------------------------------------------------------------
 - name: Power off server
   block:
     - name: Send power off command
@@ -64,26 +109,59 @@
         method: POST
         user: "{{ bmc_user }}"
         password: "{{ bmc_password }}"
-        validate_certs: no
+        validate_certs: "{{ redfish_validate_certs | default(false) }}"
         force_basic_auth: yes
         body_format: json
         body:
           ResetType: "ForceOff"
-        status_code: [200, 204]
-      delegate_to: localhost
+        status_code: [200, 202, 204]
+      delegate_to: "{{ bmc_delegate_host }}"
       register: power_off_result
+      retries: "{{ retry_count | default(3) }}"
+      delay: "{{ retry_delay | default(10) }}"
+      until: power_off_result.status in [200, 202, 204]
+      failed_when: >
+        power_off_result.status | default(0) not in [200, 202, 204] or
+        (power_off_result.json is defined and 'error' in power_off_result.json)
 
-    - name: Display power off result
-      debug:
-        msg: "Server powered off successfully"
+    # Wait for power state to transition to off before continuing
+    - name: Wait for server to reach powered off state
+      uri:
+        url: "{{ bmc_systems_url }}"
+        method: GET
+        user: "{{ bmc_user }}"
+        password: "{{ bmc_password }}"
+        validate_certs: "{{ redfish_validate_certs | default(false) }}"
+        force_basic_auth: yes
+        status_code: [200]
+      delegate_to: "{{ bmc_delegate_host }}"
+      register: power_off_state_check
+      retries: 20
+      delay: 10
+      until: power_off_state_check.json.PowerState | lower in ['off', 'poweringoff']
+      failed_when: false
+
+    - name: Fail if server did not reach powered off state
+      fail:
+        msg: >
+          Server did not reach powered off state after {{ 20 * 10 }} seconds.
+          Current state: {{ power_off_state_check.json.PowerState | default('unknown') }}
+      when: power_off_state_check.json.PowerState | lower not in ['off', 'poweringoff']
 
     - name: Wait after power off
       pause:
-        seconds: "{{ power_off_wait_time }}"
+        seconds: "{{ power_off_wait_time | default(30) }}"
 
-  when: power_action == "off" or power_action == "cycle"
+    - name: Display power off result
+      debug:
+        msg: "Server powered off successfully — state: {{ power_off_state_check.json.PowerState }}"
 
-- name: Power on after cycle
+  when: power_action in ["off", "cycle"]
+
+# -----------------------------------------------------------------------
+# Power on after cycle
+# -----------------------------------------------------------------------
+- name: Power on server after cycle
   block:
     - name: Send power on command after cycle
       uri:
@@ -91,22 +169,130 @@
         method: POST
         user: "{{ bmc_user }}"
         password: "{{ bmc_password }}"
-        validate_certs: no
+        validate_certs: "{{ redfish_validate_certs | default(false) }}"
         force_basic_auth: yes
         body_format: json
         body:
           ResetType: "On"
-        status_code: [200, 204]
-      delegate_to: localhost
+        status_code: [200, 202, 204]
+      delegate_to: "{{ bmc_delegate_host }}"
       register: power_on_cycle_result
+      retries: "{{ retry_count | default(3) }}"
+      delay: "{{ retry_delay | default(10) }}"
+      until: power_on_cycle_result.status in [200, 202, 204]
+      failed_when: >
+        power_on_cycle_result.status | default(0) not in [200, 202, 204] or
+        (power_on_cycle_result.json is defined and 'error' in power_on_cycle_result.json)
+
+    # Wait for power state to transition to on before continuing
+    - name: Wait for server to reach powered on state after cycle
+      uri:
+        url: "{{ bmc_systems_url }}"
+        method: GET
+        user: "{{ bmc_user }}"
+        password: "{{ bmc_password }}"
+        validate_certs: "{{ redfish_validate_certs | default(false) }}"
+        force_basic_auth: yes
+        status_code: [200]
+      delegate_to: "{{ bmc_delegate_host }}"
+      register: power_cycle_state_check
+      retries: 20
+      delay: 15
+      until: power_cycle_state_check.json.PowerState | lower == 'on'
+      failed_when: false
+
+    - name: Fail if server did not reach powered on state after cycle
+      fail:
+        msg: >
+          Server did not reach powered on state after cycle — waited {{ 20 * 15 }} seconds.
+          Current state: {{ power_cycle_state_check.json.PowerState | default('unknown') }}
+      when: power_cycle_state_check.json.PowerState | lower != 'on'
+
+    - name: Wait for server to finish booting after cycle
+      pause:
+        seconds: "{{ power_on_wait_time | default(60) }}"
+        prompt: "Waiting {{ power_on_wait_time | default(60) }} seconds for server to boot after cycle..."
 
     - name: Display power cycle completion
       debug:
-        msg: "Server power cycle completed successfully"
-
-    - name: Wait for server to boot after cycle
-      pause:
-        seconds: "{{ power_on_wait_time }}"
-        prompt: "Waiting {{ power_on_wait_time }} seconds for server to boot after power cycle..."
+        msg: "Server power cycle completed — state: {{ power_cycle_state_check.json.PowerState }}"
 
   when: power_action == "cycle"
+
+# -----------------------------------------------------------------------
+# Reboot OS (graceful)
+# -----------------------------------------------------------------------
+- name: Reboot server OS gracefully
+  block:
+    - name: Send graceful restart command
+      uri:
+        url: "{{ bmc_reset_url }}"
+        method: POST
+        user: "{{ bmc_user }}"
+        password: "{{ bmc_password }}"
+        validate_certs: "{{ redfish_validate_certs | default(false) }}"
+        force_basic_auth: yes
+        body_format: json
+        body:
+          ResetType: "GracefulRestart"
+        status_code: [200, 202, 204]
+      delegate_to: "{{ bmc_delegate_host }}"
+      register: reboot_result
+      retries: "{{ retry_count | default(3) }}"
+      delay: "{{ retry_delay | default(10) }}"
+      until: reboot_result.status in [200, 202, 204]
+      failed_when: >
+        reboot_result.status | default(0) not in [200, 202, 204] or
+        (reboot_result.json is defined and 'error' in reboot_result.json)
+
+    # Wait for server to go off then come back on
+    - name: Wait for server to begin rebooting
+      uri:
+        url: "{{ bmc_systems_url }}"
+        method: GET
+        user: "{{ bmc_user }}"
+        password: "{{ bmc_password }}"
+        validate_certs: "{{ redfish_validate_certs | default(false) }}"
+        force_basic_auth: yes
+        status_code: [200]
+      delegate_to: "{{ bmc_delegate_host }}"
+      register: reboot_off_check
+      retries: 10
+      delay: 10
+      until: reboot_off_check.json.PowerState | lower in ['off', 'poweringoff', 'powering on']
+      failed_when: false
+
+    - name: Wait for server to complete reboot and reach powered on state
+      uri:
+        url: "{{ bmc_systems_url }}"
+        method: GET
+        user: "{{ bmc_user }}"
+        password: "{{ bmc_password }}"
+        validate_certs: "{{ redfish_validate_certs | default(false) }}"
+        force_basic_auth: yes
+        status_code: [200]
+      delegate_to: "{{ bmc_delegate_host }}"
+      register: reboot_on_check
+      retries: 20
+      delay: 15
+      until: reboot_on_check.json.PowerState | lower == 'on'
+      failed_when: false
+
+    - name: Fail if server did not come back after reboot
+      fail:
+        msg: >
+          Server did not return to powered on state after reboot.
+          Waited {{ 20 * 15 }} seconds.
+          Current state: {{ reboot_on_check.json.PowerState | default('unknown') }}
+      when: reboot_on_check.json.PowerState | lower != 'on'
+
+    - name: Wait for OS to finish booting after reboot
+      pause:
+        seconds: "{{ power_on_wait_time | default(60) }}"
+        prompt: "Waiting {{ power_on_wait_time | default(60) }} seconds for OS to boot after reboot..."
+
+    - name: Display reboot completion
+      debug:
+        msg: "Server rebooted successfully — state: {{ reboot_on_check.json.PowerState }}"
+
+  when: power_action == "reboot"

@@ -5,7 +5,6 @@ power_on_wait_time: 180
 power_off_wait_time: 30
 
 # Timeouts and retries
-command_timeout: 300
 retry_count: 3
 retry_delay: 10
 

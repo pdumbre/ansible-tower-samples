@@ -1,11 +1,3 @@
-
-# -----------------------------------------------------------------------
-# Common Task — Cleanup Checkpoint
-# Required vars:
-#   checkpoint_workflow : workflow name
-#   checkpoint_host     : inventory_hostname
-# -----------------------------------------------------------------------
-
 - name: "[Checkpoint] Remove checkpoint — {{ checkpoint_workflow }}/{{ checkpoint_host }}"
   file:
     path: "/var/lib/awx/checkpoints/{{ checkpoint_workflow }}/{{ checkpoint_host }}.json"

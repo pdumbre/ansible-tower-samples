@@ -28,7 +28,6 @@
   register: firmware_details
   loop: "{{ firmware_inventory.json.Members | default([]) }}"
   delegate_to: "{{ bmc_delegate_host }}"
-  no_log: true
   loop_control:
     label: ""
 

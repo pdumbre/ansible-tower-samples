@@ -30,6 +30,7 @@
   delegate_to: "{{ bmc_delegate_host }}"
   loop_control:
     label: ""
+  no_log: true
 
 - name: Build firmware info dict from inventory details
   set_fact:

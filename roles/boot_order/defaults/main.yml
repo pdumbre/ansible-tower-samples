@@ -1,6 +1,6 @@
 
 # Seconds to wait after power cycle
-power_on_wait_time: 240
+power_on_wait_time: 180
 power_off_wait_time: 30
 boot_slot_settle_seconds: 240  # 4 minutes for BIOS to settle after reboot
 

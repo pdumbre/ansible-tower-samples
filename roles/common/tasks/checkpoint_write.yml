@@ -1,17 +1,12 @@
-
 # -----------------------------------------------------------------------
 # Common Task — Write Checkpoint
 # Required vars:
 #   checkpoint_workflow : workflow name
 #   checkpoint_host     : inventory_hostname
-#   checkpoint_stage    : stage just completed
+#   checkpoint_stage    : stage just completed — any string, no registry
 # Optional vars:
-#   checkpoint_meta     : dict of extra data (default: {})
+#   checkpoint_meta     : dict of extra data to store (default: {})
 # -----------------------------------------------------------------------
-
-- name: "[Checkpoint] Load stage order registry"
-  include_vars:
-    file: "{{ role_path }}/../../common/vars/checkpoint_stages.yml"
 
 - name: "[Checkpoint] Build updated stages list"
   set_fact:
@@ -21,14 +16,6 @@
         | union([checkpoint_stage])
         | unique
       }}
-
-- name: "[Checkpoint] Validate stage is registered — {{ checkpoint_stage }}"
-  fail:
-    msg: >
-      Stage '{{ checkpoint_stage }}' is not registered
-      under workflow '{{ checkpoint_workflow }}'.
-      Registered stages: {{ checkpoint_stage_order[checkpoint_workflow] }}
-  when: checkpoint_stage not in checkpoint_stage_order[checkpoint_workflow]
 
 - name: "[Checkpoint] Write checkpoint — {{ checkpoint_workflow }}/{{ checkpoint_stage }}"
   copy:
@@ -54,8 +41,8 @@
 - name: "[Checkpoint] Publish to AWX artifacts — {{ checkpoint_stage }}"
   set_stats:
     data:
-      checkpoint_workflow   : "{{ checkpoint_workflow }}"
-      checkpoint_stage      : "{{ checkpoint_stage }}"
-      checkpoint_stages_done: "{{ _stages_updated }}"
-      checkpoint_ts         : "{{ ansible_date_time.iso8601 }}"
+      checkpoint_workflow    : "{{ checkpoint_workflow }}"
+      checkpoint_stage       : "{{ checkpoint_stage }}"
+      checkpoint_stages_done : "{{ _stages_updated }}"
+      checkpoint_ts          : "{{ ansible_date_time.iso8601 }}"
     per_host: false

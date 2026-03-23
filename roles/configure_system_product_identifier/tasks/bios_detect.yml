@@ -1,6 +1,6 @@
 - name: Set system identifier from SKU
   set_fact:
-    system_identifer: >-
+    system_identifier: >-
       {{ bmc_systems_details.json.SKU | default('')
       | upper }}
   when:
@@ -8,20 +8,20 @@
 
 - name: Set system identifier from SystemID
   set_fact:
-    system_identifer: >-
+    system_identifier: >-
       {{ bmc_systems_details.json.Oem.Dell.DellSystem.SystemID }}
   when:
     - use_bios_jobqueue | bool
 
 - name: Resolve model name from MTM prefix
   set_fact:
-    node_device_type: "{{ mtm_to_model[system_identifer | string] | default('unknown') }}"
+    node_device_type: "{{ mtm_to_model[system_identifier | string] | default('unknown') }}"
 
 - name: Fail if MTM prefix not recognized
   fail:
-    msg: "Unrecognized MTM prefix '{{ system_identifer }}' for RU {{ ru_number }}"
+    msg: "Unrecognized MTM prefix '{{ system_identifier }}' for RU {{ ru_number }}"
   when: node_device_type == 'unknown'
 
 - name: Log detected model
   debug:
-    msg: "RU {{ ru_number }} - MTM: {{ system_identifer }}, model: {{ node_device_type }}"
+    msg: "RU {{ ru_number }} - MTM: {{ system_identifier }}, model: {{ node_device_type }}"

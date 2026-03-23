@@ -176,11 +176,12 @@
         | select('search', 'SLOT\s*' ~ ocp_slot_num)
         | select('search', '(?i)ip(v)?4')
         | select('search', '0/0')
+        | map('regex_replace', '\nSucceed\..*$', '')
         | map('trim')
         | first
         | default('')
       }}
-
+      
 - name: Display found PXE slot entries
   debug:
     msg:

@@ -1,19 +1,13 @@
-
 # -----------------------------------------------------------------------
 # Common Task — Read Checkpoint
 # Required vars:
 #   checkpoint_workflow : workflow name e.g. 'pxe_boot_order'
 #   checkpoint_host     : inventory_hostname
 # Sets facts:
-#   checkpoint_data         : full checkpoint dict
-#   checkpoint_stage        : latest completed stage or 'begin'
-#   checkpoint_stages_done  : list of all completed stages
-#   checkpoint_stage_index  : index of latest stage in order registry
+#   checkpoint_data        : full checkpoint dict or {}
+#   checkpoint_stage       : latest completed stage or 'begin'
+#   checkpoint_stages_done : list of all completed stages or []
 # -----------------------------------------------------------------------
-
-- name: "[Checkpoint] Load stage order registry"
-  include_vars:
-    file: "{{ role_path }}/../../common/vars/checkpoint_stages.yml"
 
 - name: "[Checkpoint] Ensure directory exists — {{ checkpoint_workflow }}"
   file:
@@ -41,7 +35,10 @@
     checkpoint_stages_done: >-
       {{
         (_checkpoint_raw.content | b64decode | from_json).stages_done
-        if _checkpoint_raw.content is defined
+        if (
+          _checkpoint_raw.content is defined and
+          (_checkpoint_raw.content | b64decode | from_json).stages_done is defined
+        )
         else []
       }}
     checkpoint_stage: >-
@@ -49,43 +46,16 @@
         (_checkpoint_raw.content | b64decode | from_json).stages_done | last
         if (
           _checkpoint_raw.content is defined and
-          (_checkpoint_raw.content | b64decode | from_json).stages_done | length > 0
+          (_checkpoint_raw.content | b64decode | from_json).stages_done | default([]) | length > 0
         )
         else 'begin'
       }}
 
-- name: "[Checkpoint] Resolve stage index"
-  set_fact:
-    checkpoint_stage_index: >-
-      {{
-        checkpoint_stage_order[checkpoint_workflow].index(checkpoint_stage)
-        if checkpoint_stage != 'begin'
-        else -1
-      }}
-
-# -----------------------------------------------------------------------
-# Common Task — Check if stage already done
-# Required vars:
-#   checkpoint_workflow  : workflow name
-#   checkpoint_host      : inventory_hostname
-#   checkpoint_until     : skip if checkpoint is AT or PAST this stage
-# Sets fact:
-#   checkpoint_skip      : true if stage already completed
-# -----------------------------------------------------------------------
-
-- name: "[Checkpoint] Evaluate skip condition — {{ checkpoint_until }}"
-  set_fact:
-    checkpoint_skip: >-
-      {{
-        checkpoint_until in checkpoint_stages_done
-      }}
-      
-- name: "[Checkpoint] Display checkpoint status — {{ checkpoint_workflow }}"
+- name: "[Checkpoint] Display checkpoint status"
   debug:
     msg:
       - "Workflow      : {{ checkpoint_workflow }}"
       - "Host          : {{ checkpoint_host }}"
       - "Stages done   : {{ checkpoint_stages_done }}"
       - "Latest stage  : {{ checkpoint_stage }}"
-      - "Stage index   : {{ checkpoint_stage_index }}"
       - "Last updated  : {{ checkpoint_data.ts | default('N/A') }}"

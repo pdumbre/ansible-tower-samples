@@ -63,9 +63,6 @@
 
   when: not (use_bios_jobqueue | bool)
 
-- debug:
-    msg: "url: {{ bmc_systems_url }}/EthernetInterfaces/{{ pxe_nic_slot }}"
-
 - name: Retrieve PXE MAC Address
   block:
     - name: Retrieve OCP NIC details
@@ -79,14 +76,14 @@
       delegate_to: localhost
       register: dell_nic_detail
 
-    - name: Set Dell PXE MAC
+    - name: Configure PXE Mac Address
       set_fact:
         pxe_mac_formatted: >-
           {{ (dell_nic_detail.json.PermanentMACAddress
               | default(dell_nic_detail.json.MACAddress))
              | lower }}
 
-    - name: Fail if Dell MAC not found
+    - name: Fail if Mac Address not found
       fail:
         msg: >
           PXE MAC not found for Dell NIC {{ pxe_nic_slot }}.
@@ -94,7 +91,7 @@
           {{ bmc_systems_url }}/EthernetInterfaces
       when: pxe_mac_formatted == ''
 
-    - name: Display Dell PXE MAC
+    - name: Display PXE Mac Address
       debug:
         msg:
           - "NIC ID:  {{ pxe_nic_slot }}"

@@ -44,10 +44,6 @@
       'history': _history
     } | to_json | from_json }}"
 
-- name: Verify checkpoint is fully evaluated
-  debug:
-    var: checkpoint
-
 - name: Write checkpoint to file
   copy:
     content: "{{ checkpoint | to_nice_json }}"

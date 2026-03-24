@@ -39,6 +39,7 @@
   vars:
     checkpoint_workflow: "configure_system_indentifier"
     checkpoint_stage: "bios_detect"
+    checkpoint_host: "{{ inventory_hostname }}"
  
 - name: Configure system product identifier
   include_tasks: configure_system_product.yml

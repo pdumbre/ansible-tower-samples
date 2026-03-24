@@ -40,6 +40,7 @@
       'host': _host,
       'stage': _stage,
       'stages_done': _stages_done,
+      'last_updated': _ts,
       'history': _history
     } | to_json | from_json }}"
 

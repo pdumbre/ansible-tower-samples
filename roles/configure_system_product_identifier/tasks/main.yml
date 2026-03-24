@@ -18,9 +18,25 @@
 - name: Set BIOS apply method flag
   set_fact:
     use_bios_jobqueue: "{{ probe_job_queue.status | default(404) == 200 }}"
+
+- name: Read checkpoint
+  include_role:
+    name: common
+    tasks_from: checkpoint_read
+  vars:
+    checkpoint_workflow : "pxe_boot_order"
+    checkpoint_host     : "{{ inventory_hostname }}"
  
 - name: Detect model and resolve configuration flags
   include_tasks: bios_detect.yml
+  when 'bios_detect' not in checkpoint_stages_done
+
+- name: Write checkpoint
+  include_role:
+    name: common
+    tasks_from: checkpoint_write
+  vars:
+    checkpoint_stage: "bios_detect"
  
 - name: Configure system product identifier
   include_tasks: configure_system_product.yml

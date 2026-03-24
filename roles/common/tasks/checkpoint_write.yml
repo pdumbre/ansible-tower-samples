@@ -16,9 +16,6 @@
         | union([checkpoint_stage])
         | unique
       }}
-- name: Get timestamp
-  set_fact:
-    current_ts: "{{ lookup('pipe', 'date +%Y-%m-%dT%H:%M:%SZ') }}"
 
 - name: "[Checkpoint] Write checkpoint — {{ checkpoint_workflow }}/{{ checkpoint_stage }}"
   copy:
@@ -29,10 +26,10 @@
           'host'        : checkpoint_host,
           'stage'       : checkpoint_stage,
           'stages_done' : _stages_updated,
-          'ts'          : "{{ current_ts }}",
+          'ts'          : "{{ now(utc=true, fmt='%Y-%m-%dT%H:%M:%SZ') }}",
           'history'     : (checkpoint_data.history | default([])) + [{
             'stage' : checkpoint_stage,
-            'ts'    : "{{ current_ts }}"
+            'ts'    : "{{ now(utc=true, fmt='%Y-%m-%dT%H:%M:%SZ') }}"
           }]
         }
         | combine(checkpoint_meta | default({}))
@@ -47,5 +44,5 @@
       checkpoint_workflow    : "{{ checkpoint_workflow }}"
       checkpoint_stage       : "{{ checkpoint_stage }}"
       checkpoint_stages_done : "{{ _stages_updated }}"
-      checkpoint_ts          : "{{ current_ts }}"
+      checkpoint_ts          : "{{ now(utc=true, fmt='%Y-%m-%dT%H:%M:%SZ') }}"
     per_host: false

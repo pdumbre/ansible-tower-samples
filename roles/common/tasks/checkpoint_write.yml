@@ -56,8 +56,8 @@
     _stages_done: "{{ _stages_updated }}"
     _history: "{{ (checkpoint_data.history | default([])) + [{
             'stage': checkpoint_stage,
-            'ts': {{ now(utc=true, fmt='%Y-%m-%dT%H:%M:%SZ') }}
-          }]"
+            'ts': _ts
+          }] }}"
 
 - name: Build checkpoint
   set_fact:

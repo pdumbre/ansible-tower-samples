@@ -17,36 +17,6 @@
         | unique
       }}
 
-- name: "[Checkpoint] Write checkpoint — {{ checkpoint_workflow }}/{{ checkpoint_stage }}"
-  copy:
-    content: >-
-      {{
-        {
-          'workflow'    : checkpoint_workflow,
-          'host'        : checkpoint_host,
-          'stage'       : checkpoint_stage,
-          'stages_done' : _stages_updated,
-          'ts'          : "{{ now(utc=true, fmt='%Y-%m-%dT%H:%M:%SZ') }}",
-          'history'     : (checkpoint_data.history | default([])) + [{
-            'stage' : checkpoint_stage,
-            'ts'    : "{{ now(utc=true, fmt='%Y-%m-%dT%H:%M:%SZ') }}"
-          }]
-        }
-        | combine(checkpoint_meta | default({}))
-        | to_nice_json
-      }}
-    dest: "/var/lib/awx/checkpoints/{{ checkpoint_workflow }}/{{ checkpoint_host }}.json"
-  delegate_to: "jump-host"
-
-- name: "[Checkpoint] Publish to AWX artifacts — {{ checkpoint_stage }}"
-  set_stats:
-    data:
-      checkpoint_workflow    : "{{ checkpoint_workflow }}"
-      checkpoint_stage       : "{{ checkpoint_stage }}"
-      checkpoint_stages_done : "{{ _stages_updated }}"
-      checkpoint_ts          : "{{ now(utc=true, fmt='%Y-%m-%dT%H:%M:%SZ') }}"
-    per_host: false
-
 - name: Collect required values as individual facts
   set_fact:
     _ts: "{{ now(utc=true, fmt='%Y-%m-%dT%H:%M:%SZ') }}"

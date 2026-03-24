@@ -2,7 +2,7 @@
   file:
     path: "/var/lib/awx/checkpoints/{{ checkpoint_workflow }}/{{ checkpoint_host }}.json"
     state: absent
-  delegate_to: "{{ onecli_jump_host }}"
+  delegate_to: "jump-host"
   failed_when: false
 
 - name: "[Checkpoint] Confirm cleanup — {{ checkpoint_workflow }}"

@@ -14,13 +14,13 @@
     path: "/var/lib/awx/checkpoints/{{ checkpoint_workflow }}"
     state: directory
     mode: '0755'
-  delegate_to: "{{ onecli_jump_host }}"
+  delegate_to: "jump-host"
   run_once: true
 
 - name: "[Checkpoint] Read checkpoint — {{ checkpoint_workflow }}/{{ checkpoint_host }}"
   slurp:
     src: "/var/lib/awx/checkpoints/{{ checkpoint_workflow }}/{{ checkpoint_host }}.json"
-  delegate_to: "{{ onecli_jump_host }}"
+  delegate_to: "jump-host"
   register: _checkpoint_raw
   failed_when: false
 

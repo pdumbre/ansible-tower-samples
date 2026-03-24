@@ -22,7 +22,6 @@ time_sync_use_ntp: true
 time_sync_timezone: "UTC"
 
 # Retry settings for NTP synchronization
-time_sync_max_retries: 3
 time_sync_retry_delay: 5
 
 # Wait time after time change (seconds)

@@ -1,7 +1,7 @@
 
 - name: Copy time_sync.sh to jump host
   copy:
-    src: time_sync2.sh
+    src: time_sync.sh
     dest: /tmp/time_sync_{{ inventory_hostname }}.sh
     mode: '0700'
   delegate_to: "{{ bmc_delegate_host }}"

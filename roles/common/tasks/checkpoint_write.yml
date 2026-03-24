@@ -53,6 +53,11 @@
     _workflow: "{{ checkpoint_workflow }}"
     _host: "{{ checkpoint_host }}"
     _stage: "{{ checkpoint_stage }}"
+    _stages_done: "{{ _stages_updated }}"
+    _history: "{{ (checkpoint_data.history | default([])) + [{
+            'stage': checkpoint_stage,
+            'ts': {{ now(utc=true, fmt='%Y-%m-%dT%H:%M:%SZ') }}
+          }]"
 
 - name: Build checkpoint
   set_fact:
@@ -60,7 +65,9 @@
       'workflow': _workflow,
       'ts': _ts,
       'host': _host,
-      'stage': _stage
+      'stage': _stage,
+      'stages_done': _stages_done,
+      'history': _history
     } | to_json | from_json }}"
 
 - name: Verify checkpoint is fully evaluated

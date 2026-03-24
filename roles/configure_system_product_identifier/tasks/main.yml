@@ -1,3 +1,4 @@
+---
 - name: Discover resources
   include_tasks: discovery.yml
 
@@ -24,12 +25,12 @@
     name: common
     tasks_from: checkpoint_read
   vars:
-    checkpoint_workflow : "pxe_boot_order"
-    checkpoint_host     : "{{ inventory_hostname }}"
+    checkpoint_workflow: "pxe_boot_order"
+    checkpoint_host: "{{ inventory_hostname }}"
  
 - name: Detect model and resolve configuration flags
   include_tasks: bios_detect.yml
-  when 'bios_detect' not in checkpoint_stages_done
+  when: "'bios_detect' not in checkpoint_stages_done"
 
 - name: Write checkpoint
   include_role:

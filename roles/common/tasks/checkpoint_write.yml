@@ -36,7 +36,7 @@
         | to_nice_json
       }}
     dest: "/var/lib/awx/checkpoints/{{ checkpoint_workflow }}/{{ checkpoint_host }}.json"
-  delegate_to: "{{ onecli_jump_host }}"
+  delegate_to: "jump-host"
 
 - name: "[Checkpoint] Publish to AWX artifacts — {{ checkpoint_stage }}"
   set_stats:

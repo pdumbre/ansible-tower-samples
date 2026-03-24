@@ -46,3 +46,23 @@
       checkpoint_stages_done : "{{ _stages_updated }}"
       checkpoint_ts          : "{{ now(utc=true, fmt='%Y-%m-%dT%H:%M:%SZ') }}"
     per_host: false
+
+- name: Collect required values as individual facts
+  set_fact:
+    _ts: "{{ now(utc=true, fmt='%Y-%m-%dT%H:%M:%SZ') }}"
+    _workflow: "{{ checkpoint_workflow }}"
+    _host: "{{ checkpoint_host }}"
+    _stage: "{{ checkpoint_stage }}"
+
+- name: Build checkpoint
+  set_fact:
+    checkpoint: "{{ {
+      'workflow': _workflow,
+      'ts': _ts,
+      'host': _host,
+      'stage': _stage
+    } | to_json | from_json }}"
+
+- name: Verify checkpoint is fully evaluated
+  debug:
+    var: checkpoint

@@ -54,11 +54,14 @@
     _host: "{{ checkpoint_host }}"
     _stage: "{{ checkpoint_stage }}"
     _stages_done: "{{ _stages_updated }}"
+    
+- name: Collect required values as individual facts
+  set_fact:
     _history: "{{ (checkpoint_data.history | default([])) + [{
-            'stage': checkpoint_stage,
+            'stage': _stage,
             'ts': _ts
-          }] }}"
-
+          }] }}" 
+          
 - name: Build checkpoint
   set_fact:
     checkpoint: "{{ {

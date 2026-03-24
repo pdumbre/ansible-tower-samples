@@ -47,3 +47,10 @@
 - name: Verify checkpoint is fully evaluated
   debug:
     var: checkpoint
+
+- name: Write checkpoint to file
+  copy:
+    content: "{{ checkpoint | to_nice_json }}"
+    dest: "/var/lib/awx/checkpoints/{{ checkpoint_workflow }}/{{ checkpoint_host }}.json"
+    mode: "0600"
+  delegate_to: jump-hosst

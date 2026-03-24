@@ -37,6 +37,7 @@
     name: common
     tasks_from: checkpoint_write
   vars:
+    checkpoint_workflow: "configure_system_indentifier"
     checkpoint_stage: "bios_detect"
  
 - name: Configure system product identifier

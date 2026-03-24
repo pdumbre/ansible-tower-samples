@@ -47,6 +47,6 @@
 - name: Write checkpoint to file
   copy:
     content: "{{ checkpoint | to_nice_json }}"
-    dest: "/var/lib/awx/checkpoints/{{ checkpoint_workflow }}/{{ checkpoint_host }}.json"
+    dest: "{{checkpoint_base_dir }}/{{ checkpoint_workflow }}/{{ checkpoint_host }}.json"
     mode: "0600"
   delegate_to: jump-hosst

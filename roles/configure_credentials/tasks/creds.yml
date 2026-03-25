@@ -19,7 +19,7 @@
 
 - name: Find kickstart JSON files
   find:
-    paths: /home/kni/isfconfig
+    paths: /data/firmware/onecli
     patterns: 'kickstart-*.json'
     file_type: file
   register: kickstart_files

@@ -124,4 +124,39 @@
     {{ imm_paths.keys() | list }}
   when: imm_list.status == 200
 
-# Made with Bob
+- name: Display available IMM paths
+  ansible.builtin.debug:
+    msg: "Available IMM nodes: {{ imm_list.json.data.keys }}"   # ✅ direct list access
+  when: imm_list.status == 200
+
+- name: Show each IMM node
+  ansible.builtin.debug:
+    msg: "IMM node: {{ item }}"
+  loop: "{{ imm_paths | default([]) }}"
+  loop_control:
+    label: "{{ item }}"
+  when: imm_list.status == 200
+
+- name: Fetch secret for each IMM node
+  ansible.builtin.uri:
+    url: "{{ vault_addr }}/v1/{{ vault_mount_point }}/data/infrastructure/imm/{{ item | regex_replace('/$', '') }}"
+    method: GET
+    headers:
+      X-Vault-Token: "{{ vault_token }}"
+    validate_certs: false
+    status_code: [200]
+  register: imm_secrets
+  loop: "{{ imm_paths | default([]) }}"
+  loop_control:
+    label: "{{ item }}"
+  when:
+    - imm_list.status == 200
+    - not item.endswith('/')    # ✅ skip sub-folders, only fetch leaf nodes
+
+- name: Display fetched IMM secrets
+  ansible.builtin.debug:
+    msg: "{{ item.json.data.data }}"       # ✅ Vault KV2 response structure
+  loop: "{{ imm_secrets.results }}"
+  loop_control:
+    label: "{{ item.item }}"
+  when: item.status == 200

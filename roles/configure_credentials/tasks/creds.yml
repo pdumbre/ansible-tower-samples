@@ -1,0 +1,14 @@
+
+- name: Read a KV v2 secret
+  community.hashi_vault.vault_kv2_get:
+    url: "{{ vault_addr }}"
+    auth_method: token
+    token: "{{ vault_token }}"
+    engine_mount_point: secret
+    path: myapp/database
+  register: vault_secret
+
+- name: Use the retrieved secret
+  ansible.builtin.debug:
+    msg: "DB User: {{ vault_secret.secret.username }}"
+

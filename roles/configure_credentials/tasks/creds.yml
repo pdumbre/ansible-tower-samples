@@ -1,21 +1,98 @@
-    
+---
 - name: Ensure hvac Python library is installed
   ansible.builtin.pip:
     name: hvac
     state: present
-  
+
 - name: Write secret using Vault Token
   community.hashi_vault.vault_kv2_write:
     url: "{{ vault_addr }}"
     auth_method: token
-    token: "{{ vault_token }}"          # your Vault token directly
+    token: "{{ vault_token }}"
     engine_mount_point: secret
     path: myapp/serversecret
     data:
       username: "admin"
       password: "secret123"
-    validate_certs: false  # Disable SSL verification
-    ca_cert: null          # Don't use CA cert
+    validate_certs: false
+    ca_cert: null
+
+# Store CN IMM Secrets (Compute Node IMM credentials)
+- name: Store control-1-ru2 IMM credentials
+  community.hashi_vault.vault_kv2_write:
+    url: "{{ vault_addr }}"
+    auth_method: token
+    token: "{{ vault_token }}"
+    engine_mount_point: "{{ vault_mount_point }}"
+    path: "infrastructure/imm/control-1-ru2"
+    data:
+      ceuser_name: "CEUSER"
+      ceuser_password: "qQ-03ywHJ26TejshriBhagwa"
+      ceuser_group: "Administrator"
+      isfuser_name: "ISFUSER"
+      isfuser_password: "GF4q9y9_CGQPrasadBhag"
+      isfuser_group: "Administrator"
+      defaultuser_name: "USERID"
+      defaultuser_password: "PASSW0RD"
+      defaultuser_group: "Administrator"
+  no_log: true
+
+- name: Store control-1-ru3 IMM credentials
+  community.hashi_vault.vault_kv2_write:
+    url: "{{ vault_addr }}"
+    auth_method: token
+    token: "{{ vault_token }}"
+    engine_mount_point: "{{ vault_mount_point }}"
+    path: "infrastructure/imm/control-1-ru3"
+    data:
+      ceuser_name: "CEUSER"
+      ceuser_password: "iPFYxg@DDp8Bhagwa"
+      ceuser_group: "Administrator"
+      isfuser_name: "ISFUSER"
+      isfuser_password: "l@p1WBOs9NWTejshriBh"
+      isfuser_group: "Administrator"
+      defaultuser_name: "USERID"
+      defaultuser_password: "PASSW0RD"
+      defaultuser_group: "Administrator"
+  no_log: true
+
+- name: Store control-1-ru4 IMM credentials
+  community.hashi_vault.vault_kv2_write:
+    url: "{{ vault_addr }}"
+    auth_method: token
+    token: "{{ vault_token }}"
+    engine_mount_point: "{{ vault_mount_point }}"
+    path: "infrastructure/imm/control-1-ru4"
+    data:
+      ceuser_name: "CEUSER"
+      ceuser_password: "E3dNoTO1_GdTejshriB"
+      ceuser_group: "Administrator"
+      isfuser_name: "ISFUSER"
+      isfuser_password: "2c9DM_8gzGgTejshriBhagwa"
+      isfuser_group: "Administrator"
+      defaultuser_name: "USERID"
+      defaultuser_password: "PASSW0RDTejshriB"
+      defaultuser_group: "Administrator"
+  no_log: true
+
+- name: Store compute-1-ru5 IMM credentials
+  community.hashi_vault.vault_kv2_write:
+    url: "{{ vault_addr }}"
+    auth_method: token
+    token: "{{ vault_token }}"
+    engine_mount_point: "{{ vault_mount_point }}"
+    path: "infrastructure/imm/compute-1-ru5"
+    data:
+      isfuser_name: "ISFUSER"
+      isfuser_password: "GE4sVyIF0X_"
+      isfuser_group: "Administrator"
+      defaultuser_name: "USERID"
+      defaultuser_password: "PASSW0RD"
+      defaultuser_group: "Administrator"
+      ceuser_name: "CEUSER"
+      ceuser_password: "nvLFnk_jUf8Fusionnnn12"
+      ceuser_group: "Administrator"
+  no_log: true
 
 - name: Read a KV v2 secret
   community.hashi_vault.vault_kv2_get:
@@ -30,3 +107,4 @@
   ansible.builtin.debug:
     msg: "DB User: {{ vault_secret.secret.username }}"
 
+# Made with Bob

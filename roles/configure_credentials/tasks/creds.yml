@@ -23,6 +23,7 @@
     patterns: 'kickstart-*.json'
     file_type: file
   register: kickstart_files
+  delegate_to: jump-host
 
 - name: Fail if no kickstart file found
   fail:

@@ -1,4 +1,4 @@
----
+
 - name: Ensure hvac Python library is installed
   ansible.builtin.pip:
     name: hvac
@@ -121,12 +121,6 @@
 - name: Display available IMM paths
   ansible.builtin.debug:
     msg: "Available IMM nodes: {{ imm_list.json.data.keys | default([]) }}"
-    {{ imm_paths.keys() | list }}
-  when: imm_list.status == 200
-
-- name: Display available IMM paths
-  ansible.builtin.debug:
-    msg: "Available IMM nodes: {{ imm_list.json.data.keys }}"   # ✅ direct list access
   when: imm_list.status == 200
 
 - name: Show each IMM node

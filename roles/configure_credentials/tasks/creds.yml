@@ -17,6 +17,92 @@
     validate_certs: false
     ca_cert: null
 
+- name: Find kickstart JSON files
+  find:
+    paths: /home/kni/isfconfig
+    patterns: 'kickstart-*.json'
+    file_type: file
+  register: kickstart_files
+
+- name: Fail if no kickstart file found
+  fail:
+    msg: "No kickstart-*.json file found in /home/kni/isfconfig"
+  when: kickstart_files.matched == 0
+
+- name: Display kickstart files being processed
+  debug:
+    msg: "Found {{ kickstart_files.matched }} kickstart file(s): {{ kickstart_files.files | map(attribute='path') | list }}"
+
+- name: Initialize aggregated lists
+  set_fact:
+    provisioners: []
+    switches: []
+    cnimm: []
+
+- name: Process each kickstart file
+  include_tasks: process_kickstart_file.yml
+  loop: "{{ kickstart_files.files }}"
+  loop_control:
+    loop_var: kickstart_file_item
+
+- name: Save provisioners to file
+  copy:
+    content: "{{ provisioners | to_nice_json }}"
+    dest: "/tmp/extracted_provisioners.json"
+
+- name: Save switches to JSON file
+  copy:
+    content: "{{ switches | to_nice_json }}"
+    dest: "/tmp/extracted_switches.json"
+
+- name: Save cnimm to JSON file
+  copy:
+    content: "{{ cnimm | to_nice_json }}"
+    dest: "/tmp/extracted_cnimm.json"
+
+# Save to Vault using URI module (no hvac library required)
+- name: Save switches to Vault using REST API
+  uri:
+    url: "{{ vault_addr }}/v1/secret/data/SwitchSecret"
+    method: POST
+    headers:
+      X-Vault-Token: "{{ vaultRootToken }}"
+    body_format: json
+    body:
+      data:
+        SwitchSecret: "{{ switches }}"
+    status_code: [200, 204]
+    validate_certs: no
+  register: vault_result_switches
+
+- name: Save provisioners to Vault using REST API
+  uri:
+    url: "{{ vault_addr }}/v1/secret/data/ProvisionersSecret"
+    method: POST
+    headers:
+      X-Vault-Token: "{{ vaultRootToken }}"
+    body_format: json
+    body:
+      data:
+        ProvisionersSecret: "{{ provisioners }}"
+    status_code: [200, 204]
+    validate_certs: no
+  register: vault_result_provisioners
+
+- name: Save cnimm to Vault using REST API
+  uri:
+    url: "{{ vault_addr }}/v1/secret/data/CNIMMSecret"
+    method: POST
+    headers:
+      X-Vault-Token: "{{ vaultRootToken }}"
+    body_format: json
+    body:
+      data:
+        CNIMMSecret: "{{ cnimm }}"
+    status_code: [200, 204]
+    validate_certs: no
+  register: vault_result_cnimm
+
 # Store CN IMM Secrets (Compute Node IMM credentials)
 - name: Store control-1-ru2 IMM credentials
   community.hashi_vault.vault_kv2_write:

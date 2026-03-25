@@ -107,4 +107,20 @@
   ansible.builtin.debug:
     msg: "DB User: {{ vault_secret.secret.username }}"
 
+- name: List all IMM secret paths
+  ansible.builtin.uri:
+    url: "{{ vault_addr }}/v1/{{ vault_mount_point }}/metadata/infrastructure/imm?list=true"
+    method: LIST
+    headers:
+      X-Vault-Token: "{{ vault_token }}"
+    validate_certs: false
+    status_code: [200, 404]
+  register: imm_list
+  ignore_errors: true
+
+- name: Display available IMM paths
+  ansible.builtin.debug:
+    msg: "Available IMM nodes: {{ imm_list.json.data.keys | default([]) }}"
+  when: imm_list.status == 200
+
 # Made with Bob

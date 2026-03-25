@@ -121,6 +121,7 @@
 - name: Display available IMM paths
   ansible.builtin.debug:
     msg: "Available IMM nodes: {{ imm_list.json.data.keys | default([]) }}"
+    {{ imm_paths.keys() | list }}
   when: imm_list.status == 200
 
 # Made with Bob

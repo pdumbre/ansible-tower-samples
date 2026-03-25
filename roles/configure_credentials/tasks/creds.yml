@@ -125,7 +125,7 @@
 
 - name: Set IMM paths fact
   ansible.builtin.set_fact:
-    imm_paths: "{{ imm_list.json.data.keys }}"
+    imm_paths: "{{ imm_list.json.data['keys'] }}" 
   when: imm_list.status == 200
   
 - name: Show each IMM node

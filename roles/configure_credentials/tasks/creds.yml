@@ -1,4 +1,9 @@
     
+- name: Ensure hvac Python library is installed
+  ansible.builtin.pip:
+    name: hvac
+    state: present
+  
 - name: Write secret using Vault Token
   community.hashi_vault.vault_kv2_write:
     url: "{{ vault_addr }}"
@@ -9,7 +14,6 @@
     data:
       username: "admin"
       password: "secret123"
-  delegate_to: jump-host
 
 - name: Read a KV v2 secret
   community.hashi_vault.vault_kv2_get:
@@ -19,7 +23,6 @@
     engine_mount_point: secret
     path: myapp/serversecret
   register: vault_secret
-  delegate_to: jump-host
 
 - name: Use the retrieved secret
   ansible.builtin.debug:

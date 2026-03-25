@@ -1,11 +1,22 @@
 
+- name: Write secret using Vault Token
+  community.hashi_vault.vault_kv2_write:
+    url: "{{ vault_addr }}"
+    auth_method: token
+    token: "{{ vault_token }}"          # your Vault token directly
+    engine_mount_point: secret
+    path: myapp/serversecret
+    data:
+      username: "admin"
+      password: "secret123"
+
 - name: Read a KV v2 secret
   community.hashi_vault.vault_kv2_get:
     url: "{{ vault_addr }}"
     auth_method: token
     token: "{{ vault_token }}"
     engine_mount_point: secret
-    path: myapp/database
+    path: myapp/serversecret
   register: vault_secret
 
 - name: Use the retrieved secret

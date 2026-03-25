@@ -123,6 +123,11 @@
     msg: "Available IMM nodes: {{ imm_list.json.data.keys | default([]) }}"
   when: imm_list.status == 200
 
+- name: Set IMM paths fact
+  ansible.builtin.set_fact:
+    imm_paths: "{{ imm_list.json.data.keys }}"
+  when: imm_list.status == 200
+  
 - name: Show each IMM node
   ansible.builtin.debug:
     msg: "IMM node: {{ item }}"

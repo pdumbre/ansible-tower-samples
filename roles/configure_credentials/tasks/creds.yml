@@ -1,9 +1,3 @@
-
-- name: Ensure hvac Python library is installed
-  ansible.builtin.pip:
-    name: hvac
-    state: present
-  delegate_to: localhost
     
 - name: Write secret using Vault Token
   community.hashi_vault.vault_kv2_write:

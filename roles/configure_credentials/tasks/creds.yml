@@ -14,6 +14,8 @@
     data:
       username: "admin"
       password: "secret123"
+    validate_certs: false  # Disable SSL verification
+    ca_cert: null          # Don't use CA cert
 
 - name: Read a KV v2 secret
   community.hashi_vault.vault_kv2_get:

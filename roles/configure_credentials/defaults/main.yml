@@ -1,0 +1,15 @@
+- name: Set AWX host
+  set_fact:
+    awx_host: "{{ awx_host | default('localhost') }}"
+
+- name: Set AWX port
+  set_fact:
+    awx_host: "{{ awx_port | default(8443) }}"
+
+- name: Set AWX URL
+  set_fact:
+    awx_url: "https://{{ awx_host }}:{{ awx_port }}" 
+
+- name: Set AWX user
+  set_fact:
+    awx_user: "{{ awx_user | default("admin) }}"

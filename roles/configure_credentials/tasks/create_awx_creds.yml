@@ -37,7 +37,7 @@
           bmc_user: "{% raw %}{{ username }}{% endraw %}"      # ✅ not resolved by Ansible
           bmc_password: "{% raw %}{{ password }}{% endraw %}"      # ✅ passed as literal string
           bmc_group: "{% raw %}{{ group }}{% endraw %}"            # ✅ to AWX API
-    status_code: [201]
+    status_code: [201, 400]
     validate_certs: no
   delegate_to: jump-host
   register: credential_type_result

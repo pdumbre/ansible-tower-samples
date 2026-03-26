@@ -1,10 +1,26 @@
-# ---------------------------------------------
-# 1. Create AWX custom credential type
-# ---------------------------------------------
 - name: Build AWX URL
   ansible.builtin.set_fact:
     awx_url: "{{ awx_scheme }}://{{ awx_host }}:{{ awx_port }}"
     
+- name: Get credential type ID
+  ansible.builtin.uri:
+    url: "{{ awx_url }}/api/v2/credential_types/?name={{ imm_credential_type_name | urlencode }}"
+    method: GET
+    url_username: "{{ awx_user }}"
+    url_password: "{{ awx_password }}"
+    force_basic_auth: yes
+    validate_certs: no
+    status_code: [200]
+  register: credential_type_query
+  delegate_to: jump-host
+  run_once: true
+
+- name: Set credential type ID if already exists
+  ansible.builtin.set_fact:
+    bmc_credential_type_id: "{{ credential_type_query.json.results[0].id }}"
+  when: credential_type_query.json.count > 0
+  run_once: true
+     
 - name: Create AWX custom credential type for BMC users
   uri:
     url: "{{ awx_url }}/api/v2/credential_types/"
@@ -34,48 +50,26 @@
           - "password"
       injectors:
         extra_vars:
-          bmc_user: "{% raw %}{{ username }}{% endraw %}"      # ✅ not resolved by Ansible
-          bmc_password: "{% raw %}{{ password }}{% endraw %}"      # ✅ passed as literal string
-          bmc_group: "{% raw %}{{ group }}{% endraw %}"            # ✅ to AWX API
-    status_code: [201, 400]
+          bmc_user: "{% raw %}{{ username }}{% endraw %}"     
+          bmc_password: "{% raw %}{{ password }}{% endraw %}"     
+          bmc_group: "{% raw %}{{ group }}{% endraw %}"           
+    status_code: [200, 201]
     validate_certs: no
   delegate_to: jump-host
   register: credential_type_result
-  failed_when:                              # ✅ fixed logic
-    credential_type_result.status == 400 and
-    'already exists' not in (credential_type_result.json.name[0] | default(''))
-
-- name: Debug credential type creation result
-  debug:
-    var: credential_type_result
-    
-# ---------------------------------------------
-# 2. Get credential type ID
-# ---------------------------------------------
-- name: Get credential type ID
-  uri:
-    url: "{{ awx_url }}/api/v2/credential_types/?name=BMC+User+Credentials"
-    method: GET
-    url_username: "{{ awx_user }}"
-    url_password: "{{ awx_password }}"
-    force_basic_auth: yes
-    status_code: [200]
-    validate_certs: no
-  register: credential_type_query
-  delegate_to: jump-host
+  when: credential_type_query.json.count == 0 
+     
+- name: Set credential type ID from newly created
+  ansible.builtin.set_fact:
+    bmc_credential_type_id: "{{ credential_type_result.json.id }}"
+  when: credential_type_query.json.count == 0
+  run_once: true
 
 - name: Fail if credential type not found
   ansible.builtin.fail:
     msg: "BMC User Credentials credential type not found in AWX"
-  when: credential_type_query.json.count == 0   # ✅ guard against empty results
+  when: bmc_credential_type_id == ''
 
-- name: Set credential type ID
-  set_fact:
-    BMC_credential_type_id: "{{ credential_type_query.json.results[0].id }}"
-
-# ---------------------------------------------
-# 3. Create credentials per node per user
-# ---------------------------------------------
 - name: Create AWX custom credentials for each node and user
   uri:
     url: "{{ awx_url }}/api/v2/credentials/"
@@ -90,23 +84,21 @@
       organization: "{{ awx_organization_id }}"
       credential_type: "{{ BMC_credential_type_id }}"
       inputs:
-        username: "{{ item.1.user }}"                      # ✅ matches source field name
-        password: "{{ item.1.password | b64decode }}"      # ✅ decode base64
+        username: "{{ item.1.user }}"                      
+        password: "{{ item.1.password | b64decode }}"     
         group: "{{ item.1.group }}"
     status_code: [201, 400]
     validate_certs: no
   loop: "{{ retrieved_cnimm | subelements('users') }}"
   loop_control:
-    label: "{{ item.0.name }}_{{ item.1.user }}"           # ✅ cleaner loop output
+    label: "{{ item.0.name }}_{{ item.1.user }}"         
   register: credential_creation_results
   delegate_to: jump-host
-  failed_when:                                             # ✅ fixed logic
+  failed_when:                                           
     credential_creation_results.status == 400 and
     'already exists' not in (credential_creation_results.json.name[0] | default(''))
 
-# ---------------------------------------------
-# 4. Display created credentials
-# ---------------------------------------------
+
 - name: Display created credentials
   debug:
     msg: "Created credential: {{ item.0.name }}_{{ item.1.user }}"

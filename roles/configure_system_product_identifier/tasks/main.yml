@@ -32,14 +32,14 @@
   include_tasks: bios_detect.yml
   #when: "'bios_detect' not in checkpoint_stages_done"
 
-- name: Write checkpoint
-  include_role:
-    name: common
-    tasks_from: checkpoint_write
-  vars:
-    checkpoint_workflow: "configure_system_indentifier"
-    checkpoint_stage: "bios_detect"
-    checkpoint_host: "{{ inventory_hostname }}"
+#- name: Write checkpoint
+ # include_role:
+  #  name: common
+   # tasks_from: checkpoint_write
+  #vars:
+   # checkpoint_workflow: "configure_system_indentifier"
+    #checkpoint_stage: "bios_detect"
+    #checkpoint_host: "{{ inventory_hostname }}"
  
 - name: Configure system product identifier
   include_tasks: configure_system_product.yml

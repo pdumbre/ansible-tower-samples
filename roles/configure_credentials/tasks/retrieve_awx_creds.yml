@@ -39,6 +39,7 @@
     msg:
       - "USERID User: {{ server_userid_info.user }}"
       - "USERID Group: {{ server_userid_info.group }}"
+      - "USERID Password: {{ server_userid_password_decoded }}"
   when: server_userid_info is defined
   no_log: false
 

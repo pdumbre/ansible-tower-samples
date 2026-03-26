@@ -1,0 +1,103 @@
+# ---------------------------------------------
+# 1. Create AWX custom credential type
+# ---------------------------------------------
+- name: Create AWX custom credential type for BMC users
+  uri:
+    url: "{{ awx_url }}/api/v2/credential_types/"
+    method: POST
+    headers:
+      Authorization: "Bearer {{ awx_token }}"
+      Content-Type: "application/json"
+    body_format: json
+    body:
+      name: "BMC User Credentials"
+      description: "Custom credential type for BMC user authentication"
+      kind: "cloud"
+      inputs:
+        fields:
+          - id: "username"
+            type: "string"
+            label: "Username"
+          - id: "password"
+            type: "string"
+            label: "Password"
+            secret: true
+          - id: "group"
+            type: "string"
+            label: "Group"
+        required:
+          - "username"
+          - "password"
+      injectors:
+        extra_vars:
+          BMC_username: "{{ username }}"    # ✅ no Jinja2 escaping needed
+          BMC_password: "{{ password }}"
+          BMC_group: "{{ group }}"
+    status_code: [201, 400]
+    validate_certs: no
+  register: credential_type_result
+  failed_when:                              # ✅ fixed logic
+    credential_type_result.status == 400 and
+    'already exists' not in (credential_type_result.json.name[0] | default(''))
+
+# ---------------------------------------------
+# 2. Get credential type ID
+# ---------------------------------------------
+- name: Get credential type ID
+  uri:
+    url: "{{ awx_url }}/api/v2/credential_types/?name=BMC+User+Credentials"
+    method: GET
+    headers:
+      Authorization: "Bearer {{ awx_token }}"
+    status_code: [200]
+    validate_certs: no
+  register: credential_type_query
+
+- name: Fail if credential type not found
+  ansible.builtin.fail:
+    msg: "BMC User Credentials credential type not found in AWX"
+  when: credential_type_query.json.count == 0   # ✅ guard against empty results
+
+- name: Set credential type ID
+  set_fact:
+    BMC_credential_type_id: "{{ credential_type_query.json.results[0].id }}"
+
+# ---------------------------------------------
+# 3. Create credentials per node per user
+# ---------------------------------------------
+- name: Create AWX custom credentials for each node and user
+  uri:
+    url: "{{ awx_url }}/api/v2/credentials/"
+    method: POST
+    headers:
+      Authorization: "Bearer {{ awx_token }}"
+      Content-Type: "application/json"
+    body_format: json
+    body:
+      name: "{{ item.0.name }}_{{ item.1.user }}"
+      description: "BMC credentials for {{ item.0.name }} - User {{ item.1.user }}"
+      organization: "{{ awx_organization_id }}"
+      credential_type: "{{ BMC_credential_type_id }}"
+      inputs:
+        username: "{{ item.1.user }}"                      # ✅ matches source field name
+        password: "{{ item.1.password | b64decode }}"      # ✅ decode base64
+        group: "{{ item.1.group }}"
+    status_code: [201, 400]
+    validate_certs: no
+  loop: "{{ retrieved_cnBMC | subelements('users') }}"
+  loop_control:
+    label: "{{ item.0.name }}_{{ item.1.user }}"           # ✅ cleaner loop output
+  register: credential_creation_results
+  failed_when:                                             # ✅ fixed logic
+    credential_creation_results.status == 400 and
+    'already exists' not in (credential_creation_results.json.name[0] | default(''))
+
+# ---------------------------------------------
+# 4. Display created credentials
+# ---------------------------------------------
+- name: Display created credentials
+  debug:
+    msg: "Created credential: {{ item.0.name }}_{{ item.1.user }}"
+  loop: "{{ retrieved_cnBMC | subelements('users') }}"    # ✅ removed invalid var/register
+  loop_control:
+    label: "{{ item.0.name }}_{{ item.1.user }}"

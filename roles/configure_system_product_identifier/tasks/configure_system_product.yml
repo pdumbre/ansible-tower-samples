@@ -90,7 +90,7 @@
       #failed_when: sr630v3_product_id.rc != 0
 
     - debug:
-        msg: sr630v3_product_id
+        msg: "{{ sr630v3_product_id }}"
      
 
     - name: Display sr630v3 Product Identifier result

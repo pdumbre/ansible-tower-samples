@@ -1,0 +1,30 @@
+- name: Parse combined credential JSON from custom credential
+  set_fact:
+    combined_credential: "{{ bmc_credential_full_details.json.inputs.combined_credential | from_json }}"
+  when: 
+    - bmc_credential_full_details is defined
+    - bmc_credential_full_details.json.inputs.combined_credential is defined
+
+- name: Extract server-specific data from combined credential
+  set_fact:
+    server_users: "{{ combined_credential[server_name] }}"
+  when: 
+    - combined_credential is defined
+    - server_name in combined_credential
+
+- name: Get USERID credentials for the server
+  set_fact:
+    server_userid_user: "{{ server_users | selectattr('user', 'equalto', 'USERID') | first }}"
+    server_userid_password: "{{ (server_users | selectattr('user', 'equalto', 'USERID') | first).password | b64decode }}"
+  when: 
+    - server_users is defined
+    - server_users | selectattr('user', 'equalto', 'USERID') | list | length > 0
+
+- name: Display server-specific credential data
+  debug:
+    msg:
+      - "Server: {{ server_name }}"
+      - "USERID User: {{ server_userid_user.user }}"
+      - "USERID Group: {{ server_userid_user.group }}"
+      - "Total users for server: {{ server_users | length }}"
+  when: server_userid_user is defined

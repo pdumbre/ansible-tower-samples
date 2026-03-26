@@ -15,5 +15,6 @@ bmc_default_group: "Administrator"
 
 # Loop defaults
 retrieved_cnimm: []
+cnimm: []
 bmc_credential_type_id: ""
 bmc_paths: []

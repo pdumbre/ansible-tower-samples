@@ -80,8 +80,8 @@
       environment:
         LD_LIBRARY_PATH: "{{ onecli_libs }}"
       delegate_to: "{{ onecli_jump_host }}"
-      async: 30  
-      poll: 5    # Check every 5 
+      #async: 30  
+      #poll: 5    # Check every 5 
       register: sr630v3_product_id
       #retries: "{{ retry_count }}"
       #delay: "{{ retry_delay }}"

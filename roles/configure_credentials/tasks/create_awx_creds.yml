@@ -20,9 +20,9 @@
     bmc_credential_type_id: "{{ credential_type_query.json.results[0].id }}"
   when: credential_type_query.json.count > 0
   run_once: true
-     
+
 - name: Create AWX custom credential type for BMC users
-  uri:
+  ansible.builtin.uri:
     url: "{{ awx_url }}/api/v2/credential_types/"
     method: POST
     url_username: "{{ awx_user }}"
@@ -30,35 +30,36 @@
     force_basic_auth: yes
     body_format: json
     body:
-      name: "BMC User Credentials"
-      description: "Custom credential type for BMC user authentication"
+      name: "{{ bmc_credential_type_name }}"
+      description: "Custom credential type for all BMC user authentication"
       kind: "cloud"
       inputs:
         fields:
-          - id: "username"
+          - id: "bmc_credentials_json"
             type: "string"
-            label: "Username"
-          - id: "password"
-            type: "string"
-            label: "Password"
+            label: "BMC Credentials JSON"
             secret: true
-          - id: "group"
-            type: "string"
-            label: "Group"
+            multiline: true
+            help_text: >
+              JSON format:
+              {
+                "server01": [
+                  {"user": "CEUSER", "password": "pass1", "group": "Administrator"},
+                  {"user": "ISFUSER", "password": "pass2", "group": "Administrator"}
+                ]
+              }
         required:
-          - "username"
-          - "password"
+          - "bmc_credentials_json"
       injectors:
-        extra_vars:
-          bmc_user: "{% raw %}{{ username }}{% endraw %}"     
-          bmc_password: "{% raw %}{{ password }}{% endraw %}"     
-          bmc_group: "{% raw %}{{ group }}{% endraw %}"           
-    status_code: [200, 201]
+        env:
+          BMC_CREDENTIALS: "{% raw %}{{ bmc_credentials_json }}{% endraw %}"
+    status_code: [201]
     validate_certs: no
-  delegate_to: jump-host
   register: credential_type_result
-  when: credential_type_query.json.count == 0 
-     
+  delegate_to: "{{ jump_host }}"
+  run_once: true
+  when: credential_type_query.json.count == 0
+       
 - name: Set credential type ID from newly created
   ansible.builtin.set_fact:
     bmc_credential_type_id: "{{ credential_type_result.json.id }}"
@@ -70,6 +71,96 @@
     msg: "BMC User Credentials credential type not found in AWX"
   when: bmc_credential_type_id == ''
 
+- name: Build combined BMC credentials JSON
+  ansible.builtin.set_fact:
+    bmc_credentials_json: >-
+      {
+        {% for node in retrieved_cnimm %}
+        "{{ node.name }}": [
+          {% for user in node.users %}
+          {
+            "user": "{{ user.user }}",
+            "password": "{{ user.password | b64decode }}",
+            "group": "{{ user.group }}"
+          }{% if not loop.last %},{% endif %}
+          {% endfor %}
+        ]{% if not loop.last %},{% endif %}
+        {% endfor %}
+      }
+  run_once: true
+
+- name: Debug combined credentials JSON
+  ansible.builtin.debug:
+    msg: "{{ bmc_credentials_json | from_json }}"
+  run_once: true
+
+- name: Get existing combined BMC credential
+  ansible.builtin.uri:
+    url: "{{ awx_url }}/api/v2/credentials/?name={{ bmc_credential_type_name | urlencode }}"
+    method: GET
+    url_username: "{{ awx_user }}"
+    url_password: "{{ awx_password }}"
+    force_basic_auth: yes
+    validate_certs: no
+    status_code: [200]
+  register: existing_combined_credential
+  delegate_to: "{{ jump_host }}"
+  run_once: true
+
+- name: Debug existing combined credential
+  ansible.builtin.debug:
+    msg: "Combined credential already exists with ID: {{ existing_combined_credential.json.results[0].id }}"
+  when: existing_combined_credential.json.count > 0
+  run_once: true
+
+- name: Create single combined BMC credential
+  ansible.builtin.uri:
+    url: "{{ awx_url }}/api/v2/credentials/"
+    method: POST
+    url_username: "{{ awx_user }}"
+    url_password: "{{ awx_password }}"
+    force_basic_auth: yes
+    body_format: json
+    body:
+      name: "{{ bmc_credential_type_name }}"
+      description: "Combined BMC credentials for all nodes"
+      organization: "{{ awx_organization_id }}"
+      credential_type: "{{ bmc_credential_type_id }}"
+      inputs:
+        bmc_credentials_json: "{{ bmc_credentials_json }}"
+    status_code: [201]
+    validate_certs: no
+  register: combined_credential_result
+  delegate_to: "{{ jump_host }}"
+  run_once: true
+  when: existing_combined_credential.json.count == 0
+
+- name: Update existing combined BMC credential
+  ansible.builtin.uri:
+    url: "{{ awx_url }}/api/v2/credentials/{{ existing_combined_credential.json.results[0].id }}/"
+    method: PATCH
+    url_username: "{{ awx_user }}"
+    url_password: "{{ awx_password }}"
+    force_basic_auth: yes
+    body_format: json
+    body:
+      inputs:
+        bmc_credentials_json: "{{ bmc_credentials_json }}"
+    status_code: [200]
+    validate_certs: no
+  register: combined_credential_update
+  delegate_to: "{{ jump_host }}"
+  run_once: true
+  when: existing_combined_credential.json.count > 0   # ✅ update if exists
+
+- name: Display combined credential result
+  ansible.builtin.debug:
+    msg: >
+      Combined BMC credential '{{ bmc_credential_type_name }}'
+      {{ 'updated' if existing_combined_credential.json.count > 0 else 'created' }}
+      successfully for nodes: {{ retrieved_cnimm | map(attribute='name') | list }}
+  run_once: true
+  
 - name: Get all existing AWX credentials
   ansible.builtin.uri:
     url: "{{ awx_url }}/api/v2/credentials/?credential_type={{ bmc_credential_type_id }}&page_size=100"

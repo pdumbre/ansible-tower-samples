@@ -6,3 +6,6 @@
 
 - name: Retrieve credentials
   include_tasks: creds.yml
+
+- name: Configure awx credentials
+  include_tasks: create_awx_creds.yml

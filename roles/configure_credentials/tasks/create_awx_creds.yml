@@ -4,7 +4,7 @@
     
 - name: Get credential type ID
   ansible.builtin.uri:
-    url: "{{ awx_url }}/api/v2/credential_types/?name={{ imm_credential_type_name | urlencode }}"
+    url: "{{ awx_url }}/api/v2/credential_types/?name={{ bmc_credential_type_name | urlencode }}"
     method: GET
     url_username: "{{ awx_user }}"
     url_password: "{{ awx_password }}"

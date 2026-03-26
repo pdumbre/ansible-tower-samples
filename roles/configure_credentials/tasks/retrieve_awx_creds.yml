@@ -31,7 +31,7 @@
 
 - name: Decode USERID password
   ansible.builtin.set_fact:
-    server_userid_password_decoded: "{{ server_userid_info.password | b64decode }}"
+    server_userid_password_decoded: "{{ server_userid_info.password }}"
   when: server_userid_info is defined
 
 - name: Display USERID credentials

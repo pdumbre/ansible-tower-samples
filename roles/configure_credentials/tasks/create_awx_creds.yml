@@ -1,7 +1,9 @@
 # ---------------------------------------------
 # 1. Create AWX custom credential type
 # ---------------------------------------------
-
+- set_fact:
+    awx_url: "http://{awx_host}}:{{awx_port}}"
+    
 - name: Create AWX custom credential type for BMC users
   uri:
     url: "{{ awx_url }}/api/v2/credential_types/"

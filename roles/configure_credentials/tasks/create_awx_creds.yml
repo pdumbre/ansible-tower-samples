@@ -31,9 +31,9 @@
           - "password"
       injectors:
         extra_vars:
-          BMC_username: "{{ username }}"    # ✅ no Jinja2 escaping needed
-          BMC_password: "{{ password }}"
-          BMC_group: "{{ group }}"
+          bmc_user: "{% raw %}{{ username }}{% endraw %}"      # ✅ not resolved by Ansible
+          bmc_password: "{% raw %}{{ password }}{% endraw %}"      # ✅ passed as literal string
+          bmc_group: "{% raw %}{{ group }}{% endraw %}"            # ✅ to AWX API
     status_code: [201, 400]
     validate_certs: no
   register: credential_type_result

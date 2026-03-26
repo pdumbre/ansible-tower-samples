@@ -1,68 +1,58 @@
-- name: Set server name
-  set_fact:
-    server_name: "control-1-ru2"
+ ---------------------------------------------
+# Retrieve server-specific users from BMC credential
+# ---------------------------------------------
 
-- name: Search for BMC credentials by credential type name
-  uri:
-    url: "{{ awx_url }}/api/v2/credentials/?credential_type__name={{ bmc_credential_type_name }}&name__icontains={{ server_name }}"
-    method: GET
-    url_username: "{{ awx_user }}"
-    url_password: "{{ awx_password }}"
-    force_basic_auth: yes
-    return_content: yes
-    status_code: [200]
-    validate_certs: no
-  register: bmc_custom_credential
+- name: Parse BMC credentials from environment variable
+  ansible.builtin.set_fact:
+    bmc_credentials_parsed: "{{ lookup('env', 'BMC_CREDENTIALS') | from_json }}"
+  when: lookup('env', 'BMC_CREDENTIALS') != ''
 
-- debug:
-    msg: "{{ bmc_custom_credential }}"
+- name: Get server-specific users from BMC credential
+  ansible.builtin.set_fact:
+    server_bmc_users: "{{ bmc_credentials_parsed[server_name] }}"
+  when:
+    - bmc_credentials_parsed is defined
+    - server_name in bmc_credentials_parsed
 
-- name: Retrieve BMC custom credential details
-  uri:
-    url: "{{ awx_url }}/api/v2/credentials/{{ bmc_custom_credential.id }}/"
-    method: GET
-    url_username: "{{ awx_user }}"
-    url_password: "{{ awx_password }}"
-    force_basic_auth: yes
-    return_content: yes
-    status_code: [200]
-    validate_certs: no
-  register: bmc_credential_full_details
-  when: bmc_custom_credential is defined
-
-- debug:
-    msg: bmc_credential_full_details
-
-- name: Parse combined credential JSON from custom credential
-  set_fact:
-    combined_credential: "{{ bmc_credential_full_details.json.inputs.combined_credential | from_json }}"
-  when: 
-    - bmc_credential_full_details is defined
-    - bmc_credential_full_details.json.inputs.combined_credential is defined
-
-- debug:
-    msg: combined_credential
-    
-- name: Extract server-specific data from combined credential
-  set_fact:
-    server_users: "{{ combined_credential[server_name] }}"
-  when: 
-    - combined_credential is defined
-    - server_name in combined_credential
-
-- name: Get USERID credentials for the server
-  set_fact:
-    server_userid_user: "{{ server_users | selectattr('user', 'equalto', 'USERID') | first }}"
-    server_userid_password: "{{ (server_users | selectattr('user', 'equalto', 'USERID') | first).password | b64decode }}"
-  when: 
-    - server_users is defined
-    - server_users | selectattr('user', 'equalto', 'USERID') | list | length > 0
-
-- name: Display server-specific credential data
-  debug:
+- name: Display server-specific BMC users
+  ansible.builtin.debug:
     msg:
       - "Server: {{ server_name }}"
-      - "USERID User: {{ server_userid_user.user }}"
-      - "USERID Group: {{ server_userid_user.group }}"
-      - "Total users for server: {{ server_users | length }}"
-  when: server_userid_user is defined
+      - "Users: {{ server_bmc_users | map(attribute='user') | list }}"
+      - "Total users: {{ server_bmc_users | length }}"
+  when: server_bmc_users is defined
+
+- name: Get USERID credentials for server
+  ansible.builtin.set_fact:
+    server_userid_info: "{{ server_bmc_users | selectattr('user', 'equalto', 'USERID') | first }}"
+  when:
+    - server_bmc_users is defined
+    - server_bmc_users | selectattr('user', 'equalto', 'USERID') | list | length > 0
+
+- name: Decode USERID password
+  ansible.builtin.set_fact:
+    server_userid_password_decoded: "{{ server_userid_info.password | b64decode }}"
+  when: server_userid_info is defined
+
+- name: Display USERID credentials
+  ansible.builtin.debug:
+    msg:
+      - "USERID User: {{ server_userid_info.user }}"
+      - "USERID Group: {{ server_userid_info.group }}"
+  when: server_userid_info is defined
+  no_log: false
+
+- name: Warning if server not found in BMC credentials
+  ansible.builtin.debug:
+    msg: "WARNING: Server '{{ server_name }}' not found in BMC credentials"
+  when:
+    - bmc_credentials_parsed is defined
+    - server_name not in bmc_credentials_parsed
+
+- name: Warning if BMC_CREDENTIALS not available
+  ansible.builtin.debug:
+    msg: "WARNING: BMC_CREDENTIALS environment variable not set. Ensure the BMC credential is attached to the job template."
+  when: lookup('env', 'BMC_CREDENTIALS') == ''
+  ansible.builtin.debug:
+    msg: "Nodes in combined credential: {{ bmc_credentials_dict.keys() | list }}"
+  run_once: true

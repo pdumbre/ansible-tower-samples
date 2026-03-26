@@ -1,11 +1,9 @@
 
 # AWX Connection
-awx_host: "{{ awx_host | default('localhost', true) }}"
-awx_port: "{{ awx_port | default(8443, true) }}"
-awx_url: "http://{{ awx_host }}:{{ awx_port }}"
-awx_user: "{{ awx_user | default('admin', true) }}"
-awx_password: "{{ awx_password | default('admin', true) }}"
-awx_organization_id: 1
+awx_host: "localhost"
+awx_port: 8443
+awx_user: "admin"
+awx_password: "admin"
 validate_certs: false
 
 # IMM Credential Type

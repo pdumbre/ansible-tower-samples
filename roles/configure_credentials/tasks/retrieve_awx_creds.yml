@@ -1,3 +1,7 @@
+- name: Set server name
+  set_fact:
+    server_name: "control-1-ru2"
+
 - name: Search for BMC credentials by credential type name
   uri:
     url: "{{ awx_url }}/api/v2/credentials/?credential_type__name={{ bmc_credential_type_name }}&name__icontains={{ server_name }}"
@@ -41,7 +45,6 @@
     
 - name: Extract server-specific data from combined credential
   set_fact:
-    server_name: "control-1-ru2"
     server_users: "{{ combined_credential[server_name] }}"
   when: 
     - combined_credential is defined

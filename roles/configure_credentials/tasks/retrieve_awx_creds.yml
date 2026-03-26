@@ -1,3 +1,34 @@
+- name: Search for BMC credentials by credential type name
+  uri:
+    url: "{{ awx_url }}/api/v2/credentials/?credential_type__name={{ bmc_credential_type_name }}&name__icontains={{ server_name }}"
+    method: GET
+    url_username: "{{ awx_user }}"
+    url_password: "{{ awx_password }}"
+    force_basic_auth: yes
+    return_content: yes
+    status_code: [200]
+    validate_certs: no
+  register: bmc_custom_credential
+
+- debug:
+    msg: bmc_custom_credential
+
+- name: Retrieve BMC custom credential details
+  uri:
+    url: "{{ awx_url }}/api/v2/credentials/{{ bmc_custom_credential.id }}/"
+    method: GET
+    url_username: "{{ awx_user }}"
+    url_password: "{{ awx_password }}"
+    force_basic_auth: yes
+    return_content: yes
+    status_code: [200]
+    validate_certs: no
+  register: bmc_credential_full_details
+  when: bmc_custom_credential is defined
+
+- debug:
+    msg: bmc_credential_full_details
+
 - name: Parse combined credential JSON from custom credential
   set_fact:
     combined_credential: "{{ bmc_credential_full_details.json.inputs.combined_credential | from_json }}"
@@ -5,8 +36,12 @@
     - bmc_credential_full_details is defined
     - bmc_credential_full_details.json.inputs.combined_credential is defined
 
+- debug:
+    msg: combined_credential
+    
 - name: Extract server-specific data from combined credential
   set_fact:
+    server_name: "control-1-ru2"
     server_users: "{{ combined_credential[server_name] }}"
   when: 
     - combined_credential is defined

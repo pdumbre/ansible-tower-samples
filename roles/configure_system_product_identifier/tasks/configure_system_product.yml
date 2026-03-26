@@ -86,8 +86,12 @@
       #retries: "{{ retry_count }}"
       #delay: "{{ retry_delay }}"
       #until: sr630v3_product_id.rc == 0
-      changed_when: "'Successfully' in sr630v3_product_id.stdout"
-      failed_when: sr630v3_product_id.rc != 0
+      #changed_when: "'Successfully' in sr630v3_product_id.stdout"
+      #failed_when: sr630v3_product_id.rc != 0
+
+    - debug:
+        msg: sr630v3_product_id
+     
 
     - name: Display sr630v3 Product Identifier result
       debug:

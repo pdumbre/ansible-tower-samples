@@ -6,6 +6,7 @@ awx_user: "admin"
 awx_password: "admin"
 awx_scheme: "https"
 validate_certs: false
+awx_organization_id: 1
 
 # IMM Credential Type
 bmc_credential_type_name: "BMC User Credentials"

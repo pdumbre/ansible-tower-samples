@@ -45,6 +45,10 @@
     credential_type_result.status == 400 and
     'already exists' not in (credential_type_result.json.name[0] | default(''))
 
+- name: Debug credential type creation result
+  debug:
+    var: credential_type_result
+    
 # ---------------------------------------------
 # 2. Get credential type ID
 # ---------------------------------------------

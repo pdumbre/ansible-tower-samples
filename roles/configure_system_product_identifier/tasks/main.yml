@@ -30,7 +30,7 @@
  
 - name: Detect model and resolve configuration flags
   include_tasks: bios_detect.yml
-  when: "'bios_detect' not in checkpoint_stages_done"
+  #when: "'bios_detect' not in checkpoint_stages_done"
 
 - name: Write checkpoint
   include_role:

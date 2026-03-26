@@ -4,6 +4,7 @@ awx_host: "localhost"
 awx_port: 8443
 awx_user: "admin"
 awx_password: "admin"
+awx_scheme: "https"
 validate_certs: false
 
 # IMM Credential Type

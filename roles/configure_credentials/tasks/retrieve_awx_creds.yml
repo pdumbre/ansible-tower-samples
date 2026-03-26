@@ -1,7 +1,7 @@
- ---------------------------------------------
-# Retrieve server-specific users from BMC credential
-# ---------------------------------------------
-
+- name: Set server name
+  ansible.builtin.set_fact:
+    server_name: "control-1-ru2"
+    
 - name: Parse BMC credentials from environment variable
   ansible.builtin.set_fact:
     bmc_credentials_parsed: "{{ lookup('env', 'BMC_CREDENTIALS') | from_json }}"

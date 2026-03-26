@@ -32,6 +32,27 @@
     validate_certs: no
   register: vault_result_cnimm
 
+- name: Retrieve cnimm data from Vault using REST API
+  uri:
+    url: "{{ vault_addr }}/v1/secret/data/CNIMMSecret"
+    method: GET
+    headers:
+      X-Vault-Token: "{{ vault_token }}"
+    return_content: yes
+    status_code: [200]
+    validate_certs: no
+  register: vault_retrieve_cnimm
+
+- name: Extract cnimm data from Vault response
+  set_fact:
+    retrieved_cnimm: "{{ vault_retrieve_cnimm.json.data.data.CNIMMSecret }}"
+
+- name: Display retrieved cnimm data
+  debug:
+    var: retrieved_cnimm
+  register: vault_result_cnimm
+
+
 - name: Write secret using Vault Token
   community.hashi_vault.vault_kv2_write:
     url: "{{ vault_addr }}"

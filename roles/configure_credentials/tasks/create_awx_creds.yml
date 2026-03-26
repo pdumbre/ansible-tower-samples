@@ -1,13 +1,14 @@
 # ---------------------------------------------
 # 1. Create AWX custom credential type
 # ---------------------------------------------
+
 - name: Create AWX custom credential type for BMC users
   uri:
     url: "{{ awx_url }}/api/v2/credential_types/"
     method: POST
-    headers:
-      Authorization: "Bearer {{ awx_token }}"
-      Content-Type: "application/json"
+    url_username: "{{ awx_user }}"
+    url_password: "{{ awx_password }}"
+    force_basic_auth: yes
     body_format: json
     body:
       name: "BMC User Credentials"
@@ -47,8 +48,9 @@
   uri:
     url: "{{ awx_url }}/api/v2/credential_types/?name=BMC+User+Credentials"
     method: GET
-    headers:
-      Authorization: "Bearer {{ awx_token }}"
+    url_username: "{{ awx_user }}"
+    url_password: "{{ awx_password }}"
+    force_basic_auth: yes
     status_code: [200]
     validate_certs: no
   register: credential_type_query
@@ -69,9 +71,9 @@
   uri:
     url: "{{ awx_url }}/api/v2/credentials/"
     method: POST
-    headers:
-      Authorization: "Bearer {{ awx_token }}"
-      Content-Type: "application/json"
+    url_username: "{{ awx_user}}"
+    url_password: "{{ awx_password }}"
+    force_basic_auth: yes
     body_format: json
     body:
       name: "{{ item.0.name }}_{{ item.1.user }}"

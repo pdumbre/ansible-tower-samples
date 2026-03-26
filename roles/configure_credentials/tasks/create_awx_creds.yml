@@ -82,7 +82,7 @@
       name: "{{ item.0.name }}_{{ item.1.user }}"
       description: "BMC credentials for {{ item.0.name }} - User {{ item.1.user }}"
       organization: "{{ awx_organization_id }}"
-      credential_type: "{{ BMC_credential_type_id }}"
+      credential_type: "{{ bmc_credential_type_id }}"
       inputs:
         username: "{{ item.1.user }}"                      
         password: "{{ item.1.password | b64decode }}"     

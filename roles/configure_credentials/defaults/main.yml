@@ -12,11 +12,11 @@
 
 - name: Set AWX user
   set_fact:
-    awx_user: "{{ awx_user | default("admin) }}"
+    awx_user: "{{ awx_user | default('admin') }}"
 
 # Need to retrieve AWX Password from vault.
 # This implementation will be removed after vault retrieval
 
 - name: Set AWX password
   set_fact:
-    awx_password: "{{ awx_password | default("admin) }}"
+    awx_password: "{{ awx_password | default('admin') }}"

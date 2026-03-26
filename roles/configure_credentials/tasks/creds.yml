@@ -4,6 +4,18 @@
     name: hvac
     state: present
 
+- name: Extract switch name and users from current kickstart (without number and uid fields)
+  set_fact:
+    switches: "{{ switches + [{'name': item.name, 'users': item.users | map('dict2items') | map('rejectattr', 'key', 'in', ['number', 'uid']) | map('items2dict') | list}] }}"
+  loop: "{{ current_kickstart.switches | default([]) }}"
+  when: current_kickstart.switches is defined
+
+- name: Extract cnimm name and users from current kickstart (without number field)
+  set_fact:
+    cnimm: "{{ cnimm + [{'name': item.OCPRole, 'users': item.users | map('dict2items') | map('rejectattr', 'key', 'equalto', 'number') | map('items2dict') | list}] }}"
+  loop: "{{ current_kickstart.computeNodeIntegratedManagementModules | default([]) }}"
+  when: current_kickstart.computeNodeIntegratedManagementModules is defined
+  
 - name: Write secret using Vault Token
   community.hashi_vault.vault_kv2_write:
     url: "{{ vault_addr }}"

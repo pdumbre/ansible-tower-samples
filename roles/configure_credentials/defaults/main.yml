@@ -1,22 +1,19 @@
-- name: Set AWX host
-  set_fact:
-    awx_host: "{{ awx_host | default('localhost') }}"
 
-- name: Set AWX port
-  set_fact:
-    awx_host: "{{ awx_port | default(8443) }}"
+# AWX Connection
+awx_host: "{{ lookup('env', 'AWX_HOST') | default('localhost', true) }}"
+awx_port: "{{ lookup('env', 'AWX_PORT') | default(8443, true) }}"
+awx_url: "https://{{ awx_host }}:{{ awx_port }}"
+awx_user: "{{ lookup('env', 'AWX_USER') | default('admin', true) }}"
+awx_password: "{{ lookup('env', 'AWX_PASSWORD') | default('admin', true) }}"
+awx_organization_id: 1
+validate_certs: false
 
-- name: Set AWX URL
-  set_fact:
-    awx_url: "https://{{ awx_host }}:{{ awx_port }}" 
+# IMM Credential Type
+bmc_credential_type_name: "BMC User Credentials"
+bmc_credential_type_kind: "cloud"
+bmc_default_group: "Administrator"
 
-- name: Set AWX user
-  set_fact:
-    awx_user: "{{ awx_user | default('admin') }}"
-
-# Need to retrieve AWX Password from vault.
-# This implementation will be removed after vault retrieval
-
-- name: Set AWX password
-  set_fact:
-    awx_password: "{{ awx_password | default('admin') }}"
+# Loop defaults
+retrieved_cnimm: []
+bmc_credential_type_id: ""
+bmc_paths: []

@@ -98,7 +98,7 @@
 
 - name: Get existing combined BMC credential
   ansible.builtin.uri:
-    url: "{{ awx_url }}/api/v2/credentials/?name={{ imm_combined_credential_name | urlencode }}"
+    url: "{{ awx_url }}/api/v2/credentials/?name={{ bmc_combined_credential_name | urlencode }}"
     method: GET
     url_username: "{{ awx_user }}"
     url_password: "{{ awx_password }}"
@@ -118,10 +118,10 @@
     force_basic_auth: yes
     body_format: json
     body:
-      name: "{{ imm_combined_credential_name }}"
+      name: "{{ bmc_combined_credential_name }}"
       description: "Combined BMC credentials for all nodes"
       organization: "{{ awx_organization_id }}"
-      credential_type: "{{ imm_credential_type_id }}"
+      credential_type: "{{ bmc_credential_type_id }}"
       inputs:
         bmc_credentials_json: "{{ bmc_credentials_json_str }}" 
     status_code: [201]
@@ -154,7 +154,7 @@
 - name: Display combined credential result
   ansible.builtin.debug:
     msg: >
-      Combined BMC credential '{{ imm_combined_credential_name }}'
+      Combined BMC credential '{{ bmc_combined_credential_name }}'
       {{ 'updated' if existing_combined_credential.json.count > 0 else 'created' }}
       successfully for nodes: {{ bmc_credentials_dict.keys() | list }}
   run_once: true

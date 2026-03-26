@@ -1,5 +1,8 @@
 
 # roles/configure_credentials/tasks/main.yml
 
+- name: configure defaults
+  include_tasks: defaults.yml
+
 - name: Retrieve credentials
   include_tasks: creds.yml

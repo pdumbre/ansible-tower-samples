@@ -15,7 +15,7 @@
   register: bmc_custom_credential
 
 - debug:
-    msg: bmc_custom_credential
+    msg: "{{ bmc_custom_credential }}"
 
 - name: Retrieve BMC custom credential details
   uri:

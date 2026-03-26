@@ -71,27 +71,29 @@
     msg: "BMC User Credentials credential type not found in AWX"
   when: bmc_credential_type_id == ''
 
-- name: Build combined BMC credentials JSON
+  
+- name: Build combined BMC credentials dict
   ansible.builtin.set_fact:
     bmc_credentials_json: >-
-      {
-        {% for node in retrieved_cnimm %}
-        "{{ node.name }}": [
-          {% for user in node.users %}
-          {
-            "user": "{{ user.user }}",
-            "password": "{{ user.password | b64decode }}",
-            "group": "{{ user.group }}"
-          }{% if not loop.last %},{% endif %}
-          {% endfor %}
-        ]{% if not loop.last %},{% endif %}
-        {% endfor %}
-      }
+      {{
+        bmc_credentials_json | default({}) | combine({
+          item.name: item.users | map('combine', {}) | list
+        })
+      }}
+  loop: "{{ retrieved_cnimm }}"
+  loop_control:
+    label: "{{ item.name }}"
+  run_once: true
+  no_log: true
+
+- name: Debug combined credentials
+  ansible.builtin.debug:
+    msg: "{{ bmc_credentials_json | to_nice_json }}"
   run_once: true
 
-- name: Debug combined credentials JSON
+- name: Debug node names in combined credential
   ansible.builtin.debug:
-    msg: "{{ bmc_credentials_json | from_json }}"
+    msg: "Nodes in combined credential: {{ bmc_credentials_json.keys() | list }}"
   run_once: true
 
 - name: Get existing combined BMC credential
@@ -105,12 +107,6 @@
     status_code: [200]
   register: existing_combined_credential
   delegate_to: "{{ jump_host }}"
-  run_once: true
-
-- name: Debug existing combined credential
-  ansible.builtin.debug:
-    msg: "Combined credential already exists with ID: {{ existing_combined_credential.json.results[0].id }}"
-  when: existing_combined_credential.json.count > 0
   run_once: true
 
 - name: Create single combined BMC credential
@@ -134,24 +130,6 @@
   delegate_to: "{{ jump_host }}"
   run_once: true
   when: existing_combined_credential.json.count == 0
-
-- name: Update existing combined BMC credential
-  ansible.builtin.uri:
-    url: "{{ awx_url }}/api/v2/credentials/{{ existing_combined_credential.json.results[0].id }}/"
-    method: PATCH
-    url_username: "{{ awx_user }}"
-    url_password: "{{ awx_password }}"
-    force_basic_auth: yes
-    body_format: json
-    body:
-      inputs:
-        bmc_credentials_json: "{{ bmc_credentials_json }}"
-    status_code: [200]
-    validate_certs: no
-  register: combined_credential_update
-  delegate_to: "{{ jump_host }}"
-  run_once: true
-  when: existing_combined_credential.json.count > 0   # ✅ update if exists
 
 - name: Display combined credential result
   ansible.builtin.debug:

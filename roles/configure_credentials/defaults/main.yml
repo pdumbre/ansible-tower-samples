@@ -5,6 +5,7 @@ awx_port: 8443
 awx_user: "admin"
 awx_password: "admin"
 validate_certs: false
+awx_url: "http://{ awx_host }}: {{ awx_port }}
 
 # IMM Credential Type
 bmc_credential_type_name: "BMC User Credentials"

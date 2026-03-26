@@ -95,7 +95,7 @@
         group: "{{ item.1.group }}"
     status_code: [201, 400]
     validate_certs: no
-  loop: "{{ retrieved_cnBMC | subelements('users') }}"
+  loop: "{{ retrieved_cnimm | subelements('users') }}"
   loop_control:
     label: "{{ item.0.name }}_{{ item.1.user }}"           # ✅ cleaner loop output
   register: credential_creation_results

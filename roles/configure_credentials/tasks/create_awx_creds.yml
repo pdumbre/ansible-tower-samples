@@ -79,7 +79,7 @@
 - name: Build combined BMC credentials dict
   ansible.builtin.set_fact:
     bmc_credentials_dict: "{{ bmc_credentials_dict | combine({item.name: item.users}) }}"
-  loop: "{{ retrieved_cnimm }}"
+  loop: "{{ vault_secrets }}"
   loop_control:
     label: "{{ item.name }}"
   run_once: true

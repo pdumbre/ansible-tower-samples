@@ -1,0 +1,158 @@
+---
+# Sample vault response data for testing
+vault_response:
+  status: "Success"
+  message: "Vault credentials retrieved successfully."
+  messageCode: "INSTALL042"
+  messageArgs: null
+  errorMessage: ""
+  data:
+    CNIMMSecret:
+      CNIMMSecret:
+        - name: "control-1-ru2-secret"
+          users:
+            - group: "Administrator"
+              password: "qQ-03ywHJ26TejshriBhagwa"
+              user: "CEUSER"
+            - group: "Administrator"
+              password: "GF4q9y9_CGQPrasadBhag"
+              user: "ISFUSER"
+            - group: "Administrator"
+              password: "PASSW0RD"
+              user: "USERID"
+        - name: "control-1-ru3-secret"
+          users:
+            - group: "Administrator"
+              password: "iPFYxg@DDp8Bhagwa"
+              user: "CEUSER"
+            - group: "Administrator"
+              password: "l@p1WBOs9NWTejshriBh"
+              user: "ISFUSER"
+            - group: "Administrator"
+              password: "PASSW0RD"
+              user: "USERID"
+        - name: "control-1-ru4-secret"
+          users:
+            - group: "Administrator"
+              password: "E3dNoTO1_GdTejshriB"
+              user: "CEUSER"
+            - group: "Administrator"
+              password: "2c9DM_8gzGgTejshriBhagwa"
+              user: "ISFUSER"
+            - group: "Administrator"
+              password: "PASSW0RDTejshriB"
+              user: "USERID"
+        - name: "compute-1-ru5-secret"
+          users:
+            - group: "Administrator"
+              password: "GE4sVyIF0X_"
+              user: "ISFUSER"
+            - group: "Administrator"
+              password: "PASSW0RD"
+              user: "USERID"
+            - group: "Administrator"
+              password: "nvLFnk_jUf8Fusionnnn12"
+              user: "CEUSER"
+        - name: "compute-1-ru6-secret"
+          users:
+            - group: "Administrator"
+              password: "u6pOv8.Mb78Tejshri"
+              user: "CEUSER"
+            - group: "Administrator"
+              password: "ySUlVD_2k17"
+              user: "ISFUSER"
+            - group: "Administrator"
+              password: "PASSW0RD"
+              user: "USERID"
+        - name: "compute-1-ru7-secret"
+          users:
+            - group: "Administrator"
+              password: "Fe#6hdafdL9Prasad"
+              user: "ISFUSER"
+            - group: "Administrator"
+              password: "PASSW0RDBhalerao"
+              user: "USERID"
+            - group: "Administrator"
+              password: "hdH00rNDK7#"
+              user: "CEUSER"
+        - name: "servicenode-1-secret"
+          users:
+            - group: "Administrator"
+              password: "PASSW0RD"
+              user: "USERID"
+            - group: "Administrator"
+              password: "CYRqU4#8lPqTejshr"
+              user: "CEUSER"
+            - group: "Administrator"
+              password: "aaj530H3r@3"
+              user: "ISFUSER"
+    ProvisionerPubPrivKeySecret:
+      ProvisionerPubPrivKeySecret:
+        - privateKey: |
+            -----BEGIN OPENSSH PRIVATE KEY-----
+            b3BlbnNzaC1rZXktdjEAAAAABG5vbmUAAAAEbm9uZQAAAAAAAAABAAAAMwAAAAtz
+            c2gtZWQyNTUxOQAAACBYdBB/WDQbZDwPUEwk00/zjkEPR5yfnPubgdX3tz7kIQAA
+            AIhrHnpvax56bwAAAAtzc2gtZWQyNTUxOQAAACBYdBB/WDQbZDwPUEwk00/zjkEP
+            R5yfnPubgdX3tz7kIQAAAEDSGO42NWO7VlCqXq35CO3umNi09RGCqi9D6feWPKCK
+            Vlh0EH9YNBtkPA9QTCTTT/OOQQ9HnJ+c+5uB1fe3PuQhAAAAAAECAwQF
+            -----END OPENSSH PRIVATE KEY-----
+          publicKey: "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIFh0EH9YNBtkPA9QTCTTT/OOQQ9HnJ+c+5uB1fe3PuQh\n"
+    SwitchSecret:
+      SwitchSecret:
+        - name: "hspeed1-f31l006-secret"
+          snmpAuthPassword: "VsZbt3Nh89Tejsh"
+          snmpPrivPassword: "kdLMuC237y"
+          snmpUser: "ISFSNMPUSR"
+          users:
+            - group: "netedit"
+              password: "qJl@kjUs4o3Bhag"
+              user: "CEUSER"
+            - group: "netedit"
+              password: "bMo1Ln9-Cl2"
+              user: "ISFUSER"
+            - group: "admin"
+              password: "Abell4Cloud!"
+              user: "cumulus"
+        - name: "hspeed2-f31l006-secret"
+          snmpAuthPassword: "qD4fEpz71mTejshri"
+          snmpPrivPassword: "3V4H2fmnlk"
+          snmpUser: "ISFSNMPUSR"
+          users:
+            - group: "netedit"
+              password: "s4l5dQSUoV#"
+              user: "CEUSER"
+            - group: "netedit"
+              password: "XEshz9tQ4E#"
+              user: "ISFUSER"
+            - group: "admin"
+              password: "Abell4Cloud!"
+              user: "cumulus"
+        - name: "mgmt1-f31l006-secret"
+          snmpAuthPassword: "0Pi2jEBYQ9Tejshri"
+          snmpPrivPassword: "Yhv4n5FTS2"
+          snmpUser: "ISFSNMPUSR"
+          users:
+            - group: "netedit"
+              password: "E@ghjp7e0KU"
+              user: "CEUSER"
+            - group: "netedit"
+              password: "OY0QHDh1dL$"
+              user: "ISFUSER"
+            - group: "netedit"
+              password: "Abell4Cloud!"
+              user: "cumulus"
+        - name: "mgmt2-f31l006-secret"
+          snmpAuthPassword: "f5es9xQMj3fusioninstallTejshri"
+          snmpPrivPassword: "N60cR9ruIa"
+          snmpUser: "ISFSNMPUSR"
+          users:
+            - group: "netedit"
+              password: "v2>vA33de0dTejshriBhagwa"
+              user: "CEUSER"
+            - group: "netedit"
+              password: "kyfF8[XWc18"
+              user: "ISFUSER"
+            - group: "netedit"
+              password: "Abell4Cloud!"
+              user: "cumulus"
+

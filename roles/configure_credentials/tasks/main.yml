@@ -7,8 +7,8 @@
 - name: Retrieve credentials
   include_tasks: creds.yml
 
-#- name: Configure awx credentials
- # include_tasks: create_awx_creds.yml
+- name: Configure awx credentials
+  include_tasks: create_awx_creds.yml
 
 - name: Retrieve awx credentials
   include_tasks: retrieve_awx_creds.yml

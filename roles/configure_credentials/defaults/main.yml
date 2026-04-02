@@ -12,6 +12,7 @@ awx_organization_id: 1
 bmc_credential_type_name: "ServerCredentials"
 bmc_credential_type_kind: "cloud"
 bmc_default_group: "Administrator"
+organization_name: "ISF RackPrep"
 
 # Loop defaults
 retrieved_cnimm: []

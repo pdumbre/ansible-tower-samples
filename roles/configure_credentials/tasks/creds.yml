@@ -8,7 +8,7 @@
 - name: Extract and combine secrets from vault data
   ansible.builtin.set_fact:
     vault_secrets:
-      cnimm: "{{ vault_response.CNIMMSecret.CNIMMSecret | default([]) }}"
+      cnimm: "{{ vault_response.data.CNIMMSecret.CNIMMSecret | default([]) }}"
       switch: "{{ vault_response.SwitchSecret.SwitchSecret | default([]) }}"
   when: vault_response is defined
 

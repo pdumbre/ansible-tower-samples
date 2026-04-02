@@ -1,4 +1,14 @@
----
+- name: Get credentials for server
+  include_tasks: y.yml
+  vars:
+    credential_server_name: "hspeed1-f31l006-secret"
+    credential_userid: "CEUSER"
+    credential_debug: true  # Optional
+
+- name: Use the credentials
+  debug:
+    msg: "Username: {{ credential_username }}, Password: {{ credential_password }}"
+
 - name: Discover resources
   include_tasks: discovery.yml
 

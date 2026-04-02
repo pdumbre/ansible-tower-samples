@@ -10,39 +10,6 @@
   loop: "{{ computeNodeIntegratedManagementModules | default([]) }}"
   when: computeNodeIntegratedManagementModules is defined
   
-- name: Save cnimm to JSON file
-  copy:
-    content: "{{ cnimm | to_nice_json }}"
-    dest: "/tmp/extracted_cnimm.json"
-
-- name: Save cnimm to Vault using REST API
-  uri:
-    url: "{{ vault_addr }}/v1/secret/data/CNIMMSecret"
-    method: POST
-    headers:
-      X-Vault-Token: "{{ vault_token }}"
-    body_format: json
-    body:
-      data:
-        CNIMMSecret: "{{ cnimm }}"
-    status_code: [200, 204]
-    validate_certs: no
-  register: vault_result_cnimm
-
-- name: Retrieve cnimm data from Vault using REST API
-  uri:
-    url: "{{ vault_addr }}/v1/secret/data/CNIMMSecret"
-    method: GET
-    headers:
-      X-Vault-Token: "{{ vault_token }}"
-    return_content: yes
-    status_code: [200]
-    validate_certs: no
-  register: vault_retrieve_cnimm
-
-- name: Extract cnimm data from Vault response
-  set_fact:
-    retrieved_cnimm: "{{ vault_retrieve_cnimm.json.data.data.CNIMMSecret }}"
 
 - name: Extract and combine secrets from vault data
   ansible.builtin.set_fact:

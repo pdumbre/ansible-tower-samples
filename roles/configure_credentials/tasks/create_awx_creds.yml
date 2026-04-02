@@ -1,7 +1,41 @@
 - name: Build AWX URL
   ansible.builtin.set_fact:
     awx_url: "{{ awx_scheme }}://{{ awx_host }}:{{ awx_port }}"
-    
+
+- name: Get organization details from AWX
+  ansible.builtin.uri:
+    url: "{{ awx_url }}/api/v2/organizations/?name={{ organization_name | urlencode }}"
+    method: GET
+    user: "{{ awx_user }}"
+    password: "{{ awx_password }}"
+    force_basic_auth: true
+    validate_certs: "{{ awx_validate_certs }}"
+    status_code: 200
+    return_content: true
+  register: awx_org_response
+  no_log: true
+
+- name: Check if organization exists
+  ansible.builtin.assert:
+    that:
+      - awx_org_response.json.count > 0
+    fail_msg: "Organization '{{ organization_name }}' not found in AWX"
+    success_msg: "Organization '{{ organization_name }}' found"
+    quiet: true
+
+- name: Extract organization ID and details
+  ansible.builtin.set_fact:
+    organization_id: "{{ awx_org_response.json.results[0].id }}"
+    organization_info: "{{ awx_org_response.json.results[0] }}"
+
+- name: Display organization information
+  ansible.builtin.debug:
+    msg:
+      - "Organization Name: {{ organization_info.name }}"
+      - "Organization ID: {{ organization_id }}"
+      - "Description: {{ organization_info.description | default('N/A') }}"
+  when: awx_debug | default(false) | bool
+   
 - name: Get credential type ID
   ansible.builtin.uri:
     url: "{{ awx_url }}/api/v2/credential_types/?name={{ bmc_credential_type_name | urlencode }}"
@@ -79,7 +113,7 @@
 - name: Build combined BMC credentials dict
   ansible.builtin.set_fact:
     bmc_credentials_dict: "{{ bmc_credentials_dict | combine({item.name: item.users}) }}"
-  loop: "{{ vault_secrets }}"
+  loop: "{{ retrieved_cnimm }}"
   loop_control:
     label: "{{ item.name }}"
   run_once: true
@@ -90,16 +124,6 @@
     bmc_credentials_json_str: "{{ bmc_credentials_dict | to_json }}"
   run_once: true
   no_log: true
-
-- name: Debug credential
-  ansible.builtin.debug:
-    msg: "Nodes in combined credential: {{ bmc_credentials_json_str }}"
-  run_once: true
-
-- name: Debug node names
-  ansible.builtin.debug:
-    msg: "Nodes in combined credential: {{ bmc_credentials_dict.keys() | list }}"
-  run_once: true
 
 - name: Get existing combined BMC credential
   ansible.builtin.uri:
@@ -125,7 +149,7 @@
     body:
       name: "{{ bmc_credential_type_name }}"
       description: "Combined BMC credentials for all nodes"
-      organization: "{{ awx_organization_id }}"
+      organization: "{{ organization_id }}"
       credential_type: "{{ bmc_credential_type_id }}"
       inputs:
         bmc_credentials_json: "{{ bmc_credentials_json_str }}" 
@@ -155,12 +179,3 @@
   run_once: true
   when: existing_combined_credential.json.count > 0
   no_log: true
-
-- name: Display combined credential result
-  ansible.builtin.debug:
-    msg: >
-      Combined BMC credential '{{ bmc_credential_type_name }}'
-      {{ 'updated' if existing_combined_credential.json.count > 0 else 'created' }}
-      successfully for nodes: {{ bmc_credentials_dict.keys() | list }}
-  run_once: true
-  

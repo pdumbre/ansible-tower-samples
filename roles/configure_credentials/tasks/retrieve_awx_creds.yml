@@ -1,6 +1,6 @@
 - name: Set server name
   ansible.builtin.set_fact:
-    server_name: "control-1-ru2-secret"
+    server_name: "hspeed1-f31l006-secret"
     
 - name: Parse BMC credentials from environment variable
   ansible.builtin.set_fact:
@@ -24,10 +24,10 @@
 
 - name: Get USERID credentials for server
   ansible.builtin.set_fact:
-    server_userid_info: "{{ server_bmc_users | selectattr('user', 'equalto', 'USERID') | first }}"
+    server_userid_info: "{{ server_bmc_users | selectattr('user', 'equalto', 'CEUSER') | first }}"
   when:
     - server_bmc_users is defined
-    - server_bmc_users | selectattr('user', 'equalto', 'USERID') | list | length > 0
+    - server_bmc_users | selectattr('user', 'equalto', 'CEUSER') | list | length > 0
 
 - name: Decode USERID password
   ansible.builtin.set_fact:

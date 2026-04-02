@@ -3,8 +3,8 @@
     name: common
     tasks_from: credentials.yml
   vars:
-    credential_server_name: "hspeed1-f31l006-secret"
-    credential_userid: "CEUSER"
+    credential_server_name: "{{OCPRole}}-secret"
+    credential_userid: "USERID"
     credential_debug: true  # Optional
 
 - name: Use the credentials

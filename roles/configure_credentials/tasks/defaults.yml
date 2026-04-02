@@ -359,4 +359,8 @@
                 - group: "netedit"
                   password: "Abell4Cloud!"
                   user: "cumulus"
+                  
+- name: Display vault responses
+  debug:
+    msg: "Found {{ vault_response.data.CNIMMSecret }} compute nodes"
 

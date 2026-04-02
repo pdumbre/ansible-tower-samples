@@ -1,6 +1,6 @@
 - name: Set server name
   ansible.builtin.set_fact:
-    server_name: "control-1-ru2"
+    server_name: "control-1-ru2-secret"
     
 - name: Parse BMC credentials from environment variable
   ansible.builtin.set_fact:

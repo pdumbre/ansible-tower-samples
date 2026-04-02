@@ -4,7 +4,7 @@
     tasks_from: credentials.yml
   vars:
     credential_server_name: "{{OCPRole}}-secret"
-    credential_userid: "USERID"
+    credential_userid: "ISFUSER"
     credential_debug: true  # Optional
 
 - name: Use the credentials

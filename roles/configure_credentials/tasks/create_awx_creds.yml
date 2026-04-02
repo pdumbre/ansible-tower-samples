@@ -56,7 +56,7 @@
     status_code: [201]
     validate_certs: no
   register: credential_type_result
-  delegate_to: jump_host
+  delegate_to: jump-host
   run_once: true
   when: credential_type_query.json.count == 0
        

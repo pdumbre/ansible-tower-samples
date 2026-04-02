@@ -9,7 +9,7 @@
   ansible.builtin.set_fact:
     vault_secrets:
       cnimm: "{{ vault_response.data.CNIMMSecret.CNIMMSecret | default([]) }}"
-      switch: "{{ vault_response.SwitchSecret.SwitchSecret | default([]) }}"
+      switch: "{{ vault_response.data.SwitchSecret.SwitchSecret | default([]) }}"
   when: vault_response is defined
 
   

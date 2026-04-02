@@ -1,5 +1,7 @@
 - name: Get credentials for server
-  include_tasks: y.yml
+  include_role:
+    name: common
+    tasks_from: credentials.yml
   vars:
     credential_server_name: "hspeed1-f31l006-secret"
     credential_userid: "CEUSER"

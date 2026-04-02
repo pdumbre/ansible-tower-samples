@@ -9,11 +9,11 @@
     user: "{{ awx_user }}"
     password: "{{ awx_password }}"
     force_basic_auth: true
-    validate_certs: "{{ awx_validate_certs }}"
+    validate_certs: no
     status_code: 200
     return_content: true
   register: awx_org_response
-  no_log: true
+  
 
 - name: Check if organization exists
   ansible.builtin.assert:

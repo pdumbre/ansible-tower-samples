@@ -4,12 +4,6 @@
     name: hvac
     state: present
     
-- name: Extract cnimm name and users from current kickstart (without number field)
-  set_fact:
-    cnimm: "{{ cnimm + [{'name': item.OCPRole, 'users': item.users | map('dict2items') | map('rejectattr', 'key', 'equalto', 'number') | map('items2dict') | list}] }}"
-  loop: "{{ computeNodeIntegratedManagementModules | default([]) }}"
-  when: computeNodeIntegratedManagementModules is defined
-  
 
 - name: Extract and combine secrets from vault data
   ansible.builtin.set_fact:

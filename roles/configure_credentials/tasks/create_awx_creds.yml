@@ -12,6 +12,7 @@
     validate_certs: no
     status_code: 200
     return_content: true
+  delegate_to: jump-host
   register: awx_org_response
   
 

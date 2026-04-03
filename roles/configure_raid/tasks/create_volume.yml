@@ -1,8 +1,5 @@
 # Create RAID volume
 
-- set_fact:
-    has_configure_jobs: false
-
 - name: Extract drive URLs (alternative method)
   set_fact:
     drive_urls: "{{ m2_storage.json.Drives | json_query('[*].\"@odata.id\"') }}"

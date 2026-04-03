@@ -2,6 +2,11 @@
 storage_config:
   storage_controller_name: "BOSS" 
 
+# Dell RAID body template - uses flat Drives array
+raid_body_template:
+  RAIDType: "RAID_LEVEL_PLACEHOLDER"
+  Drives: []
+
   
 #Power Configuration
 power_config:

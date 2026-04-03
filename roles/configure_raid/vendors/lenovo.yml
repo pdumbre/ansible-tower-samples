@@ -4,6 +4,12 @@ power_config:
   url_suffix:  "/Actions/ComputerSystem.Reset"
   desired_power_state: "On"
 
+# Lenovo RAID body template - uses Links.Drives structure
+raid_body_template:
+  RAIDType: "RAID_LEVEL_PLACEHOLDER"
+  Links:
+    Drives: []
+  
 #BIOS Configuration
 bios_config:
   url_suffix:  "/Pending"

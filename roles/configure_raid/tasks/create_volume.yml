@@ -12,6 +12,20 @@
 - name: Check existing RAID Configuration Job
   include_tasks: check_raid_config_job.yml
 
+- name: Build RAID body from vendor template
+  set_fact:
+    raid_body: "{{ raid_body_template | combine({'RAIDType': raid_config.raid_level | upper}, recursive=True) }}"
+
+- name: Populate drives in RAID body (flat structure)
+  set_fact:
+    raid_body: "{{ raid_body | combine({'Drives': drives}, recursive=True) }}"
+  when: "'Links' not in raid_body_template"
+
+- name: Populate drives in RAID body (Links structure)
+  set_fact:
+    raid_body: "{{ raid_body | combine({'Links': {'Drives': drives}}, recursive=True) }}"
+  when: "'Links' in raid_body_template"
+
 - name: Create RAID volume
   uri:
     url: "{{ bmc_storage_url}}/{{ controller_name }}/Volumes"
@@ -21,9 +35,7 @@
     validate_certs: no
     force_basic_auth: yes
     body_format: json
-    body:
-      RAIDType: "{{ raid_config.raid_level | upper }}"
-      Drives: "{{ drives }}"
+    body: "{{ raid_body }}"
     status_code: [200, 201, 202, 204]
   register: volume_create
   delegate_to: "{{ bmc_delegate_host }}"

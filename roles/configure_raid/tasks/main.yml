@@ -1,6 +1,14 @@
 
 # roles/configure_raid/tasks/main.yml
 
+- name: Retrieve credentials for server
+  include_role:
+    name: common
+    tasks_from: cred.yml
+  vars:
+    credential_server_name: "{{OCPRole}}-secret"
+    credential_userid: "USERID"
+    
 - name: Discover configuration
   include_tasks: discover.yml
   

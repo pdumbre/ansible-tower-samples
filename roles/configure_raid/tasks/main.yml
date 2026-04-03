@@ -8,6 +8,12 @@
   vars:
     credential_server_name: "{{OCPRole}}-secret"
     credential_userid: "USERID"
+
+- name: Map kickstart.json variables to task variables
+  ansible.builtin.set_fact:
+    # BMC credentials from users array
+    bmc_user: "{{ credential_username }}"
+    bmc_password: "{{ credential_password | b64decode }}"
     
 - name: Discover configuration
   include_tasks: discover.yml

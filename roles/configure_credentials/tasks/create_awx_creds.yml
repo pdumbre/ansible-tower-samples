@@ -118,7 +118,7 @@
   loop_control:
     label: "{{ item.name }}"
   run_once: true
-  no_log: true
+
 
 - name: Convert credentials dict to JSON string
   ansible.builtin.set_fact:

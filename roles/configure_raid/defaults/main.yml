@@ -1,1 +1,2 @@
 retries: 10
+has_configure_jobs: false

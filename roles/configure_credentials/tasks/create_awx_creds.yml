@@ -126,6 +126,9 @@
   run_once: true
   no_log: true
 
+- debug:
+    msg: "str: {{ bmc_credentials_json_str }}"
+
 - name: Get existing combined BMC credential
   ansible.builtin.uri:
     url: "{{ awx_url }}/api/v2/credentials/?name={{ bmc_credential_type_name | urlencode }}"

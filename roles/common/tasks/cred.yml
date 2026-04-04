@@ -70,6 +70,6 @@
 - name: Extract credential details
   ansible.builtin.set_fact:
     credential_username: "{{ credential_info.user }}"
-    credential_password: "{{ credential_info.password }}"
+    credential_password: "{{ credential_info.password | b64decode }}"
     credential_group: "{{ credential_info.group }}"
   when: credential_info is defined

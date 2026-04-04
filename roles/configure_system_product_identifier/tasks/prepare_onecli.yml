@@ -1,88 +1,123 @@
 ---
-# Prepare OneCli binary for execution via jump host
-# OneCLI binaries are pre-extracted on the jump host — no download or extraction needed
-# All OneCLI commands delegate_to: onecli_jump_host
+# Setup OneCLI for Lenovo server management
+# Extracts OneCLI package and prepares binaries
 
-- name: Assert node_device_type is supported
-  assert:
+# -----------------------------------------------------------------
+# Set OneCLI paths
+# OneCli variable values are set in RHEL Install Template
+# -----------------------------------------------------------------
+- name: Set OneCLI source path and working directory
+  ansible.builtin.set_fact:
+    onecli_source_path: "{{ firmware_base_path }}/onecli"
+    onecli_work_dir: "{{ firmware_base_path }}/onecli_{{ inventory_hostname }}"
+
+# ------------------------------------------------------------
+# Load OneCLI metadata and determine version based on server model
+# Gen nodes (SR645, SR665, SR630) → OneCLI 3.4.0 (oc34)
+# All other models → OneCLI 4.1.0 (fix)
+# ------------------------------------------------------------
+- name: Load OneCLI metadata
+  ansible.builtin.slurp:
+    src: "{{ onecli_source_path }}/metadata.json"
+  register: onecli_metadata_raw
+  delegate_to: "{{ bmc_delegate_host }}"
+
+- name: Parse OneCLI metadata
+  ansible.builtin.set_fact:
+    onecli_metadata: "{{ onecli_metadata_raw.content | b64decode | from_json }}"
+
+- name: Determine OneCLI version key based on server model
+  ansible.builtin.set_fact:
+    onecli_version_key: >-
+      {{ 'oc34' if node_discovery.server_model | lower in ['sr645', 'sr665', 'sr630']
+         else 'fix' }}
+
+- name: Set OneCLI tarball from metadata
+  ansible.builtin.set_fact:
+    onecli_tarball: "{{ onecli_metadata.imageFiles[onecli_version_key] }}"
+
+# ------------------------------------------------------------
+# Verify OneCLI file exists
+# ------------------------------------------------------------
+- name: Check if OneCLI file exists
+  ansible.builtin.stat:
+    path: "{{ onecli_source_path }}/{{ onecli_tarball }}"
+  register: onecli_file_check
+  delegate_to: "{{ bmc_delegate_host }}"
+
+- name: Verify OneCLI file is present
+  ansible.builtin.assert:
     that:
-      - node_device_type in onecli_version_rules
-    fail_msg: >
-      Unsupported device type '{{ node_device_type }}'.
-      Must be one of: {{ onecli_version_rules.keys() | list | join(', ') }}
+      - onecli_file_check.stat.exists
+      - onecli_file_check.stat.isreg
+    fail_msg: "OneCLI file not found: {{ onecli_source_path }}/{{ onecli_tarball }}"
+    success_msg: "OneCLI file found: {{ onecli_tarball }}"
 
-- name: Assert jump host is defined
-  assert:
-    that:
-      - onecli_jump_host is defined
-      - onecli_jump_host | length > 0
-    fail_msg: >
-      onecli_jump_host is not defined.
-      Set it in defaults/main.yml or group_vars.
-
-- name: Determine firmware version key
-  set_fact:
-    _firmware_key: >-
-      {{ 'old_firmware'
-         if bmc_firmware_version is version(onecli_version_threshold, '<=')
-         else 'new_firmware' }}
-
-- name: Set selected OneCli version
-  set_fact:
-    selected_onecli_version: "{{ onecli_version_rules[node_device_type][_firmware_key] }}"
-
-- name: Set OneCli binary and libs path on jump host
-  set_fact:
-    onecli_bin: "{{ onecli_versions[selected_onecli_version].bin }}"
-    onecli_libs: "{{ onecli_versions[selected_onecli_version].libs }}"
-
-- name: Warn if non-sr645 device has firmware at or below version threshold
-  debug:
+- name: Display selected OneCLI configuration
+  ansible.builtin.debug:
     msg:
-      - "WARNING: {{ node_device_type }} has firmware {{ bmc_firmware_version }} <= {{ onecli_version_threshold }}"
-      - "Version selection only applies to sr645. Defaulting to OneCli 4.1.0."
-  when:
-    - node_device_type != 'sr645'
-    - bmc_firmware_version is version(onecli_version_threshold, '<=')
+      - "Server Model: {{ node_discovery.server_model }}"
+      - "OneCLI Version Key: {{ onecli_version_key }}"
+      - "OneCLI Version: {{ onecli_metadata.version }}"
+      - "OneCLI File: {{ onecli_tarball }}"
+      - "Full Path: {{ onecli_source_path }}/{{ onecli_tarball }}"
 
-- name: Verify OneCli binary exists on jump host
-  stat:
-    path: "{{ onecli_bin }}"
-  delegate_to: "{{ onecli_jump_host }}"
-  register: onecli_bin_stat
+# ------------------------------------------------------------
+# Clean up existing working directory before extraction
+# Cleanup will be performed only for the running host
+# ------------------------------------------------------------
+- name: Remove existing OneCLI working directory if present
+  ansible.builtin.file:
+    path: "{{ onecli_work_dir }}"
+    state: absent
+  delegate_to: "{{ bmc_delegate_host }}"
 
-- name: Fail if OneCli binary not found on jump host
-  fail:
-    msg: >
-      OneCli binary not found at {{ onecli_bin }} on {{ onecli_jump_host }}.
-      Ensure OneCLI is extracted at:
-        /opt/onecli/{{ selected_onecli_version }}/OneCli
-      Run on jump host:
-        mkdir -p /opt/onecli/{{ selected_onecli_version }}
-        tar -xzf <onecli-archive> -C /opt/onecli/{{ selected_onecli_version }}/
-        chmod +x /opt/onecli/{{ selected_onecli_version }}/OneCli
-  when: not onecli_bin_stat.stat.exists
+# ------------------------------------------------------------
+# Create working directory
+# ------------------------------------------------------------
+- name: Create OneCLI working directory
+  ansible.builtin.file:
+    path: "{{ onecli_work_dir }}"
+    state: directory
+    mode: "0755"
+  delegate_to: "{{ bmc_delegate_host }}"
 
-- name: Verify OneCli binary is executable on jump host
-  stat:
-    path: "{{ onecli_bin }}"
-  delegate_to: "{{ onecli_jump_host }}"
-  register: onecli_bin_stat
+# ------------------------------------------------------------
+# Extract OneCLI
+# ------------------------------------------------------------
+- name: Extract OneCLI package
+  ansible.builtin.unarchive:
+    src: "{{ onecli_source_path }}/{{ onecli_tarball }}"
+    dest: "{{ onecli_work_dir }}"
+    remote_src: yes
+  delegate_to: "{{ bmc_delegate_host }}"
 
-- name: Fail if OneCli binary is not executable
-  fail:
-    msg: >
-      OneCli binary not found or not executable at {{ onecli_bin }}
-      on {{ onecli_jump_host }}.
-  when: >
-    not onecli_bin_stat.stat.exists or
-    not onecli_bin_stat.stat.executable
+# ------------------------------------------------------------
+# Set binary paths
+# ------------------------------------------------------------
+- name: Set rdmount & onecli paths
+  ansible.builtin.set_fact:
+    rdmount_binary: "{{ onecli_work_dir }}/rdmount"
+    rdumount_binary: "{{ onecli_work_dir }}/rdumount"
+    onecli_binary: "{{ onecli_work_dir }}/onecli"
 
-- name: Display OneCli preparation summary
-  debug:
+# ------------------------------------------------------------
+# Ensure executables
+# ------------------------------------------------------------
+- name: Ensure rdmount and onecli binaries executable
+  ansible.builtin.file:
+    path: "{{ item }}"
+    mode: "0755"
+  loop:
+    - "{{ rdmount_binary }}"
+    - "{{ rdumount_binary }}"
+    - "{{ onecli_binary }}"
+  delegate_to: "{{ bmc_delegate_host }}"
+
+- name: Display OneCLI setup complete
+  ansible.builtin.debug:
     msg:
-      - "OneCli version: {{ selected_onecli_version }}"
-      - "Binary path:    {{ onecli_bin }}"
-      - "Jump host:      {{ onecli_jump_host }}"
-      - "Binary exists and is executable: {{ onecli_bin_stat.stat.executable }}"
-
+      - "OneCLI setup completed"
+      - "Working directory: {{ onecli_work_dir }}"
+      - "OneCLI binary: {{ onecli_binary }}"
+      - "rdmount binary: {{ rdmount_binary }}"

@@ -1,0 +1,26 @@
+---
+# Set node parameters from kickstart.json for configure_system_product_identifier role
+# This provides a single source of truth for BMC credentials and node configuration
+
+- name: Map kickstart.json variables to task variables
+  ansible.builtin.set_fact:
+    # BMC credentials from users array
+    bmc_user: "{{ credential_username }}"
+    bmc_password: "{{ credential_password }}"
+    
+    # BMC network variables
+    bmc_ipv6_ula: "{{ ipv6ULA }}"
+    bmc_ipv6_lla: "{{ ipv6LLA | default('') }}"
+    bmc_ipv4: "{{ ipv4 | default('') }}"
+    
+    # Node identification
+    node_serial_num: "{{ serialNum }}"
+    node_mtm: "{{ mtm }}"
+    node_manufacturer: "{{ manufacturer }}"
+    node_name: "{{ inventory_hostname }}"
+    node_location: "{{ location }}"
+    ru_number: "{{ location | regex_replace('^RU', '') | int }}"
+    node_type: "{{ type }}"
+    node_uuid: "{{ uuid }}"
+
+# Made with Bob

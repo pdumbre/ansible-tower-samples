@@ -10,7 +10,10 @@
 - name: Use the credentials
   debug:
     msg: "Username: {{ credential_username }}, Password: {{ credential_password }}"
-
+    
+- name: Set parameters from kickstart.json
+  include_tasks: set_configure_system_product_identifier_parameters.yml
+  
 - name: Discover resources
   include_tasks: discovery.yml
 

@@ -201,4 +201,3 @@
     msg:
       - "Lenovo System Product Configuration Completed Successfully"
       - "Device:     {{ node_device_type }}"
-      - "OneCli:     {{ selected_onecli_version }}"

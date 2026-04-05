@@ -35,9 +35,8 @@
       - "  IPv6    :   {{ ipv6ULA }}"
       - "  Username:   {{ bmc_user }}"
       - "  Jump host:  {{ onecli_jump_host }}"
-      - "  OneCli bin: {{ onecli_bin }}"
-      - "  OneCli ver: {{ selected_onecli_version }}"
-
+      - "  OneCli bin: {{ onecli_binary }}"
+  
 # -----------------------------------------------------------------------
 # sr645 — Product Identifier
 # -----------------------------------------------------------------------
@@ -45,7 +44,7 @@
   block:
     - name: Set sr645 Product Identifier using OneCLI
       command: >
-        {{ onecli_bin }} config set
+        {{ onecli_binary }} config set
         SYSTEM_PROD_DATA.SysInfoProdIdentifier
         "{{ system_product_identifiers.sr645 }}"
         --nolog
@@ -73,7 +72,7 @@
   block:
     - name: Set sr630v3 Product Identifier using OneCLI
       command: >
-        {{ onecli_bin }} config set
+        {{ onecli_binary }} config set
         SYSTEM_PROD_DATA.SysInfoProdIdentifier
         "{{ system_product_identifiers.sr630v3 }}"
         --nolog
@@ -105,7 +104,7 @@
   block:
     - name: Set Manufacturer Name using OneCLI
       command: >
-        {{ onecli_bin }} config set
+        {{ onecli_binary }} config set
         SYSTEM_PROD_DATA.SysInfoManufacturerFullName
         "{{ manufacturer_name }}"
         --nolog
@@ -140,7 +139,7 @@
 
     - name: Configure Secure Boot Setting using OneCLI
       command: >
-        {{ onecli_bin }} config set
+        {{ onecli_binary }} config set
         SecureBootConfiguration.SecureBootSetting
         "{{ secure_boot_setting }}"
         --nolog
@@ -166,7 +165,7 @@
 
     - name: Configure Legacy BIOS using OneCLI
       command: >
-        {{ onecli_bin }} config set
+        {{ onecli_binary }} config set
         LegacyBIOS.LegacyBIOS
         "{{ legacy_bios_setting }}"
         --nolog

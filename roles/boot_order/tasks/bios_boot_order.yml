@@ -28,7 +28,7 @@
 
 - name: Retrieve current LegacyPXEMode entries
   command: >
-    {{ onecli_bin }} config show
+    {{ onecli_binary }} config show
     NetworkBootSettings.LegacyPXEMode.{{ item }}
     --never-check-trust --nolog
     {{ bmc_opts }}
@@ -51,7 +51,7 @@
 
 - name: Disable LegacyPXEMode entries
   command: >
-    {{ onecli_bin }} config set
+    {{ onecli_binary }} config set
     NetworkBootSettings.LegacyPXEMode.{{ item }}
     Disable
     --never-check-trust --nolog
@@ -74,7 +74,7 @@
 
 - name: Disable IPv6 PXE support 
   command: >
-    {{ onecli_bin }} config set
+    {{ onecli_binary }} config set
     NetworkStackSettings.IPv6PXESupport
     {{ pxe_disable_value }}
     --never-check-trust --nolog
@@ -91,7 +91,7 @@
 
 - name: Disable IPv4 PXE support
   command: >
-    {{ onecli_bin }} config set
+    {{ onecli_binary }} config set
     NetworkStackSettings.IPv4PXESupport
     {{ pxe_disable_value }}
     --never-check-trust --nolog
@@ -113,7 +113,7 @@
 
 - name: Enable IPv4 PXE support
   command: >
-    {{ onecli_bin }} config set
+    {{ onecli_binary }} config set
     NetworkStackSettings.IPv4PXESupport
     {{ pxe_enable_value }}
     --never-check-trust --nolog
@@ -136,7 +136,7 @@
 
 - name: Read current NetworkBootOrder via OneCLI
   command: >
-    {{ onecli_bin }} config show
+    {{ onecli_binary }} config show
     BootOrder.NetworkBootOrder
     --never-check-trust --nolog
     {{ bmc_opts }}
@@ -210,7 +210,7 @@
 
 - name: Set NetworkBootOrder via OneCLI
   command: >
-    {{ onecli_bin }} config set
+    {{ onecli_binary }} config set
     BootOrder.NetworkBootOrder
     "{{ final_network_boot_order }}"
     --never-check-trust --nolog

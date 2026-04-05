@@ -11,9 +11,10 @@
 #   7. Set boot order to: IPv4_entry=IPv6_entry
 #   8. Store PXE MAC address and slot label
 
+
 - name: Prepare OneCli on jump host
   include_tasks: prepare_onecli.yml
-  
+    
 - name: Display PXE boot order configuration start
   debug:
     msg:
@@ -29,11 +30,11 @@
   command: >
     {{ onecli_bin }} config show
     NetworkBootSettings.LegacyPXEMode.{{ item }}
-    --nolog
+    --never-check-trust --nolog
     {{ bmc_opts }}
   environment:
-    LD_LIBRARY_PATH: "{{ onecli_libs }}"
-  delegate_to: "{{ onecli_jump_host }}"
+    LD_LIBRARY_PATH: "{{ onecli_work_dir }}/lib"
+  delegate_to: "{{ bmc_delegate_host }}"
   loop: "{{ range(1, 9) | list }}"
   register: legacy_pxe_current
   retries: "{{ retry_count }}"
@@ -53,11 +54,11 @@
     {{ onecli_bin }} config set
     NetworkBootSettings.LegacyPXEMode.{{ item }}
     Disable
-    --nolog
+    --never-check-trust --nolog
     {{ bmc_opts }}
   environment:
-    LD_LIBRARY_PATH: "{{ onecli_libs }}"
-  delegate_to: "{{ onecli_jump_host }}"
+    LD_LIBRARY_PATH: "{{ onecli_work_dir }}/lib"
+  delegate_to: "{{ bmc_delegate_host }}"
   loop: "{{ range(1, 9) | list }}"
   register: legacy_pxe_disable
   retries: "{{ retry_count }}"
@@ -76,11 +77,11 @@
     {{ onecli_bin }} config set
     NetworkStackSettings.IPv6PXESupport
     {{ pxe_disable_value }}
-    --nolog
+    --never-check-trust --nolog
     {{ bmc_opts }}
   environment:
-    LD_LIBRARY_PATH: "{{ onecli_libs }}"
-  delegate_to: "{{ onecli_jump_host }}"
+    LD_LIBRARY_PATH: "{{ onecli_work_dir }}/lib"
+  delegate_to: "{{ bmc_delegate_host }}"
   register: ipv6_pxe_disable
   retries: "{{ retry_count }}"
   delay: "{{ retry_delay }}"
@@ -93,11 +94,11 @@
     {{ onecli_bin }} config set
     NetworkStackSettings.IPv4PXESupport
     {{ pxe_disable_value }}
-    --nolog
+    --never-check-trust --nolog
     {{ bmc_opts }}
   environment:
-    LD_LIBRARY_PATH: "{{ onecli_libs }}"
-  delegate_to: "{{ onecli_jump_host }}"
+    LD_LIBRARY_PATH: "{{ onecli_work_dir }}/lib"
+  delegate_to: "{{ bmc_delegate_host }}"
   register: ipv4_pxe_disable
   retries: "{{ retry_count }}"
   delay: "{{ retry_delay }}"
@@ -115,11 +116,11 @@
     {{ onecli_bin }} config set
     NetworkStackSettings.IPv4PXESupport
     {{ pxe_enable_value }}
-    --nolog
+    --never-check-trust --nolog
     {{ bmc_opts }}
   environment:
-    LD_LIBRARY_PATH: "{{ onecli_libs }}"
-  delegate_to: "{{ onecli_jump_host }}"
+    LD_LIBRARY_PATH: "{{ onecli_work_dir }}/lib"
+  delegate_to: "{{ bmc_delegate_host }}"
   register: ipv4_pxe_enable
   retries: "{{ retry_count }}"
   delay: "{{ retry_delay }}"
@@ -137,14 +138,17 @@
   command: >
     {{ onecli_bin }} config show
     BootOrder.NetworkBootOrder
-    --nolog
+    --never-check-trust --nolog
     {{ bmc_opts }}
   environment:
-    LD_LIBRARY_PATH: "{{ onecli_libs }}"
-  delegate_to: "{{ onecli_jump_host }}"
+    LD_LIBRARY_PATH: "{{ onecli_work_dir }}/lib"
+  delegate_to: "{{ bmc_delegate_host }}"
   register: network_boot_order_raw
   changed_when: false
   failed_when: network_boot_order_raw.rc != 0
+  retries: "{{ retry_count | default(3) }}"
+  delay: "{{ retry_delay | default(10) }}"
+  until: network_boot_order_raw.rc == 0
 
 - name: Parse NetworkBootOrder output into list
   set_fact:
@@ -176,12 +180,11 @@
         | select('search', 'SLOT\s*' ~ ocp_slot_num)
         | select('search', '(?i)ip(v)?4')
         | select('search', '0/0')
-        | map('regex_replace', '\nSucceed\..*$', '')
         | map('trim')
         | first
         | default('')
       }}
-      
+
 - name: Display found PXE slot entries
   debug:
     msg:
@@ -210,11 +213,11 @@
     {{ onecli_bin }} config set
     BootOrder.NetworkBootOrder
     "{{ final_network_boot_order }}"
-    --nolog
+    --never-check-trust --nolog
     {{ bmc_opts }}
   environment:
-    LD_LIBRARY_PATH: "{{ onecli_libs }}"
-  delegate_to: "{{ onecli_jump_host }}"
+    LD_LIBRARY_PATH: "{{ onecli_work_dir }}/lib"
+  delegate_to: "{{ bmc_delegate_host }}"
   register: set_boot_order_result
   retries: "{{ retry_count }}"
   delay: "{{ retry_delay }}"

@@ -56,7 +56,7 @@
 - name: Display selected OneCLI configuration
   ansible.builtin.debug:
     msg:
-      - "Server Model: {{ node_discovery.server_model }}"
+      - "Server Model: {{ server_model }}"
       - "OneCLI Version Key: {{ onecli_version_key }}"
       - "OneCLI Version: {{ onecli_metadata.version }}"
       - "OneCLI File: {{ onecli_tarball }}"

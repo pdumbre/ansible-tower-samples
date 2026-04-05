@@ -1,7 +1,7 @@
 - name: Set system identifier from SKU
   set_fact:
     system_identifier: >-
-      {{ bmc_systems_details.json.SKU | default('')
+      {{ systems_details.json.SKU | default('')
       | upper }}
   when:
     - not (use_bios_jobqueue | bool)
@@ -9,7 +9,7 @@
 - name: Set system identifier from SystemID
   set_fact:
     system_identifier: >-
-      {{ bmc_systems_details.json.Oem.Dell.DellSystem.SystemID }}
+      {{ systems_details.json.Oem.Dell.DellSystem.SystemID }}
   when:
     - use_bios_jobqueue | bool
 

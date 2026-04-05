@@ -21,8 +21,9 @@
 
 - name: Prepare OneCli on jump host
   include_tasks: prepare_onecli.yml
-
-
+  vars:
+    bmc_delegate_host: "jump-host"
+    
 - name: Set BMC connection string for OneCLI
   set_fact:
     bmc_opts: "--bmc {{ bmc_user }}:{{ bmc_password }}@[{{ ipv6ULA }}]"

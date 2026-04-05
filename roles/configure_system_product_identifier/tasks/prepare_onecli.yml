@@ -29,7 +29,7 @@
 - name: Determine OneCLI version key based on server model
   ansible.builtin.set_fact:
     onecli_version_key: >-
-      {{ 'oc34' if node_discovery.server_model | lower in ['sr645', 'sr665', 'sr630']
+      {{ 'oc34' if server_model | lower in ['sr645', 'sr665', 'sr630']
          else 'fix' }}
 
 - name: Set OneCLI tarball from metadata

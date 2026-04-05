@@ -69,6 +69,15 @@
 - set_fact:
     bmc_systems_details: "{{ system_details }}"
 
+- name: Extract manufacturer and system information
+  ansible.builtin.set_fact:
+    system_manufacturer: "{{ bmc_systems_details.json.Manufacturer | lower }}"
+    system_model: "{{ bmc_systems_details.json.Model | default('') }}"
+
+- name: Detect server model
+  ansible.builtin.set_fact:
+    server_model: "{{ system_model | regex_replace('[^a-zA-Z0-9]', '') | lower }}"
+    
 - name: Retrieve Manager information
   uri:
     url: "{{ bmc_base_url }}/redfish/v1/Managers"

@@ -78,7 +78,7 @@
         --nolog
         {{ bmc_opts }}
       environment:
-        LD_LIBRARY_PATH: "{{ onecli_libs }}"
+        LD_LIBRARY_PATH: "{{ onecli_work_dir }}/lib"
       delegate_to: "{{ onecli_jump_host }}"
       register: sr630v3_product_id
       #retries: "{{ retry_count }}"

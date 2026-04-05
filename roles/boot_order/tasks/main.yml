@@ -1,4 +1,15 @@
 
+- name: Retrieve credentials for server
+  include_role:
+    name: common
+    tasks_from: cred.yml
+  vars:
+    credential_server_name: "{{OCPRole}}-secret"
+    credential_userid: "USERID"
+    
+- name: Set parameters from kickstart.json
+  include_tasks: set_configure_boot_order_parameters.yml
+
 - name: Discover resources
   include_tasks: discovery.yml
       
@@ -12,7 +23,7 @@
     force_basic_auth: yes
     return_content: yes
     status_code: [200, 404]
-  delegate_to: localhost
+  delegate_to: "{{ bmc_delegate_host }}"
   register: probe_job_queue 
   failed_when: false
   when: not (ru_number | int == 23)
@@ -34,6 +45,8 @@
 
 - name: Resolve and set boot order
   include_tasks: bios_boot_order.yml
+  vars:
+    bmc_delegate_host: "jump-host"
   when:
     - not (ru_number | int == 23)
     - not (use_bios_jobqueue | bool)

@@ -23,20 +23,12 @@
   include_tasks: prepare_onecli.yml
   vars:
     bmc_delegate_host: "jump-host"
-    
+
+
 - name: Set BMC connection string for OneCLI
   set_fact:
     bmc_opts: "--bmc {{ bmc_user }}:{{ bmc_password }}@[{{ ipv6ULA }}]"
 
-- name: Display BMC connection info
-  debug:
-    msg:
-      - "BMC Connection Configuration:"
-      - "  IPv6    :   {{ ipv6ULA }}"
-      - "  Username:   {{ bmc_user }}"
-      - "  Jump host:  {{ onecli_jump_host }}"
-      - "  OneCli bin: {{ onecli_binary }}"
-  
 # -----------------------------------------------------------------------
 # sr645 — Product Identifier
 # -----------------------------------------------------------------------
@@ -48,9 +40,10 @@
         SYSTEM_PROD_DATA.SysInfoProdIdentifier
         "{{ system_product_identifiers.sr645 }}"
         --nolog
+        --never-check-trust
         {{ bmc_opts }}
       environment:
-        LD_LIBRARY_PATH: "{{ onecli_libs }}"
+        LD_LIBRARY_PATH: "{{ onecli_work_dir }}/lib"
       delegate_to: "{{ onecli_jump_host }}"
       register: sr645_product_id
       retries: "{{ retry_count }}"
@@ -76,20 +69,17 @@
         SYSTEM_PROD_DATA.SysInfoProdIdentifier
         "{{ system_product_identifiers.sr630v3 }}"
         --nolog
+        --never-check-trust
         {{ bmc_opts }}
       environment:
         LD_LIBRARY_PATH: "{{ onecli_work_dir }}/lib"
       delegate_to: "{{ onecli_jump_host }}"
       register: sr630v3_product_id
-      #retries: "{{ retry_count }}"
-      #delay: "{{ retry_delay }}"
-      #until: sr630v3_product_id.rc == 0
+      retries: "{{ retry_count }}"
+      delay: "{{ retry_delay }}"
+      until: sr630v3_product_id.rc == 0
       changed_when: "'Successfully' in sr630v3_product_id.stdout"
       failed_when: sr630v3_product_id.rc != 0
-
-    - debug:
-        msg: "{{ sr630v3_product_id }}"
-     
 
     - name: Display sr630v3 Product Identifier result
       debug:
@@ -108,6 +98,7 @@
         SYSTEM_PROD_DATA.SysInfoManufacturerFullName
         "{{ manufacturer_name }}"
         --nolog
+        --never-check-trust
         --override
         {{ bmc_opts }}
       environment:
@@ -143,6 +134,7 @@
         SecureBootConfiguration.SecureBootSetting
         "{{ secure_boot_setting }}"
         --nolog
+        --never-check-trust
         {{ bmc_opts }}
       environment:
         LD_LIBRARY_PATH: "{{ onecli_work_dir }}/lib"
@@ -169,6 +161,7 @@
         LegacyBIOS.LegacyBIOS
         "{{ legacy_bios_setting }}"
         --nolog
+        --never-check-trust
         {{ bmc_opts }}
       environment:
         LD_LIBRARY_PATH: "{{ onecli_work_dir }}/lib"

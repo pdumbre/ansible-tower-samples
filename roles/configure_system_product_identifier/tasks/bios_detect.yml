@@ -12,7 +12,10 @@
       {{ systems_details.json.Oem.Dell.DellSystem.SystemID }}
   when:
     - use_bios_jobqueue | bool
-
+    
+- debug:
+    msg: "system identifier = {{ system_identifier }}"
+    
 - name: Resolve model name from MTM prefix
   set_fact:
     node_device_type: "{{ mtm_to_model[system_identifier | string] | default('unknown') }}"

@@ -1,5 +1,5 @@
 - name: Configure PXE boot order
-  hosts: bmc_servers
+  hosts: servers
   gather_facts: false
     
   roles:

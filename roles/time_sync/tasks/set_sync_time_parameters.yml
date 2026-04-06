@@ -1,0 +1,66 @@
+---
+# Set node parameters from kickstart.json for sync_time role
+# This provides a single source of truth for BMC credentials and node configuration
+# All variables come from AWX inventory (host_vars, group_vars, extra_vars)
+# populated by setup_awx.yml from kickstart.json
+
+- name: Map kickstart.json variables to sync_time task variables
+  ansible.builtin.set_fact:
+    # BMC credentials from users array
+    # Extract USERID user or fall back to first user in array
+    bmc_user: "{{ credential_username }}"
+    bmc_password: "{{ credential_password }}"
+    
+    # BMC network variables
+    # Clean and normalize IP addresses for BMC access
+    ipv4_clean: "{{ ipv4 | default('') | replace('\n','') | replace('\r','') | trim }}"
+    ipv6_clean: "{{ ipv6ULA | default('') | replace('\n','') | replace('\r','') | trim }}"
+    ipv6_lla: "{{ ipv6LLA | default('') | replace('\n','') | replace('\r','') | trim }}"
+    
+    # Node identification
+    node_serial_num: "{{ serialNum }}"
+    node_mtm: "{{ mtm }}"
+    node_manufacturer: "{{ manufacturer }}"
+    node_name: "{{ inventory_hostname }}"
+    node_location: "{{ location }}"
+    ru_number: "{{ location | regex_replace('^RU', '') | int }}"
+    node_type: "{{ type }}"
+    node_uuid: "{{ uuid }}"
+    
+    # RHEL OS IP address (if available)
+    rhel_ip_clean: "{{ rhel_ip | default('') | replace('\n','') | replace('\r','') | trim }}"
+
+- name: Generate BMC Base Endpoint
+  ansible.builtin.set_fact:
+    bmc_base_url: >-
+      {% if ipv4_clean | length > 0 %}
+      https://{{ ipv4_clean }}
+      {% elif ipv6_clean | length > 0 %}
+      https://[{{ ipv6_clean }}]
+      {% else %}
+      
+      {% endif %}
+
+- name: Configure BMC Base Endpoint
+  ansible.builtin.set_fact:
+    bmc_base_url: "{{ bmc_base_url | trim }}"
+
+- name: Configure BMC IP address
+  ansible.builtin.set_fact:
+    bmc_ip: >-
+      {{ ipv4_clean
+         if (ipv4_clean is defined and ipv4_clean | length > 0)
+         else '[' ~ ipv6_clean ~ ']'}}
+
+- name: Configure delegate host
+  ansible.builtin.set_fact:
+    bmc_delegate_host: >-
+      {{ 'localhost'
+         if (ipv4_clean is defined and ipv4_clean | length > 0)
+         else 'jump-host' }}
+
+- name: Normalize BMC delegate host
+  ansible.builtin.set_fact:
+    bmc_delegate_host: "{{ bmc_delegate_host | trim }}"
+
+# Made with Bob

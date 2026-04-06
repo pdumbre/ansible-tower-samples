@@ -4,6 +4,17 @@
 # Synchronizes time on BMC and/or OS level
 # Vendor-agnostic implementation using Redfish API for BMC
 
+- name: Retrieve credentials for server
+  include_role:
+    name: common
+    tasks_from: cred.yml
+  vars:
+    credential_server_name: "{{OCPRole}}-secret"
+    credential_userid: "USERID"
+
+- name: Configure time sync parameters
+  include_tasks: set_sync_time_parameters.yml
+
 - name: Discover resources
   include_tasks: discovery.yml
   

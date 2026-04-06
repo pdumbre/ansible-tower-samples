@@ -1,4 +1,4 @@
-# roles/configure_raid/tasks/discover.yml
+# roles/sync_time/tasks/discover.yml
 
 - name: Reset BMC IP Variables
   set_fact:
@@ -80,4 +80,9 @@
   
 - set_fact:
     bmc_manager_url: "{{ bmc_base_url }}{{ managers.json.Members[0]['@odata.id'] }}"
-    
+
+
+- name: Configure NTP server
+  set_fact:
+    time_sync_ntp_server: "{{ hostvars['jump-host']['ansible_host'] }}"
+    time_sync_ntp_servers: "{{ [hostvars['jump-host']['ansible_host']] }}"

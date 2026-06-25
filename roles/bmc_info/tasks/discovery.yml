@@ -34,7 +34,7 @@
 
 - name: Configure delegate host
   set_fact:
-    bmc_delegate_host: "localhost"
+    bmc_delegate_host: "jump-host"
     
 - name: Normalize BMC delegate host
   set_fact:

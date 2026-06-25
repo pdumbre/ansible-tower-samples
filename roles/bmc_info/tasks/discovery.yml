@@ -39,6 +39,12 @@
 - name: Normalize BMC delegate host
   set_fact:
     bmc_delegate_host: "{{ bmc_delegate_host | trim }}"
+
+- debug:
+    msg: "user: {{ bmc_user }}"
+
+- debug:
+    msg: "password: {{ bmc_password }}"
          
 - name: Retrieve Systems information
   uri:
@@ -49,6 +55,9 @@
     validate_certs: false
   delegate_to: "{{ bmc_delegate_host }}"
   register: systems
+
+- debug:
+    msg: "systems: {{ systems }}"
   
 - set_fact:
     bmc_systems_url: "{{ bmc_base_url }}{{ systems.json.Members[0]['@odata.id'] }}"
